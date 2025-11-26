@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- ФУНКЦІЇ РЕНДЕРИНГУ ТА ДОСТУПУ ---
 
-  // ВИДАЛЕНО: function checkAccess() {...}
+  // ВИДАЛЕНО checkAccess()
 
   function updateAuthUI() {
     if (!openAuthBtn || !authBtnText) return;
@@ -235,8 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
       openAuthBtn.classList.remove('btn-outline');
       openAuthBtn.style.boxShadow = "none";
     }
-
-    // ВИДАЛЕНО: checkAccess();
   }
 
   function renderAdminSidebarData(filter = '') {
@@ -295,9 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
       div.className = 'member animated-content';
       div.setAttribute('data-id', m.id);
       
-      // ВИДАЛЕНО: canManage та isOwner перевірки, оскільки кнопки завжди видимі
-      // let socialLinksHtml = ...; // Залишено без змін
-      
       let socialLinksHtml = '';
       if (m.links) {
           socialLinksHtml += '<div class="social-links">';
@@ -333,7 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     membersGrid.innerHTML = '';
     membersGrid.appendChild(fragment);
-    // ВИДАЛЕНО: checkAccess();
     setTimeout(checkVisibilityAndAnimate, 50);
   }
 
@@ -358,7 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     newsList.innerHTML = '';
     newsList.appendChild(fragment);
-    // ВИДАЛЕНО: checkAccess();
     setTimeout(checkVisibilityAndAnimate, 50);
   }
 
@@ -379,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     galleryGrid.innerHTML = '';
     galleryGrid.appendChild(fragment);
-    // ВИДАЛЕНО: checkAccess();
     setTimeout(checkVisibilityAndAnimate, 50);
   }
 
@@ -411,8 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const member = members.find(m => m.id == id);
       if (!member) return;
       
-      // ВИДАЛЕНО перевірку if(currentUser.role !== 'admin' && currentUser.username !== member.owner)
-      
       // **ЗБЕРЕЖЕНО prompt ДЛЯ РЕДАГУВАННЯ, Оскільки це єдина функція, яка повертає введене значення синхронно**
       const newName = prompt(`Редагувати ім'я для ${member.name}:`, member.name);
       if (newName === null || newName.trim() === '') return;
@@ -435,7 +425,6 @@ document.addEventListener('DOMContentLoaded', () => {
       save(MEMBERS_KEY, members);
       renderMembers(memberSearch ? memberSearch.value : '');
       
-      // ДОДАНО ПОВІДОМЛЕННЯ ПРО УСПІШНЕ РЕДАГУВАННЯ
       customConfirm(`Інформацію про учасника ${member.name} оновлено.`);
   }
 
@@ -445,8 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const member = members.find(m => m.id == id);
           if (!member) return;
-
-          // ВИДАЛЕНО перевірку if(currentUser.role !== 'admin' && currentUser.username !== member.owner)
 
           members = members.filter(m => m.id != id);
           save(MEMBERS_KEY, members);
