@@ -100,36 +100,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // --- ПОЧАТКОВІ ДАНІ ---
-  const defaultMembers = [
-    {
-        id:1, 
-        name:'Vlad_B', 
-        role:'Голова', 
-        owner:'system', 
-        links: {
-            discord: 'vladb#0001', 
-            youtube: 'https://youtube.com/@vladb_channel',
-            tg: ''
-        }
-    },
-    {
-        id:2, 
-        name:'Kostya', 
-        role:'Зам', 
-        owner:'system',
-        links: {
-            discord: 'kostya_rp#1234', 
-            youtube: 'https://youtube.com/kostyastar',
-            tg: 'https://t.me/kostya_tg'
-        }
-    }
-  ];
+  // Видалено початкові записи учасників
+  const defaultMembers = []; // Тепер порожній масив
+  // --------------------------------------------------
   let members = load(MEMBERS_KEY, defaultMembers);
   let news = load(NEWS_KEY, [{id:101,title:'Операція на маяку',date:'2025-11-20',summary:'Успішно захопили маяк.'}]);
-  let gallery = load(GALLERY_KEY, [
-    {id:201,url:'https://i.postimg.cc/QtxK543b/gallery1.jpg'},
-    {id:202,url:'https://i.postimg.cc/wT7s0x9Y/gallery2.jpg'}
-  ]);
+  // Видалено початкові фотографії з галереї 
+  let gallery = load(GALLERY_KEY, []); 
   let currentUser = load(CURRENT_USER_KEY, null); 
 
   // --- КЕШУВАННЯ DOM ЕЛЕМЕНТІВ ---
@@ -214,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
       animateDynamicContent(galleryGrid ? galleryGrid.querySelectorAll('.animated-content:not(.animate-in)') : []);
   }
   
-  // *** ЗМІНЕНО: Прибрано індексну затримку для динамічних елементів для усунення рассинхрону ***
+  // Прибрано індексну затримку для динамічних елементів для усунення рассинхрону
   function animateDynamicContent(elements) {
       elements.forEach((el) => {
           const rect = el.getBoundingClientRect();
@@ -222,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const isVisible = rect.top < viewHeight - 50 && rect.bottom > 50;
 
           if (isVisible) {
-              // el.style.transitionDelay = `${index * 0.1}s`; // ВИДАЛЕНО
               el.classList.add('animate-in');
           }
       });
@@ -444,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMembers(memberSearch ? memberSearch.value : '');
         }
         updateAuthUI(); 
-        customConfirm(`Користувача ${username} видалено.`, );
+        customConfirm(`Користувача ${username} видалено.`);
     });
   }
 
@@ -476,6 +452,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       save(MEMBERS_KEY, members);
       renderMembers(memberSearch ? memberSearch.value : '');
+      
+      // <<< ДОДАНО ПОВІДОМЛЕННЯ ПРО УСПІШНЕ РЕДАГУВАННЯ >>>
+      customConfirm(`Інформацію про учасника ${member.name} оновлено.`);
   }
 
   function removeMember(id) {
@@ -492,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
           members = members.filter(m => m.id != id);
           save(MEMBERS_KEY, members);
           renderMembers(memberSearch ? memberSearch.value : '');
-          customConfirm('Учасника видалено.', );
+          customConfirm('Учасника видалено.');
       });
   }
 
@@ -503,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
           news = news.filter(n => n.id != id);
           save(NEWS_KEY, news);
           renderNews();
-          customConfirm('Подію видалено.', );
+          customConfirm('Подію видалено.');
       });
   }
   
@@ -514,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gallery = gallery.filter(g=>g.id!=id); 
         save(GALLERY_KEY,gallery); 
         renderGallery();
-        customConfirm('Фото видалено.', );
+        customConfirm('Фото видалено.');
     });
   }
   
