@@ -379,9 +379,6 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 .close-modal:hover { color: #fff; transform: rotate(90deg); }
 
 
-/* --- ВИДАЛЕНО: ACCESS CONTROL --- */
-/* Ці правила більше не потрібні, оскільки ми керуємо відображенням кнопок через їхню відсутність у HTML */
-
 /* --- ADMIN SIDEBAR --- */
 .admin-sidebar {
   position: fixed; top: 0; left: -350px; width: 320px; height: 100%; background: rgba(11, 13, 16, 0.98); backdrop-filter: blur(15px);
