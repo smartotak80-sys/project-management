@@ -208,19 +208,21 @@ document.addEventListener('DOMContentLoaded', () => {
           }
       });
       
+      // Динамічний контент (члени, новини, галерея)
       animateDynamicContent(membersGrid ? membersGrid.querySelectorAll('.member.animated-content:not(.animate-in)') : []);
       animateDynamicContent(newsList ? newsList.querySelectorAll('.news-item.animated-content:not(.animate-in)') : []);
       animateDynamicContent(galleryGrid ? galleryGrid.querySelectorAll('.animated-content:not(.animate-in)') : []);
   }
   
+  // *** ЗМІНЕНО: Прибрано індексну затримку для динамічних елементів для усунення рассинхрону ***
   function animateDynamicContent(elements) {
-      elements.forEach((el, index) => {
+      elements.forEach((el) => {
           const rect = el.getBoundingClientRect();
           const viewHeight = window.innerHeight;
           const isVisible = rect.top < viewHeight - 50 && rect.bottom > 50;
 
           if (isVisible) {
-              el.style.transitionDelay = `${index * 0.1}s`;
+              // el.style.transitionDelay = `${index * 0.1}s`; // ВИДАЛЕНО
               el.classList.add('animate-in');
           }
       });
