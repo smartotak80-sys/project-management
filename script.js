@@ -1,613 +1,865 @@
-/* styles.css — Final Barakuda Version (ПОВНИЙ ДИЗАЙН ТА АНІМАЦІЇ + CUSTOM MODAL) */
+// script.js — Final Logic (ОСТАННЯ ВЕРСІЯ: ВСЕ ВИДИМО)
 
-:root {
-  --bg-dark: #050505;
-  --bg-panel: #0f1012;
-  --accent: #ff2a2a;       
-  --accent-dark: #8a0000;
-  --text-main: #ffffff;
-  --text-muted: #94a3b8;
-  --glass: rgba(20, 20, 25, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glow: 0 0 15px rgba(255, 42, 42, 0.4);
-  --radius: 12px;
-  --font-main: 'Inter', system-ui, sans-serif;
+document.addEventListener('DOMContentLoaded', () => {
+  // --- КОНСТАНТИ ---
+  const MEMBERS_KEY = 'barakuda_members_v3';
+  const NEWS_KEY = 'barakuda_news_v1';
+  const GALLERY_KEY = 'barakuda_gallery_v1';
+  const USERS_KEY = 'barakuda_users_db';
+  const CURRENT_USER_KEY = 'barakuda_current_user';
+  const ADMIN_LOGIN = 'famillybarracuda@gmail.com'; 
+  const ADMIN_PASS = 'barracuda123';
+  const MAX_USERS = 1; 
+  const MAX_MEMBER_PER_USER = 1;
+
+
+  // --- ДОПОМІЖНІ ФУНКЦІЇ ---
+  function load(key, fallback){ 
+      try{ 
+          const v = localStorage.getItem(key); 
+          return v ? JSON.parse(v) : fallback;
+      } catch(e){
+          console.error(`Error loading key ${key}:`, e);
+          return fallback;
+      } 
+  }
+  function save(key,val){ localStorage.setItem(key, JSON.stringify(val)) }
+  function escapeHtml(str){ return String(str).replace(/[&<>"'`=/]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','=':'&#x3D;','`':'&#x60;'}[s])); }
   
-  /* Кольори для соцмереж */
-  --color-discord: #5865F2;
-  --color-youtube: #FF0000;
-  --color-telegram: #0088CC;
-}
+  function timeAgo(dateString) {
+      if (!dateString) return 'Невідомо';
+      const now = new Date();
+      const past = new Date(dateString);
+      const diffSeconds = Math.floor((now - past) / 1000);
+      const minutes = Math.floor(diffSeconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
 
-* { box-sizing: border-box; }
-html, body { height: 100%; scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  font-family: var(--font-main);
-  background-color: var(--bg-dark);
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(138, 0, 0, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(20, 20, 25, 0.5) 0%, transparent 40%);
-  background-attachment: fixed;
-  color: var(--text-main);
-  line-height: 1.6;
-}
-
-.site { display: flex; flex-direction: column; min-height: 100vh; }
-.container { width: 90%; max-width: 1200px; margin: 0 auto; }
-
-/* Header */
-.site-header {
-  background: rgba(5, 5, 5, 0.9);
-  border-bottom: 1px solid var(--glass-border);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  backdrop-filter: blur(10px);
-}
-.header-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
-.brand { 
-    display: flex; align-items: center; gap: 15px; text-decoration: none; color: inherit; 
-    animation: fadeIn 0.8s ease-out 0.8s backwards;
-}
-.logo {
-  width: 50px; height: 50px; 
-  border-radius: var(--radius);
-  background-image: url('https://i.postimg.cc/hzCBQ980/B.png'); 
-  background-size: cover; 
-  background-position: center;
-  border: 1px solid var(--glass-border);
-}
-.brand-text .title { font-weight: 800; font-size: 20px; text-transform: uppercase; }
-.brand-text .subtitle { font-size: 11px; color: var(--accent); font-weight: 600; text-transform: uppercase; }
-
-/* Nav */
-.site-nav ul { display: flex; gap: 10px; list-style: none; margin: 0; padding: 0; }
-.site-nav li {
-    animation: fadeIn 0.6s ease-out backwards;
-}
-
-.site-nav a {
-  text-decoration: none; color: var(--text-muted); padding: 8px 16px;
-  border-radius: 8px; font-weight: 600; transition: all 0.3s ease; font-size: 14px;
-}
-.site-nav a:hover, .site-nav a.primary { color: #fff; background: rgba(255, 255, 255, 0.05); }
-.site-nav a.primary { border: 1px solid var(--accent); color: var(--accent); }
-.site-nav a.primary:hover { background: var(--accent); color: #fff; box-shadow: var(--glow); }
-.nav-toggle { display: none; background: transparent; border: none; color: #fff; font-size: 24px; cursor: pointer; }
-
-/* Hero */
-.hero { padding: 100px 0; display: flex; align-items: center; position: relative; overflow: hidden; }
-.hero-inner { display: flex; gap: 60px; align-items: center; }
-.hero-copy { flex: 1; }
-.hero h1 { 
-    font-size: 56px; line-height: 1.1; margin: 0 0 20px; font-weight: 800; 
-    text-transform: uppercase; color: #fff; text-shadow: 0 0 20px rgba(0,0,0,0.5); 
-}
-.lead { 
-    color: var(--text-muted); font-size: 18px; margin-bottom: 30px; padding-left: 0; 
-} 
-
-/* Keyframes */
-@keyframes textLoad {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-@keyframes popIn { 
-    from { opacity: 0; transform: scale(0.8); } 
-    to { opacity: 1; transform: scale(1); } 
-}
-
-/* Buttons */
-.btn {
-  display: inline-block; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-  padding: 12px 24px; border-radius: 8px; color: #fff; cursor: pointer; font-weight: 600; font-size: 14px;
-  transition: all 0.3s; text-decoration: none; text-transform: uppercase;
-}
-.btn:hover { transform: translateY(-3px) scale(1.02); background: rgba(255,255,255,0.1); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-.btn-primary { background: linear-gradient(90deg, var(--accent), #d00000); border: none; box-shadow: 0 4px 20px rgba(214, 40, 40, 0.3); }
-.btn-primary:hover { background: linear-gradient(90deg, #ff4d4d, var(--accent)); box-shadow: 0 6px 25px rgba(255, 42, 42, 0.6); transform: translateY(-3px) scale(1.02); }
-.btn-outline { border: 1px solid var(--glass-border); color: var(--text-muted); }
-.btn-outline:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #fff; }
-
-
-/* --- SCROLL ANIMATION CLASSES --- */
-.animated-content {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-.animated-content.animate-in {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Спеціальний ефект для новин (рух горизонтально) */
-.news-item.animated-content {
-    transform: translateX(-30px);
-}
-.news-item.animated-content.animate-in {
-    transform: translateX(0);
-}
-/* Спеціальний ефект для галереї (збільшення) */
-#galleryGrid .animated-content {
-    transform: scale(0.8);
-    transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-#galleryGrid .animated-content.animate-in {
-    transform: scale(1);
-}
-
-/* Sections */
-.section { padding: 80px 0; }
-.section h2 { 
-    font-size: 32px; margin-bottom: 10px; color: #fff; text-transform: uppercase; 
-    border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 5px; 
-}
-.section.alt { background: rgba(255, 255, 255, 0.02); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); }
-
-/* About Section Cards */
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 40px; }
-.card { 
-    background: var(--glass); padding: 30px; border-radius: 16px; border: 1px solid var(--glass-border); 
-    transition: 0.3s; 
-}
-.card:hover { transform: translateY(-8px); border-color: var(--accent); box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
-.card h3 { color: var(--accent); margin: 0 0 12px; font-size: 20px; text-transform: uppercase; }
-
-/* Controls */
-input, textarea { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 8px; color: #fff; font-family: inherit; font-size: 14px; flex: 1; min-width: 200px; transition: border-color 0.3s, background 0.3s; }
-input:focus, textarea:focus { outline: none; border-color: var(--accent); background: rgba(0,0,0,0.6); box-shadow: 0 0 10px rgba(255, 42, 42, 0.2); }
-
-.members-controls, .gallery-controls { 
-  display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; 
-  background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; 
-  border: 1px solid var(--glass-border); 
-}
-
-/* Sticky Events */
-.events-controls {
-  position: sticky; top: 85px; z-index: 900; background: rgba(15, 16, 18, 0.95); backdrop-filter: blur(12px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; padding: 15px; border-radius: 12px; align-items: center;
-}
-.events-controls textarea { height: 42px; min-height: 42px; resize: none; padding-top: 10px; overflow-y: hidden; white-space: nowrap; }
-.events-controls button { height: 42px; display: flex; align-items: center; justify-content: center; }
-
-/* Discord */
-.discord-banner {
-  background: linear-gradient(135deg, rgba(88, 101, 242, 0.15), rgba(0, 0, 0, 0.4)); border: 1px solid #5865F2;
-  border-radius: 16px; padding: 30px; text-align: center; box-shadow: 0 0 30px rgba(88, 101, 242, 0.15);
-  position: relative; overflow: hidden;
-}
-.btn-discord {
-  display: inline-block; background: #5865F2; color: #fff; padding: 14px 30px; border-radius: 8px;
-  font-weight: 700; text-decoration: none; box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
-  transition: 0.3s; border: none; text-transform: uppercase;
-}
-.btn-discord:hover { background: #4752c4; box-shadow: 0 6px 25px rgba(88, 101, 242, 0.6); transform: translateY(-2px) scale(1.02); }
-
-/* News & Gallery */
-.news-list { display: flex; flex-direction: column; gap: 15px; }
-.news-item { 
-    background: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border); 
-    position: relative; padding-left: 25px; transition: all 0.3s; 
-}
-.news-item::before { content: ''; position: absolute; left: 0; top: 20px; bottom: 20px; width: 4px; background: var(--accent); }
-
-.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-.gallery-grid div { overflow: hidden; border-radius: 8px; }
-.gallery-grid img { 
-    width: 100%; height: 150px; object-fit: cover; border-radius: 8px; 
-    border: 1px solid var(--glass-border); cursor: pointer; transition: 0.5s; 
-}
-.gallery-grid img:hover { transform: scale(1.1); border-color: var(--accent); }
-
-/* Footer */
-.site-footer { margin-top: auto; padding: 40px 0; border-top: 1px solid var(--glass-border); text-align: center; color: var(--text-muted); font-size: 13px; background: #000; }
-.site-footer .container {
-    padding-top: 0;
-    padding-bottom: 0;
-}
-
-
-/* Member Cards & Buttons */
-.members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
-.member {
-  position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 24px;
-  background: linear-gradient(145deg, #16181c, #0b0d10); border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-.member::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent); opacity: 0.8; transition: width 0.3s; }
-.member:hover::before { width: 100%; }
-.member:hover { transform: translateY(-5px); border-color: rgba(255, 42, 42, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-.member-top { margin-bottom: 20px; }
-.info h3 { margin: 0 0 8px 0; font-size: 20px; color: #fff; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-.role-badge { margin-bottom: 8px; display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); background: rgba(255, 42, 42, 0.08); border: 1px solid rgba(255, 42, 42, 0.2); padding: 4px 10px; border-radius: 4px; letter-spacing: 1px; box-shadow: 0 0 10px rgba(255, 42, 42, 0.05); }
-
-
-/* --- СТИЛІ ДЛЯ СОЦМЕРЕЖ --- */
-.social-links { margin-top: 10px; display: flex; gap: 8px; align-items: center; }
-.social-link {
-    display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
-    border-radius: 50%; font-size: 14px; transition: all 0.2s ease; text-decoration: none;
-    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-muted);
-}
-.social-link:hover { transform: translateY(-2px) scale(1.1); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); }
-.social-link .fa-discord { color: var(--color-discord, #5865F2); }
-.social-link .fa-youtube { color: var(--color-youtube, #FF0000); }
-.social-link .fa-telegram { color: var(--color-telegram, #0088CC); }
-.social-link.link-yt:hover { background: rgba(255, 0, 0, 0.2); border-color: var(--color-youtube, #FF0000); }
-.social-link.link-tg:hover { background: rgba(0, 136, 204, 0.2); border-color: var(--color-telegram, #0088CC); }
-.social-links span.social-link { cursor: default; }
-
-
-/* Tactical Buttons */
-.member-actions { display: flex; gap: 12px; width: 100%; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
-.member-actions button {
-  flex: 1; padding: 12px 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-  background: transparent; border: 1px solid; border-radius: 6px; cursor: pointer; display: flex; align-items: center;
-  justify-content: center; gap: 8px; transition: all 0.2s ease; min-width: 100px;
-}
-.btn i.fa-pen { margin-right: -2px; margin-left: 2px; }
-.btn-edit { border-color: #3b82f6; color: #3b82f6; }
-.btn-edit:hover { background: rgba(59, 130, 246, 0.1); box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); transform: translateY(-2px); color: #fff; }
-.btn-delete { border-color: #ef4444; color: #ef4444; }
-.btn-delete:hover { background: rgba(239, 68, 68, 0.1); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); transform: translateY(-2px); color: #fff; }
-
-/* Auth Modal (Login/Register) */
-.auth-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); align-items: center; justify-content: center; }
-.auth-modal.show { display: flex; animation: popIn 0.3s ease; }
-.auth-content { background: linear-gradient(145deg, #16181c, #0b0d10); border: 1px solid var(--accent); border-radius: 16px; padding: 30px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 0 30px rgba(255, 42, 42, 0.2); }
-.close-auth { position: absolute; top: 15px; right: 20px; color: var(--text-muted); font-size: 28px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-.close-auth:hover { color: #fff; transform: rotate(90deg); }
-.auth-tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.auth-tabs button { flex: 1; background: transparent; border: none; padding: 10px; color: var(--text-muted); font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: 0.3s; }
-.auth-tabs button.active { color: #fff; border-bottom-color: var(--accent); }
-.auth-form h3 { margin-top: 0; text-align: center; margin-bottom: 20px; color: #fff; }
-.auth-form input { width: 100%; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
-.full-width { width: 100%; margin-top: 10px; justify-content: center; }
-
-/* --- CUSTOM MODAL CONTAINER (Common for Add Member & Confirm) --- */
-.custom-modal { 
-    display: none; 
-    position: fixed; 
-    z-index: 2500; 
-    left: 0; top: 0; 
-    width: 100%; height: 100%; 
-    background-color: rgba(0, 0, 0, 0.85); 
-    backdrop-filter: blur(4px); 
-    align-items: center; 
-    justify-content: center;
-}
-.custom-modal.show { 
-    display: flex; 
-    animation: fadeIn 0.3s ease; 
-}
-.custom-modal-content {
-    background: linear-gradient(145deg, #16181c, #0b0d10);
-    border-radius: 16px; 
-    padding: 30px; 
-    width: 90%; 
-    max-width: 450px; 
-    position: relative;
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* --- ADD MEMBER SPECIFIC STYLES --- */
-#addMemberModal .custom-modal-content {
-    border: 1px solid #3b82f6; /* Синій акцент для форми учасника */
-}
-#addMemberModal h3 {
-    margin-top: 0; 
-    text-align: center; 
-    margin-bottom: 20px; 
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-.social-header {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin: 20px 0 10px 0;
-    border-top: 1px dashed rgba(255,255,255,0.1);
-    padding-top: 15px;
-}
-.limit-warning {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    padding: 10px 15px;
-    border-radius: 6px;
-    margin-bottom: 15px;
-    border: 1px solid #ef4444;
-    font-weight: 600;
-    text-align: center;
-    /* Видимість контролюється JS */
-}
-
-/* --- CUSTOM CONFIRM MODAL STYLES --- */
-.confirm-modal .custom-modal-content {
-    max-width: 400px;
-    padding: 30px;
-    text-align: center;
-    border: 1px solid var(--accent); /* Червоний акцент для попередження/підтвердження */
-    box-shadow: 0 0 30px rgba(255, 42, 42, 0.2);
-}
-
-.confirm-modal h3 {
-    margin-bottom: 15px;
-    font-size: 20px;
-    color: var(--accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.confirm-modal p {
-    font-size: 16px;
-    color: var(--text-main);
-    margin-bottom: 25px;
-}
-
-.confirm-actions {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.confirm-actions .btn {
-    flex: 1;
-    max-width: 150px;
-    min-width: 120px;
-}
-
-.close-modal {
-    position: absolute; top: 15px; right: 20px; color: var(--text-muted); font-size: 28px; font-weight: bold; cursor: pointer; transition: 0.3s;
-}
-.close-modal:hover { color: #fff; transform: rotate(90deg); }
-
-
-/* --- ВИДАЛЕНО: ACCESS CONTROL --- */
-/* Ці правила більше не потрібні, оскільки ми керуємо відображенням кнопок через їхню відсутність у HTML */
-
-/* --- ADMIN SIDEBAR --- */
-.admin-sidebar {
-  position: fixed; top: 0; left: -350px; width: 320px; height: 100%; background: rgba(11, 13, 16, 0.98); backdrop-filter: blur(15px);
-  border-right: 1px solid var(--accent); box-shadow: 10px 0 80px rgba(255, 42, 42, 0.1); z-index: 2001; transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex; flex-direction: column;
-}
-.admin-sidebar.open { left: 0; }
-
-.sidebar-header { padding: 25px; background: linear-gradient(90deg, rgba(255, 42, 42, 0.1), transparent); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.sidebar-title { display: flex; align-items: center; gap: 10px; color: var(--accent); font-weight: 800; font-size: 18px; letter-spacing: 1px; }
-.close-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; opacity: 0.7; transition: 0.3s; }
-.close-btn:hover { opacity: 1; transform: rotate(90deg); color: var(--accent); }
-
-.sidebar-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
-.sidebar-profile { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 12px; }
-.profile-avatar { width: 40px; height: 40px; background: var(--accent); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; }
-.profile-info { flex: 1; display: flex; flex-direction: column; }
-.profile-info strong { color: #fff; font-size: 14px; }
-.profile-info small { color: var(--text-muted); font-size: 11px; }
-.logout-icon-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 5px; }
-.logout-icon-btn:hover { color: #fff; transform: scale(1.1); }
-.admin-stats-mini { display: flex; gap: 10px; }
-.stat-box { flex: 1; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-.stat-box span { display: block; font-size: 20px; font-weight: 800; color: var(--accent); }
-.stat-box small { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.sidebar-section h4 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
-.user-list-compact { display: flex; flex-direction: column; gap: 8px; }
-.user-card-mini { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
-.user-card-mini:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
-.u-info { display: flex; flex-direction: column; }
-.u-name { font-weight: 600; font-size: 13px; color: #fff; }
-.u-role { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
-.u-role.admin { color: var(--accent); font-weight: 800; }
-.btn-ban { background: none; border: 1px solid rgba(255,255,255,0.1); color: #666; font-size: 10px; padding: 4px; border-radius: 4px; cursor: pointer; transition: 0.2s; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
-.btn-ban:hover { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-
-/* --- LIGHTBOX STYLES --- */
-.lightbox-modal {
-    display: none; 
-    position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; 
-    background-color: rgba(0, 0, 0, 0.95); backdrop-filter: blur(8px);
-    justify-content: center; align-items: center;
-}
-.lightbox-modal.open { display: flex; }
-.lightbox-content { display: flex; align-items: center; justify-content: space-between; width: 90%; max-width: 1200px; height: 90%; }
-#lightboxImage { max-width: 100%; max-height: 100vh; display: block; object-fit: contain; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.8); transition: transform 0.3s; }
-.lightbox-close { position: absolute; top: 20px; right: 40px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: 0.3s; z-index: 3001; }
-.lightbox-close:hover { color: var(--accent); transform: rotate(180deg) scale(1.1); }
-.lightbox-prev, .lightbox-next { background: rgba(255, 255, 255, 0.1); border: none; color: #fff; padding: 20px 15px; font-size: 24px; cursor: pointer; transition: background 0.2s; margin: 0 10px; border-radius: 8px; }
-.lightbox-prev:hover, .lightbox-next:hover { background: rgba(255, 42, 42, 0.2); color: var(--accent); }
-
-
-/* ======================================================= */
-/* ====== МЕДІАЗАПИТИ ДЛЯ АДАПТИВНОСТІ (Responsive) ====== */
-/* ======================================================= */
-
-
-/* ----------------------------------- */
-/* 1. ПЛАНШЕТИ ТА СЕРЕДНІ ЕКРАНИ (<= 1024px) */
-/* ----------------------------------- */
-@media (max-width: 1024px) {
-    .site-nav { 
-        /* Ховаємо навігацію для мобільного режиму, але лише при 1024px, 
-           щоб зберегти її на планшетах в горизонтальній орієнтації, якщо це можливо. 
-           Далі у 900px вона буде мобільною. */
-        display: none; 
-    }
-    .nav-toggle { display: block; } /* Показуємо кнопку меню */
-    
-    .hero {
-        padding: 80px 0 50px;
-    }
-
-    .hero h1 {
-        font-size: 48px;
-    }
-    
-    .hero-inner {
-        flex-direction: column; 
-        text-align: center;
-    }
-    
-    .hero-cta {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-    }
-
-    /* Адаптуємо секції карток */
-    .cards {
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-    
-    /* Адаптуємо сітки */
-    .members-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    }
-    .gallery-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    }
-}
-
-
-/* ----------------------------------- */
-/* 2. ТЕЛЕФОНИ ТА МАЛІ ЕКРАНИ (<= 900px) */
-/* ----------------------------------- */
-@media (max-width: 900px) {
-  /* Переводимо навігацію в мобільний режим */
-  .site-nav { display: none; }
-  .nav-toggle { display: block; }
-
-  /* Навігація в мобільному меню */
-  .site-nav.open { 
-    display: block; 
-    position: absolute; 
-    left: 0; 
-    right: 0; 
-    top: 82px; 
-    background: #000; 
-    padding: 20px; 
-    border-bottom: 2px solid var(--accent); 
-    z-index: 999; 
-    box-shadow: 0 5px 20px rgba(0,0,0,0.7);
+      if (diffSeconds < 60) return `${diffSeconds} сек. тому`;
+      if (minutes < 60) return `${minutes} хв. тому`;
+      if (hours < 24) return `${hours} год. тому`;
+      if (days < 30) return `${days} дн. тому`;
+      
+      return past.toLocaleDateString('uk-UA'); 
   }
-  .site-nav.open ul { 
-    flex-direction: column; 
-    align-items: flex-start; 
-    gap: 0;
+
+  /**
+   * Замінює стандартний confirm/alert на стилізоване модальне вікно.
+   */
+  function customConfirm(message, callback) {
+      const modal = document.getElementById('customConfirmModal');
+      const msg = document.getElementById('confirmMessage');
+      const okBtn = document.getElementById('confirmOkBtn');
+      const cancelBtn = document.getElementById('confirmCancelBtn');
+      const closeBtn = document.getElementById('closeConfirmModal');
+      
+      // Якщо це просто сповіщення (alert), приховуємо кнопку "Відмінити"
+      const isAlert = callback === undefined; 
+      if (isAlert) {
+          if(cancelBtn) cancelBtn.style.display = 'none';
+          if(okBtn) okBtn.textContent = 'Зрозуміло';
+          if(document.getElementById('confirmTitle')) document.getElementById('confirmTitle').innerHTML = '<i class="fa-solid fa-circle-info"></i> Повідомлення';
+      } else {
+          if(cancelBtn) cancelBtn.style.display = 'inline-block';
+          if(okBtn) okBtn.textContent = 'Так, продовжити';
+          if(document.getElementById('confirmTitle')) document.getElementById('confirmTitle').innerHTML = '<i class="fa-solid fa-circle-question"></i> Підтвердіть дію';
+      }
+
+      if (!modal) return isAlert ? window.alert(message) : callback(window.confirm(message)); 
+
+      msg.textContent = message;
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+
+      const cleanup = (result) => {
+          modal.classList.remove('show');
+          document.body.style.overflow = 'auto';
+          
+          // Видалення всіх обробників, щоб уникнути конфліктів
+          okBtn.onclick = null;
+          cancelBtn.onclick = null;
+          closeBtn.onclick = null;
+          modal.onclick = null;
+          
+          if (!isAlert) callback(result);
+      };
+
+      const handleOk = () => cleanup(true);
+      const handleCancel = () => cleanup(false);
+      const handleOutsideClick = (e) => {
+          if (e.target === modal && !isAlert) cleanup(false); // Тільки confirm можна закрити кліком поза межами
+          if (e.target === modal && isAlert) cleanup(true); // Alert можна закрити
+      };
+      
+      if(okBtn) okBtn.onclick = handleOk;
+      if(cancelBtn && !isAlert) cancelBtn.onclick = handleCancel;
+      if(closeBtn) closeBtn.onclick = handleCancel;
+      modal.onclick = handleOutsideClick;
   }
-  .site-nav.open li {
-    width: 100%;
-    margin: 5px 0;
-    border-left: none !important;
-    padding-left: 0 !important;
-  }
-  .site-nav.open a {
-    display: block;
-    padding: 12px 16px;
-    width: 100%;
-    text-align: left;
-    background: rgba(255, 255, 255, 0.05);
+  window.customConfirm = customConfirm; // Доступно глобально, якщо потрібно
+
+
+  // --- ПОЧАТКОВІ ДАНІ ---
+  const defaultMembers = []; 
+  let members = load(MEMBERS_KEY, defaultMembers);
+  let news = load(NEWS_KEY, []); 
+  let gallery = load(GALLERY_KEY, []); 
+  let currentUser = load(CURRENT_USER_KEY, null); 
+
+  // --- КЕШУВАННЯ DOM ЕЛЕМЕНТІВ ---
+  if(document.getElementById('year')) document.getElementById('year').textContent = new Date().getFullYear();
+  const navToggle = document.getElementById('navToggle');
+  const mainNav = document.getElementById('mainNav');
+  const membersGrid = document.getElementById('membersGrid');
+  const newsList = document.getElementById('newsList');
+  const galleryGrid = document.getElementById('galleryGrid');
+  const memberSearch = document.getElementById('memberSearch');
+  const adminSidebar = document.getElementById('adminSidebar');
+  const closeSidebar = document.getElementById('closeSidebar');
+  const userDatabaseSidebar = document.getElementById('userDatabaseSidebar');
+  const totalUsersSidebar = document.getElementById('totalUsersSidebar');
+  const totalAdminsSidebar = document.getElementById('totalAdminsSidebar');
+  const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImage = document.getElementById('lightboxImage');
+  const lightboxCloseBtn = document.getElementById('lightboxCloseBtn');
+  const lightboxPrevBtn = document.getElementById('lightboxPrevBtn');
+  const lightboxNextBtn = document.getElementById('lightboxNextBtn');
+  const authModal = document.getElementById('authModal');
+  const openAuthBtn = document.getElementById('openAuthBtn');
+  const authBtnText = document.getElementById('authBtnText');
+  const addNewsBtn = document.getElementById('addNewsBtn');
+  const galleryUrl = document.getElementById('galleryUrl');
+  const addGalleryBtn = document.getElementById('addGalleryBtn');
+  const newsTitle = document.getElementById('newsTitle');
+  const newsDate = document.getElementById('newsDate');
+  const newsSummary = document.getElementById('newsSummary');
+  const regUser = document.getElementById('regUser');
+  const regEmail = document.getElementById('regEmail');
+  const regPass = document.getElementById('regPass');
+  const regPassConfirm = document.getElementById('regPassConfirm');
+  const loginUser = document.getElementById('loginUser');
+  const loginPass = document.getElementById('loginPass');
+  const registerForm = document.getElementById('registerForm');
+  const loginForm = document.getElementById('loginForm');
+  const addMemberBtn = document.getElementById('addMemberBtn');
+  const tabRegister = document.getElementById('tabRegister');
+  const userSearchSidebar = document.getElementById('userSearchSidebar');
+  
+  // НОВІ ЕЛЕМЕНТИ МОДАЛЬНОГО ВІКНА
+  const addMemberModal = document.getElementById('addMemberModal');
+  const closeMemberModal = document.getElementById('closeMemberModal');
+  const addMemberForm = document.getElementById('addMemberForm');
+  const memberNewName = document.getElementById('memberNewName');
+  const memberNewRole = document.getElementById('memberNewRole');
+  const memberNewDiscord = document.getElementById('memberNewDiscord');
+  const memberNewYoutube = document.getElementById('memberNewYoutube');
+  const memberNewTg = document.getElementById('memberNewTg');
+  const memberLimitWarning = document.getElementById('memberLimitWarning');
+
+  let currentImageIndex = 0;
+
+
+  // --- SCROLL ANIMATION LOGIC ---
+  const animatedElements = document.querySelectorAll('.animated-content');
+  
+  function checkVisibilityAndAnimate() {
+      if (!animatedElements) return;
+
+      animatedElements.forEach(el => {
+          if (el.classList.contains('animate-in')) return;
+          
+          const rect = el.getBoundingClientRect();
+          const viewHeight = window.innerHeight;
+          const isVisible = rect.top < viewHeight - 50 && rect.bottom > 50; 
+
+          if (isVisible) {
+              const delay = parseFloat(el.getAttribute('data-delay')) || 0;
+              if (delay > 0) {
+                  el.style.transitionDelay = `${delay}s`;
+              }
+              el.classList.add('animate-in');
+          }
+      });
+      
+      // Динамічний контент (члени, новини, галерея)
+      animateDynamicContent(membersGrid ? membersGrid.querySelectorAll('.member.animated-content:not(.animate-in)') : []);
+      animateDynamicContent(newsList ? newsList.querySelectorAll('.news-item.animated-content:not(.animate-in)') : []);
+      animateDynamicContent(galleryGrid ? galleryGrid.querySelectorAll('.animated-content:not(.animate-in)') : []);
   }
   
-  /* Герой-секція */
-  .hero h1 { 
-    font-size: 38px; 
-  }
-  .lead {
-    font-size: 16px;
-  }
-  .hero-cta {
-    flex-direction: column; /* Кнопки одна під одною */
-    gap: 10px;
-  }
-  .btn {
-    width: 100%;
+  // Прибрано індексну затримку для динамічних елементів для усунення рассинхрону
+  function animateDynamicContent(elements) {
+      elements.forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const viewHeight = window.innerHeight;
+          const isVisible = rect.top < viewHeight - 50 && rect.bottom > 50;
+
+          if (isVisible) {
+              el.classList.add('animate-in');
+          }
+      });
   }
 
-  /* Секції */
-  .section {
-    padding: 60px 0;
+
+  // --- ФУНКЦІЇ РЕНДЕРИНГУ ТА ДОСТУПУ ---
+
+  // ВИДАЛЕНО: function checkAccess() {...}
+
+  function updateAuthUI() {
+    if (!openAuthBtn || !authBtnText) return;
+    
+    const users = load(USERS_KEY, []);
+    const regularUsers = users.filter(u => u.role !== 'admin'); 
+    const canRegister = regularUsers.length < MAX_USERS;
+
+    if (currentUser) {
+      if (currentUser.role === 'admin') {
+        authBtnText.textContent = 'ADMIN PANEL';
+        openAuthBtn.classList.remove('btn-outline');
+        openAuthBtn.classList.add('btn-primary');
+        openAuthBtn.style.boxShadow = "0 0 15px var(--accent)";
+      } else {
+        authBtnText.textContent = escapeHtml(currentUser.username);
+        openAuthBtn.classList.remove('btn-primary');
+        openAuthBtn.classList.add('btn-outline');
+        openAuthBtn.style.boxShadow = "none";
+      }
+    } else {
+      if (tabRegister) {
+        tabRegister.textContent = canRegister ? 'Реєстрація' : `Реєстрація (Ліміт: ${MAX_USERS})`;
+        tabRegister.disabled = !canRegister;
+      }
+      authBtnText.textContent = 'Вхід';
+      openAuthBtn.classList.add('btn-primary');
+      openAuthBtn.classList.remove('btn-outline');
+      openAuthBtn.style.boxShadow = "none";
+    }
+
+    // ВИДАЛЕНО: checkAccess();
   }
-  .section h2 {
-    font-size: 28px;
+
+  function renderAdminSidebarData(filter = '') {
+    if (!userDatabaseSidebar) return;
+    const allUsers = load(USERS_KEY, []);
+    
+    const lowerFilter = filter.toLowerCase().trim();
+    const filteredUsers = allUsers.filter(u => 
+        u.username.toLowerCase().includes(lowerFilter) || 
+        (u.email && u.email.toLowerCase().includes(lowerFilter))
+    );
+    
+    const fragment = document.createDocumentFragment();
+    
+    filteredUsers.forEach(u => {
+      const isMe = currentUser && u.username === currentUser.username;
+      
+      // Використання timeAgo
+      const creationInfo = u.regDate ? 
+          `<small class="u-date" style="color:#777; font-size:10px;">Створено: ${new Date(u.regDate).toLocaleDateString('uk-UA')} (${timeAgo(u.regDate)})</small>` : 
+          `<small class="u-date" style="color:#777; font-size:10px;">Дата невідома</small>`;
+          
+      const div = document.createElement('div');
+      div.className = 'user-card-mini';
+      div.setAttribute('data-username', escapeHtml(u.username)); 
+      
+      div.innerHTML = `
+        <div class="u-info">
+          <span class="u-name">${escapeHtml(u.username)}</span>
+          <span class="u-role ${u.role}">${u.role === 'admin' ? 'ADMIN' : 'USER'}</span>
+          ${creationInfo}
+        </div>
+        ${!isMe && u.role !== 'admin' ? 
+          `<button class="btn-ban" data-action="ban"><i class="fa-solid fa-ban"></i></button>` : ''}
+      `;
+      fragment.appendChild(div);
+    });
+    
+    userDatabaseSidebar.innerHTML = '';
+    userDatabaseSidebar.appendChild(fragment); 
+
+    if(totalUsersSidebar) totalUsersSidebar.textContent = allUsers.length;
+    if(totalAdminsSidebar) totalAdminsSidebar.textContent = allUsers.filter(u => u.role === 'admin').length;
+  }
+
+  function renderMembers(filter=''){
+    if (!membersGrid) return;
+    const list = members.filter(m => (m.name + ' ' + m.role).toLowerCase().includes(filter.toLowerCase()));
+    
+    if(list.length===0) { membersGrid.innerHTML = '<p class="muted">Немає учасників</p>'; return; }
+    
+    const fragment = document.createDocumentFragment();
+
+    list.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'member animated-content';
+      div.setAttribute('data-id', m.id);
+      
+      // ВИДАЛЕНО: canManage та isOwner перевірки, оскільки кнопки завжди видимі
+      // let socialLinksHtml = ...; // Залишено без змін
+      
+      let socialLinksHtml = '';
+      if (m.links) {
+          socialLinksHtml += '<div class="social-links">';
+          
+          if (m.links.discord) {
+              socialLinksHtml += `<span class="social-link" title="Discord: ${escapeHtml(m.links.discord)}"><i class="fa-brands fa-discord"></i></span>`;
+          }
+          if (m.links.youtube) {
+              socialLinksHtml += `<a href="${escapeHtml(m.links.youtube)}" target="_blank" class="social-link link-yt" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
+          }
+          if (m.links.tg) {
+              socialLinksHtml += `<a href="${escapeHtml(m.links.tg)}" target="_blank" class="social-link link-tg" title="Telegram"><i class="fa-brands fa-telegram"></i></a>`;
+          }
+          socialLinksHtml += '</div>';
+      }
+
+
+      div.innerHTML = `
+        <div class="member-top">
+          <div class="info">
+            <h3>${escapeHtml(m.name)}</h3>
+            <div class="role-badge">${escapeHtml(m.role)}</div>
+            ${socialLinksHtml}
+            
+          </div>
+        </div>
+        <div class="member-actions"> <button class="btn btn-edit" data-action="edit" data-id="${m.id}"><i class="fa-solid fa-pen"></i> Редагувати</button>
+            <button class="btn btn-delete" data-action="delete" data-id="${m.id}"><i class="fa-solid fa-trash"></i> Видалити</button>
+        </div>
+      `;
+      fragment.appendChild(div);
+    });
+    
+    membersGrid.innerHTML = '';
+    membersGrid.appendChild(fragment);
+    // ВИДАЛЕНО: checkAccess();
+    setTimeout(checkVisibilityAndAnimate, 50);
+  }
+
+  function renderNews(){
+    if (!newsList) return;
+    const fragment = document.createDocumentFragment();
+    if(news.length===0) { newsList.innerHTML = '<p class="muted">Немає подій</p>'; return; }
+    
+    [...news].reverse().forEach(n=>{
+      const el = document.createElement('div'); 
+      el.className='news-item animated-content';
+      el.setAttribute('data-id', n.id);
+      
+      el.innerHTML = `
+        <strong>${escapeHtml(n.title)}</strong> 
+        <div class="meta">${escapeHtml(n.date)}</div>
+        <p>${escapeHtml(n.summary)}</p>
+        <div style="margin-top:8px"> <button class="btn btn-delete" style="border:1px solid #ef4444; color:#ef4444; padding:5px 10px;" data-action="delete-news" data-id="${n.id}">Видалити</button>
+        </div>`;
+      fragment.appendChild(el);
+    });
+    
+    newsList.innerHTML = '';
+    newsList.appendChild(fragment);
+    // ВИДАЛЕНО: checkAccess();
+    setTimeout(checkVisibilityAndAnimate, 50);
+  }
+
+  function renderGallery(){
+    if (!galleryGrid) return;
+    const fragment = document.createDocumentFragment();
+    if(gallery.length===0) { galleryGrid.innerHTML = '<p class="muted">Галерея пуста</p>'; return; }
+    
+    gallery.forEach((g, index)=>{
+      const d = document.createElement('div'); 
+      d.classList.add('animated-content');
+      d.innerHTML = `
+        <img src="${escapeHtml(g.url)}" alt="gallery photo" onerror="this.src='https://i.postimg.cc/k47tX6Qd/hero-placeholder.jpg'" data-index="${index}" data-action="lightbox">
+        <div style="margin-top:6px"> <button class='btn btn-delete' style="width:100%; border:1px solid #ef4444; color:#ef4444;" data-id="${g.id}" data-action="delete-gallery">Видалити</button>
+        </div>`;
+      fragment.appendChild(d);
+    });
+    
+    galleryGrid.innerHTML = '';
+    galleryGrid.appendChild(fragment);
+    // ВИДАЛЕНО: checkAccess();
+    setTimeout(checkVisibilityAndAnimate, 50);
+  }
+
+  // --- ГЛОБАЛЬНІ ФУНКЦІЇ (ОБРОБКА ДІЙ) ---
+  
+  function banUser(username) {
+    customConfirm(`Ви впевнені, що хочете заблокувати користувача ${username}? Це призведе до видалення його записів та виходу з системи.`, (result) => {
+        if (!result) return;
+        
+        let users = load(USERS_KEY, []);
+        users = users.filter(u => u.username !== username);
+        save(USERS_KEY, users);
+        renderAdminSidebarData(userSearchSidebar ? userSearchSidebar.value : '');
+        
+        if(currentUser && currentUser.username === username && currentUser.role !== 'admin') {
+            currentUser = null;
+            localStorage.removeItem(CURRENT_USER_KEY);
+            updateAuthUI();
+            members = members.filter(m => m.owner !== username);
+            save(MEMBERS_KEY, members);
+            renderMembers(memberSearch ? memberSearch.value : '');
+        }
+        updateAuthUI(); 
+        customConfirm(`Користувача ${username} видалено.`);
+    });
+  }
+
+  function editMember(id) {
+      const member = members.find(m => m.id == id);
+      if (!member) return;
+      
+      // ВИДАЛЕНО перевірку if(currentUser.role !== 'admin' && currentUser.username !== member.owner)
+      
+      // **ЗБЕРЕЖЕНО prompt ДЛЯ РЕДАГУВАННЯ, Оскільки це єдина функція, яка повертає введене значення синхронно**
+      const newName = prompt(`Редагувати ім'я для ${member.name}:`, member.name);
+      if (newName === null || newName.trim() === '') return;
+      
+      const newRole = prompt(`Редагувати роль для ${newName}:`, member.role);
+      if (newRole === null || newRole.trim() === '') return;
+      
+      const newDiscord = prompt(`Discord (${member.links?.discord || 'немає'}):`, member.links?.discord || '');
+      const newYoutube = prompt(`YouTube URL (${member.links?.youtube || 'немає'}):`, member.links?.youtube || '');
+      const newTg = prompt(`Telegram URL (${member.links?.tg || 'немає'}):`, member.links?.tg || '');
+      
+      member.name = newName.trim();
+      member.role = newRole.trim();
+      member.links = {
+          discord: newDiscord ? newDiscord.trim() : '',
+          youtube: newYoutube ? newYoutube.trim() : '',
+          tg: newTg ? newTg.trim() : ''
+      };
+
+      save(MEMBERS_KEY, members);
+      renderMembers(memberSearch ? memberSearch.value : '');
+      
+      // ДОДАНО ПОВІДОМЛЕННЯ ПРО УСПІШНЕ РЕДАГУВАННЯ
+      customConfirm(`Інформацію про учасника ${member.name} оновлено.`);
+  }
+
+  function removeMember(id) {
+      customConfirm('Видалити цього учасника? Це дія незворотна.', (result) => {
+          if (!result) return;
+          
+          const member = members.find(m => m.id == id);
+          if (!member) return;
+
+          // ВИДАЛЕНО перевірку if(currentUser.role !== 'admin' && currentUser.username !== member.owner)
+
+          members = members.filter(m => m.id != id);
+          save(MEMBERS_KEY, members);
+          renderMembers(memberSearch ? memberSearch.value : '');
+          customConfirm('Учасника видалено.');
+      });
+  }
+
+  function removeNews(id) {
+      customConfirm('Видалити цю новину? Це дія незворотна.', (result) => {
+          if (!result) return;
+
+          news = news.filter(n => n.id != id);
+          save(NEWS_KEY, news);
+          renderNews();
+          customConfirm('Подію видалено.');
+      });
   }
   
-  /* Контроли новин та галереї */
-  .events-controls {
-    position: static; /* Видаляємо sticky */
-    flex-direction: column; 
-    gap: 10px;
-  }
-  .events-controls input, .events-controls textarea, .events-controls button {
-      width: 100%;
-  }
-  .members-controls, .gallery-controls {
-    flex-direction: column;
-    gap: 10px;
-  }
-  .members-controls input, .gallery-controls input, .members-controls button {
-    width: 100%;
-  }
-
-  /* Картки учасників */
-  .member-actions {
-      flex-direction: column;
-      gap: 8px;
-  }
-  .member-actions button {
-      width: 100%;
+  function removeGallery(id){
+    customConfirm('Видалити це фото з галереї? Це дія незворотна.', (result) => {
+        if (!result) return;
+        
+        gallery = gallery.filter(g=>g.id!=id); 
+        save(GALLERY_KEY,gallery); 
+        renderGallery();
+        customConfirm('Фото видалено.');
+    });
   }
   
-  /* Лайтбокс */
-  .lightbox-prev, .lightbox-next { 
-    font-size: 18px; 
-    padding: 10px; 
+  // Lightbox
+  function openLightbox(index) {
+      if (gallery.length === 0 || !lightbox || !document.body) return;
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden'; 
+      showImage(index);
   }
-}
+
+  function showImage(index) {
+      if (gallery.length === 0) return;
+      currentImageIndex = (index + gallery.length) % gallery.length;
+      lightboxImage.src = gallery[currentImageIndex].url;
+      
+      const visibility = gallery.length > 1 ? 'visible' : 'hidden';
+      if(lightboxPrevBtn) lightboxPrevBtn.style.visibility = visibility;
+      if(lightboxNextBtn) lightboxNextBtn.style.visibility = visibility;
+  }
+  
+  function closeLightbox() {
+      if(!lightbox || !document.body) return;
+      lightbox.classList.remove('open');
+      document.body.style.overflow = 'auto'; 
+  }
+  
+  // Функція для закриття модального вікна додавання учасника
+  function closeAddMemberModal() {
+      if(addMemberModal) addMemberModal.classList.remove('show');
+      if(addMemberForm) addMemberForm.reset();
+      document.body.style.overflow = 'auto';
+  }
 
 
-/* ----------------------------------- */
-/* 3. ДУЖЕ МАЛІ ЕКРАНИ (<= 500px) */
-/* ----------------------------------- */
-@media (max-width: 500px) {
-    .brand-text .title { font-size: 18px; }
-    .brand-text .subtitle { font-size: 10px; }
-    .logo { width: 40px; height: 40px; }
-    
-    .hero h1 { font-size: 32px; }
-    .lead { font-size: 15px; }
+  // --- ДЕЛЕГУВАННЯ ПОДІЙ ---
+  
+  if (userDatabaseSidebar) {
+      userDatabaseSidebar.addEventListener('click', (e) => {
+          const targetBtn = e.target.closest('[data-action="ban"]');
+          if (targetBtn) {
+              const userCard = targetBtn.closest('.user-card-mini');
+              const username = userCard.getAttribute('data-username');
+              if (username) banUser(username);
+          }
+      });
+  }
+  
+  if (membersGrid) {
+      membersGrid.addEventListener('click', (e) => {
+          const targetBtn = e.target.closest('[data-action]');
+          if (!targetBtn) return;
+          
+          const id = parseInt(targetBtn.getAttribute('data-id'));
+          if (isNaN(id)) return;
+          
+          const action = targetBtn.getAttribute('data-action');
+          if (action === 'edit') editMember(id);
+          if (action === 'delete') removeMember(id);
+      });
+  }
+  
+  if (newsList) {
+      newsList.addEventListener('click', (e) => {
+          const targetBtn = e.target.closest('[data-action="delete-news"]');
+          if (targetBtn) {
+              const id = parseInt(targetBtn.getAttribute('data-id'));
+              if (id) removeNews(id);
+          }
+      });
+  }
+  
+  if (galleryGrid) {
+      galleryGrid.addEventListener('click', (e) => {
+          const target = e.target;
+          const action = target.getAttribute('data-action') || target.closest('[data-action="delete-gallery"]')?.getAttribute('data-action');
+          
+          if (action === 'lightbox' && target.tagName === 'IMG') {
+              const index = parseInt(target.getAttribute('data-index'));
+              openLightbox(index);
+          } else if (action === 'delete-gallery') {
+              const id = parseInt(target.getAttribute('data-id') || target.closest('[data-id]').getAttribute('data-id'));
+              if (id) removeGallery(id);
+          }
+      });
+  }
 
-    .section h2 { font-size: 24px; }
-    
-    /* Картки "Про сім'ю" - одна під одною */
-    .cards {
-        grid-template-columns: 1fr;
+
+  // --- ОБРОБНИКИ ПОДІЙ ---
+  
+  if(navToggle && mainNav) {
+    navToggle.addEventListener('click', () => {
+      mainNav.classList.toggle('open');
+    });
+  }
+  
+  // Scroll & Animation Events
+  window.addEventListener('scroll', checkVisibilityAndAnimate);
+  window.addEventListener('resize', checkVisibilityAndAnimate);
+
+  // Smooth Scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      const href = a.getAttribute('href');
+      if(href.startsWith('#')){
+        e.preventDefault();
+        const target = document.querySelector(href);
+        if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+        if(mainNav && mainNav.classList.contains('open')) mainNav.classList.remove('open');
+      }
+    });
+  });
+
+  // Admin Sidebar 
+  if(closeSidebar) closeSidebar.addEventListener('click', () => {
+    if(adminSidebar) adminSidebar.classList.remove('open');
+  });
+  if(adminLogoutBtn) {
+    adminLogoutBtn.addEventListener('click', () => {
+        customConfirm('Ви впевнені, що хочете вийти з адмін-панелі?', (result) => {
+            if (result) {
+                currentUser = null;
+                localStorage.removeItem(CURRENT_USER_KEY);
+                if(adminSidebar) adminSidebar.classList.remove('open');
+                updateAuthUI();
+            }
+        });
+    });
+  }
+  
+  // Обробник подій: Пошук користувачів в Адмін-панелі
+  if (userSearchSidebar) {
+      userSearchSidebar.addEventListener('input', (e) => {
+          renderAdminSidebarData(e.target.value); 
+      });
+  }
+
+  // Lightbox 
+  if(lightboxCloseBtn) lightboxCloseBtn.addEventListener('click', closeLightbox);
+  if(lightboxPrevBtn) lightboxPrevBtn.addEventListener('click', () => showImage(currentImageIndex - 1));
+  if(lightboxNextBtn) lightboxNextBtn.addEventListener('click', () => showImage(currentImageIndex + 1));
+  window.addEventListener('keydown', (e) => {
+      if (lightbox && lightbox.classList.contains('open')) {
+          if (e.key === 'Escape') closeLightbox();
+          if (e.key === 'ArrowLeft') showImage(currentImageIndex - 1);
+          if (e.key === 'ArrowRight') showImage(currentImageIndex + 1);
+      }
+  });
+
+
+  // AUTH SYSTEM
+  if(openAuthBtn) openAuthBtn.addEventListener('click', () => {
+    if (currentUser) {
+      if (currentUser.role === 'admin') {
+        if(adminSidebar) adminSidebar.classList.add('open');
+        renderAdminSidebarData(userSearchSidebar ? userSearchSidebar.value : '');
+      } else {
+        customConfirm(`Ви впевнені, що хочете вийти з акаунту ${currentUser.username}?`, (result) => {
+          if (result) {
+            currentUser = null;
+            localStorage.removeItem(CURRENT_USER_KEY);
+            updateAuthUI();
+          }
+        });
+      }
+    } else {
+      if(authModal) authModal.classList.add('show');
     }
+  });
+
+  if(document.getElementById('closeAuth')) document.getElementById('closeAuth').addEventListener('click', () => {
+    if(authModal) authModal.classList.remove('show');
+  });
+
+  if(document.getElementById('tabLogin')) document.getElementById('tabLogin').addEventListener('click', (e) => {
+    e.target.classList.add('active'); 
+    if(tabRegister) tabRegister.classList.remove('active');
+    if(loginForm) loginForm.style.display = 'block'; 
+    if(registerForm) registerForm.style.display = 'none';
+  });
+
+  if(tabRegister) tabRegister.addEventListener('click', (e) => {
+    if (tabRegister.disabled) return;
+    e.target.classList.add('active'); 
+    if(document.getElementById('tabLogin')) document.getElementById('tabLogin').classList.remove('active');
+    if(registerForm) registerForm.style.display = 'block'; 
+    if(loginForm) loginForm.style.display = 'none';
+  });
+
+
+  // REGISTER
+  if(registerForm) registerForm.addEventListener('submit', (e) => {
+    e.preventDefault();
     
-    /* Сітка галереї */
-    .gallery-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    const users = load(USERS_KEY, []);
+    const regularUsers = users.filter(u => u.role !== 'admin');
+    // Обмеження на реєстрацію
+    if (regularUsers.length >= MAX_USERS) {
+        return customConfirm(`Досягнуто ліміту користувачів (${MAX_USERS}). Зверніться до Адміна.`);
     }
+
+    const user = regUser.value.trim();
+    const email = regEmail.value.trim();
+    const pass = regPass.value;
+
+    if(user.length < 3) return customConfirm('Логін має бути довший 3 символів');
+    if(pass.length < 6) return customConfirm('Пароль має бути довший 6 символів');
+    if(pass !== regPassConfirm.value) return customConfirm('Паролі не співпадають');
     
-    /* Модальні вікна (для кращого вигляду на малих екранах) */
-    .auth-content, .custom-modal-content {
-        padding: 20px;
-        margin: 10px;
+    if(users.find(u => u.username === user)) return customConfirm('Логін зайнятий');
+    if(users.find(u => u.email === email)) return customConfirm('Email вже використовується');
+    
+    const now = new Date();
+    users.push({ 
+        username: user, 
+        email: email, 
+        password: pass, 
+        role: 'member', 
+        regDate: now.toISOString() 
+    });
+    save(USERS_KEY, users);
+    
+    updateAuthUI();
+    customConfirm('Готово! Тепер можете увійти.');
+    if(document.getElementById('tabLogin')) document.getElementById('tabLogin').click();
+    registerForm.reset();
+  });
+
+  // LOGIN
+  if(loginForm) loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const user = loginUser.value.trim();
+    const pass = loginPass.value;
+
+    if (user === ADMIN_LOGIN && pass === ADMIN_PASS) {
+      currentUser = { username: 'ADMIN 🦈', role: 'admin' };
+      save(CURRENT_USER_KEY, currentUser);
+      updateAuthUI();
+      if(authModal) authModal.classList.remove('show');
+      customConfirm('Ласкаво просимо, Адмін!');
+      return;
     }
-}
+
+    const users = load(USERS_KEY, []); 
+    const found = users.find(u => u.username === user && u.password === pass);
+
+    if (found) {
+      currentUser = { username: found.username, role: found.role };
+      save(CURRENT_USER_KEY, currentUser);
+      updateAuthUI();
+      if(authModal) authModal.classList.remove('show');
+      customConfirm(`Вітаємо, ${found.username}!`);
+    } else {
+      customConfirm('Невірні дані (логін або пароль)');
+    }
+  });
+
+
+  // ADD NEWS 
+  if(addNewsBtn) {
+    addNewsBtn.addEventListener('click', () => {
+        if (!newsTitle.value || !newsDate.value || !newsSummary.value) {
+            return customConfirm('Будь ласка, заповніть усі поля для події.');
+        }
+
+        const newNews = {
+            id: Date.now(),
+            title: newsTitle.value,
+            date: newsDate.value,
+            summary: newsSummary.value
+        };
+
+        news.push(newNews);
+        save(NEWS_KEY, news);
+        renderNews();
+
+        newsTitle.value = '';
+        newsDate.value = '';
+        newsSummary.value = '';
+        customConfirm('Подію додано.');
+    });
+  }
+
+  // ADD GALLERY 
+  if(addGalleryBtn) {
+    addGalleryBtn.addEventListener('click', ()=>{
+      const url = galleryUrl.value.trim(); 
+      if(!url) return customConfirm('Вкажіть коректне посилання на зображення');
+      gallery.push({id:Date.now(), url});
+      save(GALLERY_KEY,gallery); 
+      galleryUrl.value=''; 
+      renderGallery();
+      customConfirm('Фото додано.');
+    });
+  }
+
+  // LOGIC FOR CUSTOM ADD MEMBER MODAL
+  if(addMemberBtn) {
+    addMemberBtn.addEventListener('click', () => {
+      if(!currentUser) return customConfirm('Спершу увійдіть в акаунт.');
+      
+      const isLimited = currentUser.role !== 'admin';
+      
+      if (isLimited) {
+          const userMembersCount = members.filter(m => m.owner === currentUser.username).length;
+          // Обмеження для звичайного користувача
+          if (userMembersCount >= MAX_MEMBER_PER_USER) {
+              memberLimitWarning.textContent = `Ви досягли ліміту (${MAX_MEMBER_PER_USER}) учасника. Спершу видаліть існуючий.`;
+              memberLimitWarning.style.display = 'block';
+              addMemberForm.querySelector('button[type="submit"]').disabled = true;
+          } else {
+              memberLimitWarning.style.display = 'none';
+              addMemberForm.querySelector('button[type="submit"]').disabled = false;
+          }
+      } else {
+          // Для ADMIN ліміт не відображається
+          memberLimitWarning.style.display = 'none';
+          addMemberForm.querySelector('button[type="submit"]').disabled = false;
+      }
+
+      addMemberModal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    });
+  }
+
+  if(closeMemberModal) {
+    closeMemberModal.addEventListener('click', closeAddMemberModal);
+  }
+
+  if(addMemberModal) {
+    addMemberModal.addEventListener('click', (e) => {
+        if (e.target === addMemberModal) {
+            closeAddMemberModal();
+        }
+    });
+  }
+  
+  if(addMemberForm) {
+      addMemberForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          
+          if(!currentUser) return; 
+          
+          const newName = memberNewName.value.trim();
+          const newRole = memberNewRole.value.trim();
+          const newDiscord = memberNewDiscord.value.trim();
+          const newYoutube = memberNewYoutube.value.trim();
+          const newTg = memberNewTg.value.trim();
+          
+          if (!newName || !newRole) return customConfirm("Будь ласка, заповніть ім'я та роль.");
+
+          const newId = Date.now();
+          const newMember = {
+            id: newId,
+            name: newName,
+            role: newRole,
+            owner: currentUser.username,
+            links: {
+                discord: newDiscord,
+                youtube: newYoutube,
+                tg: newTg
+            }
+          };
+
+          members.push(newMember);
+          save(MEMBERS_KEY, members);
+          renderMembers(memberSearch ? memberSearch.value : '');
+          closeAddMemberModal();
+          customConfirm(`Учасника ${newName} додано!`);
+      });
+  }
+
+
+  // Member Search (основний)
+  if(memberSearch) {
+      memberSearch.addEventListener('input', (e) => {
+          renderMembers(e.target.value);
+      });
+  }
+
+  // Initial Render and Animation Activation
+  updateAuthUI(); 
+  renderMembers();
+  renderNews();
+  renderGallery();
+  
+  // Активація анімації після початкового завантаження DOM
+  checkVisibilityAndAnimate();
+});
