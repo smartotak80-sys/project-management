@@ -1,4 +1,4 @@
-// script.js — Final Logic (ОСТАННЯ ВЕРСІЯ: ФІКС РОЗСИНХРОНУ ПРОКРУЧУВАННЯ)
+// script.js — Final Logic (ОСТАННЯ ВЕРСІЯ: ВСЕ ПОКАЗУЄ)
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- КОНСТАНТИ ---
@@ -343,7 +343,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     membersGrid.innerHTML = '';
     membersGrid.appendChild(fragment);
-    // <<< ЗМІНА: Прямий виклик для анімації нових елементів >>>
     checkVisibilityAndAnimate(); 
   }
 
@@ -368,7 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     newsList.innerHTML = '';
     newsList.appendChild(fragment);
-    // <<< ЗМІНА: Прямий виклик для анімації нових елементів >>>
     checkVisibilityAndAnimate();
   }
 
@@ -389,7 +387,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     galleryGrid.innerHTML = '';
     galleryGrid.appendChild(fragment);
-    // <<< ЗМІНА: Прямий виклик для анімації нових елементів >>>
     checkVisibilityAndAnimate();
   }
 
@@ -576,10 +573,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Scroll & Animation Events
-  // <<< ЗМІНА: Використовуємо throttle для оптимізації прокручування >>>
   window.addEventListener('scroll', throttle(checkVisibilityAndAnimate, 100));
-  window.addEventListener('resize', checkVisibilityAndAnimate); // Resize можна залишити без throttle
-  // -------------------------------------------------------------------
+  window.addEventListener('resize', checkVisibilityAndAnimate);
 
   // Smooth Scroll
   document.querySelectorAll('a[href^="#"]').forEach(a=>{
@@ -789,13 +784,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // LOGIC FOR CUSTOM ADD MEMBER MODAL
   if(addMemberBtn) {
     addMemberBtn.addEventListener('click', () => {
-      if(!currentUser) return customConfirm('Спершу увійдіть в акаунт.');
+      // ВИДАЛЕНО: if(!currentUser) return customConfirm('Спершу увійдіть в акаунт.');
       
-      const isLimited = currentUser.role !== 'admin';
+      const isLimited = currentUser?.role !== 'admin';
       
       if (isLimited) {
-          const userMembersCount = members.filter(m => m.owner === currentUser.username).length;
-          // Обмеження для звичайного користувача
+          // Якщо користувач не увійшов, він також обмежений лімітом (owner === 'anonymous')
+          const currentOwner = currentUser ? currentUser.username : 'anonymous';
+          const userMembersCount = members.filter(m => m.owner === currentOwner).length;
+          
           if (userMembersCount >= MAX_MEMBER_PER_USER) {
               memberLimitWarning.textContent = `Ви досягли ліміту (${MAX_MEMBER_PER_USER}) учасника. Спершу видаліть існуючий.`;
               memberLimitWarning.style.display = 'block';
@@ -831,7 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
       addMemberForm.addEventListener('submit', (e) => {
           e.preventDefault();
           
-          if(!currentUser) return; 
+          // ВИДАЛЕНО: if(!currentUser) return; 
           
           const newName = memberNewName.value.trim();
           const newRole = memberNewRole.value.trim();
@@ -846,7 +843,8 @@ document.addEventListener('DOMContentLoaded', () => {
             id: newId,
             name: newName,
             role: newRole,
-            owner: currentUser.username,
+            // Якщо currentUser є null, використовуємо 'anonymous'
+            owner: currentUser ? currentUser.username : 'anonymous',
             links: {
                 discord: newDiscord,
                 youtube: newYoutube,
@@ -877,5 +875,5 @@ document.addEventListener('DOMContentLoaded', () => {
   renderGallery();
   
   // Активація анімації після початкового завантаження DOM
-  // ВИДАЛЕНО checkVisibilityAndAnimate(), оскільки воно вже викликається в renderX()
+  checkVisibilityAndAnimate();
 });
