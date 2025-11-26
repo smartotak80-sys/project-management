@@ -1,4 +1,4 @@
-// script.js — Final Logic (ОСТАННЯ ВЕРСІЯ: ВСЕ ВИДИМО)
+// script.js — Final Logic (ОСТАННЯ ВЕРСІЯ: ФІКС РОЗСИНХРОНУ ПРОКРУЧУВАННЯ)
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- КОНСТАНТИ ---
@@ -42,6 +42,23 @@ document.addEventListener('DOMContentLoaded', () => {
       
       return past.toLocaleDateString('uk-UA'); 
   }
+
+  /**
+   * Утиліта для обмеження частоти викликів функції (дроселювання).
+   */
+  function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+      const context = this;
+      const args = arguments;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    }
+  }
+
 
   /**
    * Замінює стандартний confirm/alert на стилізоване модальне вікно.
@@ -204,8 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- ФУНКЦІЇ РЕНДЕРИНГУ ТА ДОСТУПУ ---
 
-  // ВИДАЛЕНО checkAccess()
-
   function updateAuthUI() {
     if (!openAuthBtn || !authBtnText) return;
     
@@ -328,7 +343,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     membersGrid.innerHTML = '';
     membersGrid.appendChild(fragment);
-    setTimeout(checkVisibilityAndAnimate, 50);
+    // <<< ЗМІНА: Прямий виклик для анімації нових елементів >>>
+    checkVisibilityAndAnimate(); 
   }
 
   function renderNews(){
@@ -352,7 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     newsList.innerHTML = '';
     newsList.appendChild(fragment);
-    setTimeout(checkVisibilityAndAnimate, 50);
+    // <<< ЗМІНА: Прямий виклик для анімації нових елементів >>>
+    checkVisibilityAndAnimate();
   }
 
   function renderGallery(){
@@ -372,7 +389,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     galleryGrid.innerHTML = '';
     galleryGrid.appendChild(fragment);
-    setTimeout(checkVisibilityAndAnimate, 50);
+    // <<< ЗМІНА: Прямий виклик для анімації нових елементів >>>
+    checkVisibilityAndAnimate();
   }
 
   // --- ГЛОБАЛЬНІ ФУНКЦІЇ (ОБРОБКА ДІЙ) ---
@@ -558,8 +576,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Scroll & Animation Events
-  window.addEventListener('scroll', checkVisibilityAndAnimate);
-  window.addEventListener('resize', checkVisibilityAndAnimate);
+  // <<< ЗМІНА: Використовуємо throttle для оптимізації прокручування >>>
+  window.addEventListener('scroll', throttle(checkVisibilityAndAnimate, 100));
+  window.addEventListener('resize', checkVisibilityAndAnimate); // Resize можна залишити без throttle
+  // -------------------------------------------------------------------
 
   // Smooth Scroll
   document.querySelectorAll('a[href^="#"]').forEach(a=>{
@@ -670,8 +690,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if(pass.length < 6) return customConfirm('Пароль має бути довший 6 символів');
     if(pass !== regPassConfirm.value) return customConfirm('Паролі не співпадають');
     
-    if(users.find(u => u.username === user)) return customConfirm('Логін зайнятий');
-    if(users.find(u => u.email === email)) return customConfirm('Email вже використовується');
+    // РЕГІСТРОНЕЗАЛЕЖНА ПЕРЕВІРКА ДУБЛІКАТІВ
+    const normalizedUser = user.toLowerCase();
+    const normalizedEmail = email.toLowerCase();
+    
+    if(users.find(u => u.username.toLowerCase() === normalizedUser)) {
+        return customConfirm('Логін зайнятий. Спробуйте інший.');
+    }
+    
+    if(users.find(u => u.email && u.email.toLowerCase() === normalizedEmail)) {
+        return customConfirm('Email вже використовується іншим акаунтом.');
+    }
     
     const now = new Date();
     users.push({ 
@@ -848,5 +877,5 @@ document.addEventListener('DOMContentLoaded', () => {
   renderGallery();
   
   // Активація анімації після початкового завантаження DOM
-  checkVisibilityAndAnimate();
+  // ВИДАЛЕНО checkVisibilityAndAnimate(), оскільки воно вже викликається в renderX()
 });
