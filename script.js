@@ -1,4 +1,4 @@
-// script.js — Final Logic (ОСТАННЯ ВЕРСІЯ: CUSTOM MODAL + CUSTOM CONFIRM + SCROLL ANIMATION)
+// script.js — Final Logic (ОСТАННЯ ВЕРСІЯ: ВСЕ ВИДИМО)
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- КОНСТАНТИ ---
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ADMIN_LOGIN = 'famillybarracuda@gmail.com'; 
   const ADMIN_PASS = 'barracuda123';
   const MAX_USERS = 1; 
-  const MAX_MEMBER_PER_USER = 1; 
+  const MAX_MEMBER_PER_USER = 1;
 
 
   // --- ДОПОМІЖНІ ФУНКЦІЇ ---
@@ -100,12 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // --- ПОЧАТКОВІ ДАНІ ---
-  // Видалено початкові записи учасників
-  const defaultMembers = []; // Тепер порожній масив
-  // --------------------------------------------------
+  const defaultMembers = []; 
   let members = load(MEMBERS_KEY, defaultMembers);
-  let news = load(NEWS_KEY, [{id:101,title:'Операція на маяку',date:'2025-11-20',summary:'Успішно захопили маяк.'}]);
-  // Видалено початкові фотографії з галереї 
+  let news = load(NEWS_KEY, []); 
   let gallery = load(GALLERY_KEY, []); 
   let currentUser = load(CURRENT_USER_KEY, null); 
 
@@ -207,11 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- ФУНКЦІЇ РЕНДЕРИНГУ ТА ДОСТУПУ ---
 
-  function checkAccess() {
-    const body = document.body;
-    body.classList.toggle('is-logged-in', !!currentUser);
-    body.classList.toggle('is-admin', currentUser && currentUser.role === 'admin');
-  }
+  // ВИДАЛЕНО checkAccess()
 
   function updateAuthUI() {
     if (!openAuthBtn || !authBtnText) return;
@@ -233,23 +226,15 @@ document.addEventListener('DOMContentLoaded', () => {
         openAuthBtn.style.boxShadow = "none";
       }
     } else {
+      if (tabRegister) {
+        tabRegister.textContent = canRegister ? 'Реєстрація' : `Реєстрація (Ліміт: ${MAX_USERS})`;
+        tabRegister.disabled = !canRegister;
+      }
       authBtnText.textContent = 'Вхід';
       openAuthBtn.classList.add('btn-primary');
       openAuthBtn.classList.remove('btn-outline');
       openAuthBtn.style.boxShadow = "none";
     }
-
-    if (tabRegister) {
-      if (!canRegister) {
-        tabRegister.textContent = 'Реєстрація (Зайнято)';
-        tabRegister.disabled = true;
-      } else {
-        tabRegister.textContent = 'Реєстрація';
-        tabRegister.disabled = false;
-      }
-    }
-
-    checkAccess();
   }
 
   function renderAdminSidebarData(filter = '') {
@@ -308,9 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
       div.className = 'member animated-content';
       div.setAttribute('data-id', m.id);
       
-      const isOwner = currentUser && currentUser.username === m.owner && currentUser.role !== 'admin';
-      const canManage = currentUser && (currentUser.role === 'admin' || isOwner);
-
       let socialLinksHtml = '';
       if (m.links) {
           socialLinksHtml += '<div class="social-links">';
@@ -334,21 +316,18 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3>${escapeHtml(m.name)}</h3>
             <div class="role-badge">${escapeHtml(m.role)}</div>
             ${socialLinksHtml}
-            ${isOwner ? '<small style="color:#555; display:block; margin-top:5px;">(Ваш запис)</small>' : ''}
+            
           </div>
         </div>
-        ${canManage ? 
-          `<div class="member-actions admin-only">
-            <button class="btn btn-edit" data-action="edit" data-id="${m.id}"><i class="fa-solid fa-pen"></i> Редагувати</button>
+        <div class="member-actions"> <button class="btn btn-edit" data-action="edit" data-id="${m.id}"><i class="fa-solid fa-pen"></i> Редагувати</button>
             <button class="btn btn-delete" data-action="delete" data-id="${m.id}"><i class="fa-solid fa-trash"></i> Видалити</button>
-          </div>` : ''}
+        </div>
       `;
       fragment.appendChild(div);
     });
     
     membersGrid.innerHTML = '';
     membersGrid.appendChild(fragment);
-    checkAccess();
     setTimeout(checkVisibilityAndAnimate, 50);
   }
 
@@ -366,15 +345,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <strong>${escapeHtml(n.title)}</strong> 
         <div class="meta">${escapeHtml(n.date)}</div>
         <p>${escapeHtml(n.summary)}</p>
-        <div style="margin-top:8px" class="admin-only">
-          <button class="btn btn-delete" style="border:1px solid #ef4444; color:#ef4444; padding:5px 10px;" data-action="delete-news" data-id="${n.id}">Видалити</button>
+        <div style="margin-top:8px"> <button class="btn btn-delete" style="border:1px solid #ef4444; color:#ef4444; padding:5px 10px;" data-action="delete-news" data-id="${n.id}">Видалити</button>
         </div>`;
       fragment.appendChild(el);
     });
     
     newsList.innerHTML = '';
     newsList.appendChild(fragment);
-    checkAccess();
     setTimeout(checkVisibilityAndAnimate, 50);
   }
 
@@ -388,15 +365,13 @@ document.addEventListener('DOMContentLoaded', () => {
       d.classList.add('animated-content');
       d.innerHTML = `
         <img src="${escapeHtml(g.url)}" alt="gallery photo" onerror="this.src='https://i.postimg.cc/k47tX6Qd/hero-placeholder.jpg'" data-index="${index}" data-action="lightbox">
-        <div style="margin-top:6px" class="admin-only">
-           <button class='btn btn-delete' style="width:100%; border:1px solid #ef4444; color:#ef4444;" data-id="${g.id}" data-action="delete-gallery">Видалити</button>
+        <div style="margin-top:6px"> <button class='btn btn-delete' style="width:100%; border:1px solid #ef4444; color:#ef4444;" data-id="${g.id}" data-action="delete-gallery">Видалити</button>
         </div>`;
       fragment.appendChild(d);
     });
     
     galleryGrid.innerHTML = '';
     galleryGrid.appendChild(fragment);
-    checkAccess();
     setTimeout(checkVisibilityAndAnimate, 50);
   }
 
@@ -427,10 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function editMember(id) {
       const member = members.find(m => m.id == id);
       if (!member) return;
-      if(currentUser.role !== 'admin' && currentUser.username !== member.owner) {
-        return customConfirm('Недостатньо прав для редагування цього учасника.');
-      }
-
+      
       // **ЗБЕРЕЖЕНО prompt ДЛЯ РЕДАГУВАННЯ, Оскільки це єдина функція, яка повертає введене значення синхронно**
       const newName = prompt(`Редагувати ім'я для ${member.name}:`, member.name);
       if (newName === null || newName.trim() === '') return;
@@ -453,7 +425,6 @@ document.addEventListener('DOMContentLoaded', () => {
       save(MEMBERS_KEY, members);
       renderMembers(memberSearch ? memberSearch.value : '');
       
-      // <<< ДОДАНО ПОВІДОМЛЕННЯ ПРО УСПІШНЕ РЕДАГУВАННЯ >>>
       customConfirm(`Інформацію про учасника ${member.name} оновлено.`);
   }
 
@@ -463,10 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const member = members.find(m => m.id == id);
           if (!member) return;
-
-          if(currentUser.role !== 'admin' && currentUser.username !== member.owner) {
-            return customConfirm('Недостатньо прав для видалення цього учасника.');
-          }
 
           members = members.filter(m => m.id != id);
           save(MEMBERS_KEY, members);
@@ -690,6 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const users = load(USERS_KEY, []);
     const regularUsers = users.filter(u => u.role !== 'admin');
+    // Обмеження на реєстрацію
     if (regularUsers.length >= MAX_USERS) {
         return customConfirm(`Досягнуто ліміту користувачів (${MAX_USERS}). Зверніться до Адміна.`);
     }
@@ -798,8 +766,9 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (isLimited) {
           const userMembersCount = members.filter(m => m.owner === currentUser.username).length;
+          // Обмеження для звичайного користувача
           if (userMembersCount >= MAX_MEMBER_PER_USER) {
-              memberLimitWarning.textContent = `Ви досягли ліміту (${MAX_MEMBER_PER_USER}) учасників. Спершу видаліть існуючий.`;
+              memberLimitWarning.textContent = `Ви досягли ліміту (${MAX_MEMBER_PER_USER}) учасника. Спершу видаліть існуючий.`;
               memberLimitWarning.style.display = 'block';
               addMemberForm.querySelector('button[type="submit"]').disabled = true;
           } else {
@@ -807,6 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
               addMemberForm.querySelector('button[type="submit"]').disabled = false;
           }
       } else {
+          // Для ADMIN ліміт не відображається
           memberLimitWarning.style.display = 'none';
           addMemberForm.querySelector('button[type="submit"]').disabled = false;
       }
