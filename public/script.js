@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
   
-  // Custom Confirm/Alert Modal
+  // Custom Confirm
   function customConfirm(message, callback) {
       const modal = document.getElementById('customConfirmModal');
       const msg = document.getElementById('confirmMessage');
@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const data = await response.json();
           if (!response.ok) { 
               console.error("API Error:", data);
+              // Повернення користувацького повідомлення при помилці
               customConfirm(data.message || "Помилка сервера. Перевірте логін або статус бекенду.", true);
               return null; 
           }
