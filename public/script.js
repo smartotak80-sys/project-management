@@ -2,12 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
   const MAX_MEMBER_PER_USER = 1; 
 
-  // --- Helpers ---
+  // --- HELPERS ---
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
   
-  // Custom Confirm
+  // Custom Confirm Modal
   function customConfirm(message, callback) {
       const modal = document.getElementById('customConfirmModal');
       const msg = document.getElementById('confirmMessage');
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let members = [];
   let currentUser = loadCurrentUser(); 
 
-  // --- API FETCH (Підключення до сервера) ---
+  // --- API FETCH FUNCTION ---
   async function apiFetch(url, options = {}) {
       try {
           const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
@@ -53,33 +53,33 @@ document.addEventListener('DOMContentLoaded', () => {
           return data;
       } catch (error) {
           console.error("Network Error:", error);
-          // Не показуємо помилку при кожному запиті, щоб не спамити, якщо сервер впав
+          // Не показуємо алерт при кожному запиті, щоб не дратувати
           return null;
       }
   }
 
   // --- LOAD DATA ---
   async function loadInitialData() {
-      // Members
+      // 1. Members
       const m = await apiFetch('/api/members');
       if (m) { members = m; renderMembers(); }
       
-      // News
+      // 2. News
       const n = await apiFetch('/api/news');
       if (n) renderNews(n);
       
-      // Gallery
+      // 3. Gallery
       const g = await apiFetch('/api/gallery');
       if (g) renderGallery(g);
 
-      // Users Count
+      // 4. Stats
       const counts = await apiFetch('/api/users/count');
       if(counts){
           if(document.getElementById('totalUsersSidebar')) document.getElementById('totalUsersSidebar').textContent = counts.totalUsers;
           if(document.getElementById('totalAdminsSidebar')) document.getElementById('totalAdminsSidebar').textContent = counts.totalAdmins;
       }
 
-      // Admin Sidebar
+      // 5. Admin Sidebar
       if (currentUser && currentUser.role === 'admin') {
           const users = await apiFetch('/api/users');
           if (users) renderAdminSidebar(users);
@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderMembers(filter='') {
     const grid = document.getElementById('membersGrid');
     if(!grid) return;
+    
     const list = members.filter(m => (m.name + ' ' + m.role).toLowerCase().includes(filter.toLowerCase()));
     
     if(list.length===0) { grid.innerHTML = '<p class="muted">Немає учасників</p>'; return; }
@@ -108,6 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="role-badge">${m.role}</div>
             <div class="social-links">
                ${m.links?.discord ? `<span class="social-link"><i class="fa-brands fa-discord"></i></span>` : ''}
+               ${m.links?.youtube ? `<a href="${m.links.youtube}" target="_blank" class="social-link link-yt"><i class="fa-brands fa-youtube"></i></a>` : ''}
+               ${m.links?.tg ? `<a href="${m.links.tg}" target="_blank" class="social-link link-tg"><i class="fa-brands fa-telegram"></i></a>` : ''}
             </div>
           </div>
           ${(isOwner || isAdmin) ? 
@@ -144,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       checkAnimate();
   }
 
-  // --- ОНОВЛЕНИЙ РЕНДЕР АДМІНКИ (ВИПРАВЛЕНО ДИЗАЙН) ---
+  // --- ADMIN SIDEBAR (ВИПРАВЛЕНО ПІД СТИЛЬ КАРТОК) ---
   function renderAdminSidebar(users) {
       const el = document.getElementById('userDatabaseSidebar');
       if(!el) return;
@@ -160,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
               dateStr = `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
           }
 
-          // ГЕНЕРАЦІЯ HTML ДЛЯ НОВОГО ДИЗАЙНУ КАРТКИ
           return `
             <div class="user-card-row">
                 <div class="u-header">
@@ -187,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
   }
 
-  // --- GLOBAL ACTIONS ---
+  // --- ACTIONS ---
   window.editMember = async (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
@@ -213,7 +215,31 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   };
 
-  // --- AUTH & UI ---
+  // --- UI LISTENERS ---
+  const addNewsBtn = document.getElementById('addNewsBtn');
+  if(addNewsBtn) {
+      addNewsBtn.addEventListener('click', async () => {
+          const body = { title: newsTitle.value, date: newsDate.value, summary: newsSummary.value };
+          if(!body.title || !body.date) return customConfirm('Заповніть поля');
+          await apiFetch('/api/news', { method: 'POST', body: JSON.stringify(body) });
+          loadInitialData();
+          newsTitle.value = ''; newsDate.value = ''; newsSummary.value = '';
+          customConfirm('Подію додано');
+      });
+  }
+
+  const addGalleryBtn = document.getElementById('addGalleryBtn');
+  if(addGalleryBtn) {
+      addGalleryBtn.addEventListener('click', async () => {
+          if(!galleryUrl.value) return;
+          await apiFetch('/api/gallery', { method: 'POST', body: JSON.stringify({ url: galleryUrl.value }) });
+          loadInitialData();
+          galleryUrl.value = '';
+          customConfirm('Фото додано');
+      });
+  }
+
+  // Auth & UI
   function updateAuthUI() {
       const btn = document.getElementById('openAuthBtn');
       const txt = document.getElementById('authBtnText');
@@ -242,11 +268,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
-  // EVENT LISTENERS
+  // Event Listeners
   document.getElementById('navToggle')?.addEventListener('click', ()=>document.getElementById('mainNav').classList.toggle('open'));
   document.getElementById('lightboxCloseBtn')?.addEventListener('click', ()=>document.getElementById('lightbox').classList.remove('open'));
   
-  // Auth
   document.getElementById('openAuthBtn')?.addEventListener('click', ()=>{
       if(currentUser) {
           if(currentUser.role==='admin') { 
@@ -264,7 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('closeSidebar')?.addEventListener('click', ()=>document.getElementById('adminSidebar').classList.remove('open'));
   document.getElementById('adminLogoutBtn')?.addEventListener('click', ()=>{ removeCurrentUser(); location.reload(); });
 
-  // Forms
   document.getElementById('loginForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const res = await apiFetch('/api/auth/login', { method:'POST', body: JSON.stringify({ username: loginUser.value, password: loginPass.value }) });
@@ -288,26 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
-  // Adding Content (Events, Gallery, Members)
-  const addNewsBtn = document.getElementById('addNewsBtn');
-  if(addNewsBtn) {
-      addNewsBtn.addEventListener('click', async () => {
-          const body = { title: newsTitle.value, date: newsDate.value, summary: newsSummary.value };
-          if(!body.title || !body.date) return customConfirm('Заповніть поля');
-          await apiFetch('/api/news', { method: 'POST', body: JSON.stringify(body) });
-          loadInitialData();
-      });
-  }
-
-  const addGalleryBtn = document.getElementById('addGalleryBtn');
-  if(addGalleryBtn) {
-      addGalleryBtn.addEventListener('click', async () => {
-          if(!galleryUrl.value) return;
-          await apiFetch('/api/gallery', { method: 'POST', body: JSON.stringify({ url: galleryUrl.value }) });
-          loadInitialData();
-      });
-  }
-
   document.getElementById('addMemberForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(!currentUser) return;
@@ -320,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await apiFetch('/api/members', { method:'POST', body: JSON.stringify(body) });
       document.getElementById('addMemberModal').classList.remove('show');
       loadInitialData();
+      customConfirm('Учасника додано');
   });
   
   document.getElementById('addMemberBtn')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.add('show'));
