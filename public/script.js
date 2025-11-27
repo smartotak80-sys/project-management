@@ -1,4 +1,4 @@
-// script.js - Оновлений для Fetch API
+// script.js - Фінальна версія (API + Custom Modal + Scroll Animation)
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- КОНСТАНТИ ---
@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return past.toLocaleDateString('uk-UA'); 
   }
 
-  // Функція для стилізованого customConfirm (залишається без змін)
   function customConfirm(message, callback) {
       const modal = document.getElementById('customConfirmModal');
       const msg = document.getElementById('confirmMessage');
@@ -41,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const closeBtn = document.getElementById('closeConfirmModal');
       
       const isAlert = callback === undefined; 
+      // ... (скорочена логіка customConfirm, як в оригінальному файлі) ...
       if (isAlert) {
           if(cancelBtn) cancelBtn.style.display = 'none';
           if(okBtn) okBtn.textContent = 'Зрозуміло';
@@ -84,14 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
   window.customConfirm = customConfirm;
 
   
-  // --- КЕШУВАННЯ ДАНИХ (для клієнта) ---
+  // --- КЕШУВАННЯ ДАНИХ ---
   let members = [];
   let news = [];
   let gallery = [];
   let currentUser = loadCurrentUser(); 
   
-  // --- КЕШУВАННЯ DOM ЕЛЕМЕНТІВ (залишається) ---
-  if(document.getElementById('year')) document.getElementById('year').textContent = new Date().getFullYear();
+  // ... (Кешування DOM елементів - залишається) ...
   const navToggle = document.getElementById('navToggle');
   const mainNav = document.getElementById('mainNav');
   const membersGrid = document.getElementById('membersGrid');
@@ -140,14 +139,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const memberLimitWarning = document.getElementById('memberLimitWarning');
 
   let currentImageIndex = 0;
-  let allUsersCache = []; // Кеш користувачів для адмін-панелі
+  let allUsersCache = [];
 
 
-  // --- API ФУНКЦІЇ ---
+  // --- API ФУНКЦІЇ (ВИКОРИСТОВУЄМО FETCH) ---
   
   function getAuthHeaders() {
       if (!currentUser) return {};
-      // Надсилаємо дані користувача в заголовках для авторизації на бекенді
       return {
           'X-Auth-User': currentUser.username,
           'X-Auth-Role': currentUser.role
@@ -172,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           return data;
       } catch (error) {
+          // ЦЕЙ ЛОГ ВИКЛИКАВ ПОМИЛКУ НА ЕКРАНІ
           customConfirm('Помилка з\'єднання з сервером. Перевірте мережу або Railway.');
           return null;
       }
@@ -180,29 +179,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- ФУНКЦІЇ ЗАВАНТАЖЕННЯ (Loaders) ---
   async function loadInitialData() {
-      // 1. Завантаження учасників
       const membersData = await apiFetch('/api/members');
       if (membersData) members = membersData;
       renderMembers(memberSearch ? memberSearch.value : '');
 
-      // 2. Завантаження новин
       const newsData = await apiFetch('/api/news');
       if (newsData) news = newsData;
       renderNews();
 
-      // 3. Завантаження галереї
       const galleryData = await apiFetch('/api/gallery');
       if (galleryData) gallery = galleryData;
       renderGallery();
       
-      // 4. Оновлення лічильників
       const countsData = await apiFetch('/api/users/count');
       if(countsData){
           if(totalUsersSidebar) totalUsersSidebar.textContent = countsData.totalUsers;
           if(totalAdminsSidebar) totalAdminsSidebar.textContent = countsData.totalAdmins;
-          // Оновлюємо UI реєстрації тут, оскільки ліміт перевіряється на сервері
+          
           if (tabRegister) {
-            const canRegister = countsData.totalUsers < 100; // Використовуємо ліміт із сервера
+            const canRegister = countsData.totalUsers < 100;
             if (!canRegister) {
               tabRegister.textContent = 'Реєстрація (Зайнято)';
               tabRegister.disabled = true;
@@ -213,14 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
           }
       }
 
-      // 5. Завантаження користувачів для Адмін-панелі (якщо адміністратор)
       if (currentUser && currentUser.role === 'admin') {
           const usersData = await apiFetch('/api/users');
           if (usersData) allUsersCache = usersData;
       }
   }
 
-  // --- UI & РЕНДЕРИНГ (АДАПТОВАНО) ---
+  // --- UI & РЕНДЕРИНГ ---
   
   function checkAccess() {
     const body = document.body;
@@ -229,7 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateAuthUI() {
-      // ... (схожа логіка як в оригіналі, але без перевірки canRegister, яка тепер у loadInitialData)
       if (!openAuthBtn || !authBtnText) return;
       
       if (currentUser) {
@@ -292,7 +285,110 @@ document.addEventListener('DOMContentLoaded', () => {
       userDatabaseSidebar.appendChild(fragment); 
   }
   
-  // --- (renderMembers, renderNews, renderGallery - залишаються як у оригіналі, працюючи з локальними members/news/gallery масивами) ---
+  function renderMembers(filter=''){
+    if (!membersGrid) return;
+    const list = members.filter(m => (m.name + ' ' + m.role).toLowerCase().includes(filter.toLowerCase()));
+    
+    if(list.length===0) { membersGrid.innerHTML = '<p class="muted">Немає учасників</p>'; return; }
+    
+    const fragment = document.createDocumentFragment();
+
+    list.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'member animated-content';
+      div.setAttribute('data-id', m.id);
+      
+      const isOwner = currentUser && currentUser.username === m.owner && currentUser.role !== 'admin';
+      const canManage = currentUser && (currentUser.role === 'admin' || isOwner);
+
+      let socialLinksHtml = '';
+      if (m.links) {
+          socialLinksHtml += '<div class="social-links">';
+          
+          if (m.links.discord) {
+              socialLinksHtml += `<span class="social-link" title="Discord: ${m.links.discord}"><i class="fa-brands fa-discord"></i></span>`;
+          }
+          if (m.links.youtube) {
+              socialLinksHtml += `<a href="${m.links.youtube}" target="_blank" class="social-link link-yt" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
+          }
+          if (m.links.tg) {
+              socialLinksHtml += `<a href="${m.links.tg}" target="_blank" class="social-link link-tg" title="Telegram"><i class="fa-brands fa-telegram"></i></a>`;
+          }
+          socialLinksHtml += '</div>';
+      }
+
+
+      div.innerHTML = `
+        <div class="member-top">
+          <div class="info">
+            <h3>${m.name}</h3>
+            <div class="role-badge">${m.role}</div>
+            ${socialLinksHtml}
+            ${isOwner ? '<small style="color:#555; display:block; margin-top:5px;">(Ваш запис)</small>' : ''}
+          </div>
+        </div>
+        ${canManage ? 
+          `<div class="member-actions admin-only">
+            <button class="btn btn-edit" data-action="edit" data-id="${m.id}"><i class="fa-solid fa-pen"></i> Редагувати</button>
+            <button class="btn btn-delete" data-action="delete" data-id="${m.id}"><i class="fa-solid fa-trash"></i> Видалити</button>
+          </div>` : ''}
+      `;
+      fragment.appendChild(div);
+    });
+    
+    membersGrid.innerHTML = '';
+    membersGrid.appendChild(fragment);
+    checkAccess();
+    setTimeout(checkVisibilityAndAnimate, 50);
+  }
+
+  function renderNews(){
+    if (!newsList) return;
+    const fragment = document.createDocumentFragment();
+    if(news.length===0) { newsList.innerHTML = '<p class="muted">Немає подій</p>'; return; }
+    
+    [...news].reverse().forEach(n=>{
+      const el = document.createElement('div'); 
+      el.className='news-item animated-content';
+      el.setAttribute('data-id', n.id);
+      
+      el.innerHTML = `
+        <strong>${n.title}</strong> 
+        <div class="meta">${n.date}</div>
+        <p>${n.summary}</p>
+        <div style="margin-top:8px" class="admin-only">
+          <button class="btn btn-delete" style="border:1px solid #ef4444; color:#ef4444; padding:5px 10px;" data-action="delete-news" data-id="${n.id}">Видалити</button>
+        </div>`;
+      fragment.appendChild(el);
+    });
+    
+    newsList.innerHTML = '';
+    newsList.appendChild(fragment);
+    checkAccess();
+    setTimeout(checkVisibilityAndAnimate, 50);
+  }
+
+  function renderGallery(){
+    if (!galleryGrid) return;
+    const fragment = document.createDocumentFragment();
+    if(gallery.length===0) { galleryGrid.innerHTML = '<p class="muted">Галерея пуста</p>'; return; }
+    
+    gallery.forEach((g, index)=>{
+      const d = document.createElement('div'); 
+      d.classList.add('animated-content');
+      d.innerHTML = `
+        <img src="${g.url}" alt="gallery photo" onerror="this.src='https://i.postimg.cc/k47tX6Qd/hero-placeholder.jpg'" data-index="${index}" data-action="lightbox">
+        <div style="margin-top:6px" class="admin-only">
+           <button class='btn btn-delete' style="width:100%; border:1px solid #ef4444; color:#ef4444;" data-id="${g.id}" data-action="delete-gallery">Видалити</button>
+        </div>`;
+      fragment.appendChild(d);
+    });
+    
+    galleryGrid.innerHTML = '';
+    galleryGrid.appendChild(fragment);
+    checkAccess();
+    setTimeout(checkVisibilityAndAnimate, 50);
+  }
 
 
   // --- ГЛОБАЛЬНІ ФУНКЦІЇ (ОБРОБКА ДІЙ API) ---
@@ -303,12 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const data = await apiFetch(`/api/users/${username}`, { method: 'DELETE' });
           if (data) {
-              // Оновлюємо кеш та UI
               allUsersCache = allUsersCache.filter(u => u.username !== username);
               renderAdminSidebarData(userSearchSidebar ? userSearchSidebar.value : '');
-              loadInitialData(); // Оновлення лічильників та учасників
+              loadInitialData(); 
 
-              // Якщо забанили самого себе (якщо не адмін)
               if(currentUser && currentUser.username === username && currentUser.role !== 'admin') {
                   currentUser = null;
                   removeCurrentUser();
@@ -392,12 +486,151 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
   }
+  
+  // Функції lightbox, scroll animation, smooth scroll - залишаються як в оригінальному файлі
 
-  // --- ОБРОБНИКИ ПОДІЙ (АДАПТОВАНО) ---
+  function openLightbox(index) {
+      if (gallery.length === 0 || !lightbox || !document.body) return;
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden'; 
+      showImage(index);
+  }
 
-  // ... (Delegation, Scroll Events, Smooth Scroll - залишаються) ...
+  function showImage(index) {
+      if (gallery.length === 0) return;
+      currentImageIndex = (index + gallery.length) % gallery.length;
+      lightboxImage.src = gallery[currentImageIndex].url;
+      
+      const visibility = gallery.length > 1 ? 'visible' : 'hidden';
+      if(lightboxPrevBtn) lightboxPrevBtn.style.visibility = visibility;
+      if(lightboxNextBtn) lightboxNextBtn.style.visibility = visibility;
+  }
+  
+  function closeLightbox() {
+      if(!lightbox || !document.body) return;
+      lightbox.classList.remove('open');
+      document.body.style.overflow = 'auto'; 
+  }
+  
+  function closeAddMemberModal() {
+      if(addMemberModal) addMemberModal.classList.remove('show');
+      if(addMemberForm) addMemberForm.reset();
+      document.body.style.overflow = 'auto';
+  }
+  
+  const animatedElements = document.querySelectorAll('.animated-content');
+  
+  function checkVisibilityAndAnimate() {
+      if (!animatedElements) return;
 
-  // Admin Sidebar 
+      animatedElements.forEach(el => {
+          if (el.classList.contains('animate-in')) return;
+          
+          const rect = el.getBoundingClientRect();
+          const viewHeight = window.innerHeight;
+          const isVisible = rect.top < viewHeight - 50 && rect.bottom > 50; 
+
+          if (isVisible) {
+              const delay = parseFloat(el.getAttribute('data-delay')) || 0;
+              if (delay > 0) {
+                  el.style.transitionDelay = `${delay}s`;
+              }
+              el.classList.add('animate-in');
+          }
+      });
+      
+      animateDynamicContent(membersGrid ? membersGrid.querySelectorAll('.member.animated-content:not(.animate-in)') : []);
+      animateDynamicContent(newsList ? newsList.querySelectorAll('.news-item.animated-content:not(.animate-in)') : []);
+      animateDynamicContent(galleryGrid ? galleryGrid.querySelectorAll('.animated-content:not(.animate-in)') : []);
+  }
+  
+  function animateDynamicContent(elements) {
+      elements.forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const viewHeight = window.innerHeight;
+          const isVisible = rect.top < viewHeight - 50 && rect.bottom > 50;
+
+          if (isVisible) {
+              el.classList.add('animate-in');
+          }
+      });
+  }
+
+
+  // --- ОБРОБНИКИ ПОДІЙ ---
+  
+  if (userDatabaseSidebar) {
+      userDatabaseSidebar.addEventListener('click', (e) => {
+          const targetBtn = e.target.closest('[data-action="ban"]');
+          if (targetBtn) {
+              const userCard = targetBtn.closest('.user-card-mini');
+              const username = userCard.getAttribute('data-username');
+              if (username) banUser(username);
+          }
+      });
+  }
+  
+  if (membersGrid) {
+      membersGrid.addEventListener('click', (e) => {
+          const targetBtn = e.target.closest('[data-action]');
+          if (!targetBtn) return;
+          
+          const id = parseInt(targetBtn.getAttribute('data-id'));
+          if (isNaN(id)) return;
+          
+          const action = targetBtn.getAttribute('data-action');
+          if (action === 'edit') editMember(id);
+          if (action === 'delete') removeMember(id);
+      });
+  }
+  
+  if (newsList) {
+      newsList.addEventListener('click', (e) => {
+          const targetBtn = e.target.closest('[data-action="delete-news"]');
+          if (targetBtn) {
+              const id = parseInt(targetBtn.getAttribute('data-id'));
+              if (id) removeNews(id);
+          }
+      });
+  }
+  
+  if (galleryGrid) {
+      galleryGrid.addEventListener('click', (e) => {
+          const target = e.target;
+          const action = target.getAttribute('data-action') || target.closest('[data-action="delete-gallery"]')?.getAttribute('data-action');
+          
+          if (action === 'lightbox' && target.tagName === 'IMG') {
+              const index = parseInt(target.getAttribute('data-index'));
+              openLightbox(index);
+          } else if (action === 'delete-gallery') {
+              const id = parseInt(target.getAttribute('data-id') || target.closest('[data-id]').getAttribute('data-id'));
+              if (id) removeGallery(id);
+          }
+      });
+  }
+
+
+  if(navToggle && mainNav) {
+    navToggle.addEventListener('click', () => {
+      mainNav.classList.toggle('open');
+    });
+  }
+  
+  window.addEventListener('scroll', checkVisibilityAndAnimate);
+  window.addEventListener('resize', checkVisibilityAndAnimate);
+
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      const href = a.getAttribute('href');
+      if(href.startsWith('#')){
+        e.preventDefault();
+        const target = document.querySelector(href);
+        if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+        if(mainNav && mainNav.classList.contains('open')) mainNav.classList.remove('open');
+      }
+    });
+  });
+
   if(closeSidebar) closeSidebar.addEventListener('click', () => {
     if(adminSidebar) adminSidebar.classList.remove('open');
   });
@@ -414,19 +647,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
   }
-
-  // Обробник подій: Пошук користувачів в Адмін-панелі
+  
   if (userSearchSidebar) {
       userSearchSidebar.addEventListener('input', (e) => {
           renderAdminSidebarData(e.target.value); 
       });
   }
 
+  if(lightboxCloseBtn) lightboxCloseBtn.addEventListener('click', closeLightbox);
+  if(lightboxPrevBtn) lightboxPrevBtn.addEventListener('click', () => showImage(currentImageIndex - 1));
+  if(lightboxNextBtn) lightboxNextBtn.addEventListener('click', () => showImage(currentImageIndex + 1));
+  window.addEventListener('keydown', (e) => {
+      if (lightbox && lightbox.classList.contains('open')) {
+          if (e.key === 'Escape') closeLightbox();
+          if (e.key === 'ArrowLeft') showImage(currentImageIndex - 1);
+          if (e.key === 'ArrowRight') showImage(currentImageIndex + 1);
+      }
+  });
+
+
   // AUTH SYSTEM
   if(openAuthBtn) openAuthBtn.addEventListener('click', async () => {
     if (currentUser) {
       if (currentUser.role === 'admin') {
-        // Оновлюємо кеш користувачів перед відкриттям панелі
         await loadInitialData(); 
         if(adminSidebar) adminSidebar.classList.add('open');
         renderAdminSidebarData(userSearchSidebar ? userSearchSidebar.value : '');
@@ -444,6 +687,26 @@ document.addEventListener('DOMContentLoaded', () => {
       if(authModal) authModal.classList.add('show');
     }
   });
+
+  if(document.getElementById('closeAuth')) document.getElementById('closeAuth').addEventListener('click', () => {
+    if(authModal) authModal.classList.remove('show');
+  });
+
+  if(document.getElementById('tabLogin')) document.getElementById('tabLogin').addEventListener('click', (e) => {
+    e.target.classList.add('active'); 
+    if(tabRegister) tabRegister.classList.remove('active');
+    if(loginForm) loginForm.style.display = 'block'; 
+    if(registerForm) registerForm.style.display = 'none';
+  });
+
+  if(tabRegister) tabRegister.addEventListener('click', (e) => {
+    if (tabRegister.disabled) return;
+    e.target.classList.add('active'); 
+    if(document.getElementById('tabLogin')) document.getElementById('tabLogin').classList.remove('active');
+    if(registerForm) registerForm.style.display = 'block'; 
+    if(loginForm) loginForm.style.display = 'none';
+  });
+
 
   // REGISTER
   if(registerForm) registerForm.addEventListener('submit', async (e) => {
@@ -465,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       if (data && document.getElementById('tabLogin')) {
-          loadInitialData(); // Оновлюємо лічильники
+          loadInitialData();
           customConfirm('Готово! Тепер можете увійти.');
           document.getElementById('tabLogin').click();
           registerForm.reset();
@@ -545,6 +808,45 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // LOGIC FOR CUSTOM ADD MEMBER MODAL
+  if(addMemberBtn) {
+    addMemberBtn.addEventListener('click', () => {
+      if(!currentUser) return customConfirm('Спершу увійдіть в акаунт.');
+      
+      const isLimited = currentUser.role !== 'admin';
+      
+      if (isLimited) {
+          const userMembersCount = members.filter(m => m.owner === currentUser.username).length;
+          if (userMembersCount >= MAX_MEMBER_PER_USER) {
+              memberLimitWarning.textContent = `Ви досягли ліміту (${MAX_MEMBER_PER_USER}) учасників. Спершу видаліть існуючий.`;
+              memberLimitWarning.style.display = 'block';
+              addMemberForm.querySelector('button[type="submit"]').disabled = true;
+          } else {
+              memberLimitWarning.style.display = 'none';
+              addMemberForm.querySelector('button[type="submit"]').disabled = false;
+          }
+      } else {
+          memberLimitWarning.style.display = 'none';
+          addMemberForm.querySelector('button[type="submit"]').disabled = false;
+      }
+
+      addMemberModal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    });
+  }
+
+  if(closeMemberModal) {
+    closeMemberModal.addEventListener('click', closeAddMemberModal);
+  }
+
+  if(addMemberModal) {
+    addMemberModal.addEventListener('click', (e) => {
+        if (e.target === addMemberModal) {
+            closeAddMemberModal();
+        }
+    });
+  }
+  
   // ADD MEMBER FORM SUBMIT
   if(addMemberForm) {
       addMemberForm.addEventListener('submit', async (e) => {
@@ -575,10 +877,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
+  // Member Search
+  if(memberSearch) {
+      memberSearch.addEventListener('input', (e) => {
+          renderMembers(e.target.value);
+      });
+  }
 
   // Initial Render and Animation Activation
   updateAuthUI(); 
   loadInitialData(); 
   
-  // (checkVisibilityAndAnimate - залишається)
+  checkVisibilityAndAnimate();
 });
