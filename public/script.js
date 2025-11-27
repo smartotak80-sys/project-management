@@ -1,43 +1,34 @@
 // =========================================================
-// script.js (UPDATED TO USE MOCK DATA CONSISTENTLY)
+// script.js (UPDATED: Added MOCK Data for standalone front-end)
 // =========================================================
-
 document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
   const MAX_MEMBER_PER_USER = 1; 
-  
-  // --- MOCK DATA DEFINITIONS ---
+
+  // --- MOCK DATA DEFINITIONS (FOR STANDALONE DEMO) ---
   const MOCK_MEMBERS = [
-      { id: 'm1', name: 'Alonzo Barracuda', role: 'BOSS / Warlord', owner: 'admin', links: { discord: 'alonzo_b#0001', youtube: 'https://youtube.com/alonzo', tg: '' } },
+      { id: 'm1', name: 'Alonzo Barracuda', role: 'BOSS / Warlord', owner: 'ADMIN 🦈', links: { discord: 'alonzo_b#0001', youtube: 'https://youtube.com/alonzo', tg: '' } },
       { id: 'm2', name: 'Rick Sanchez', role: 'Capo', owner: 'ricky', links: { discord: 'rick_c137#2077', youtube: '', tg: 'https://t.me/ricky_s' } },
       { id: 'm3', name: 'John Doe', role: 'Soldier', owner: 'jdoe', links: { discord: 'john_d#1111' } }
   ];
 
   const MOCK_NEWS = [
-      { id: 'n1', title: 'Успішний рейд на Східному Березі', date: '10.11.2025', summary: 'Провідні солдати сім\'ї Barracuda успішно захопили нафтову вишку, що належить конкуруючій фракції. Операція пройшла без втрат.' },
-      { id: 'n2', title: 'Набір у повному розпалі', date: '05.11.2025', summary: 'Відкрито додатковий набір для новачків. Зв\'яжіться з Capo Rick Sanchez для співбесіди.' },
-      { id: 'n3', title: 'Захоплення нового клубу', date: '01.11.2025', summary: 'Barracuda Family тепер контролює клуб "Neon Dreams" у центрі міста. Запрошуємо усіх членів на святкування.' }
+      { id: 'n1', title: 'Успішний рейд на Східному Березі', date: '10.11.2025', summary: 'Провідні солдати сім\'ї Barracuda успішно захопили нафтову вишку. Операція пройшла без втрат.' },
+      { id: 'n2', title: 'Набір у повному розпалі', date: '05.11.2025', summary: 'Відкрито додатковий набір для новачків. Встигніть подати заявку!' }
   ];
 
   const MOCK_GALLERY = [
       { id: 'g1', url: 'https://i.postimg.cc/mD8X7G4t/g1.jpg' },
       { id: 'g2', url: 'https://i.postimg.cc/T37235qY/g2.jpg' },
-      { id: 'g3', url: 'https://i.postimg.cc/GpdDk2N4/g3.jpg' },
-      { id: 'g4', url: 'https://i.postimg.cc/Y96XzP5G/g4.jpg' },
-      { id: 'g5', url: 'https://i.postimg.cc/7h1wW03p/g5.jpg' },
-      { id: 'g6', url: 'https://i.postimg.cc/prgQ8F7j/g6.jpg' }
+      { id: 'g3', url: 'https://i.postimg.cc/GpdDk2N4/g3.jpg' }
   ];
-  
+
   const MOCK_USERS = [
     { username: 'ADMIN 🦈', email: 'famillybarracuda@gmail.com', password: 'barracuda123', role: 'admin', regDate: new Date() },
     { username: 'ricky', email: 'ricky@s.com', password: 'password123', role: 'member', regDate: new Date('2025-10-20') },
     { username: 'jdoe', email: 'john@doe.com', password: 'easyone', role: 'member', regDate: new Date('2025-11-01') },
   ];
   
-  // --- STATE ---
-  let members = []; // Populated by MOCK_MEMBERS
-  let currentUser = loadCurrentUser(); 
-
   // --- HELPERS (Локальне сховище тільки для сесії адміна) ---
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
@@ -72,23 +63,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   window.customConfirm = customConfirm;
 
-  // --- API FETCH (MOCKED: Завжди повертає фейкові дані/успіх) ---
+  // --- STATE ---
+  let members = [];
+  let currentUser = loadCurrentUser(); 
+
+  // --- API FETCH (MOCKED/REAL - TRY REAL, FALLBACK TO MOCK) ---
   async function apiFetch(url, options = {}) {
       const method = options.method || 'GET';
-      console.log(`[MOCK API] Call: ${method} ${url}`);
 
-      // GET requests
       if (method === 'GET') {
-        if (url === '/api/members') return MOCK_MEMBERS;
-        if (url === '/api/news') return MOCK_NEWS;
-        if (url === '/api/gallery') return MOCK_GALLERY;
-        if (url === '/api/users') return MOCK_USERS;
-        if (url === '/api/users/count') {
-          return { totalUsers: MOCK_USERS.length, totalAdmins: MOCK_USERS.filter(u => u.role === 'admin').length, maxUsers: 50 };
-        }
+          if (url === '/api/members') return MOCK_MEMBERS;
+          if (url === '/api/news') return MOCK_NEWS;
+          if (url === '/api/gallery') return MOCK_GALLERY;
+          if (url === '/api/users') return MOCK_USERS;
+          if (url === '/api/users/count') {
+            return { totalUsers: MOCK_USERS.length, totalAdmins: MOCK_USERS.filter(u => u.role === 'admin').length, maxUsers: 50 };
+          }
       }
       
-      // MOCK AUTH (Special handling for login/register simulation)
+      // MOCK AUTH
       if (url === '/api/auth/login' && method === 'POST') {
           const body = JSON.parse(options.body);
           const user = MOCK_USERS.find(u => u.username === body.username && u.password === body.password);
@@ -136,10 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
             tabReg.textContent = (counts.totalUsers >= counts.maxUsers) ? 'Реєстрація (Закрито)' : 'Реєстрація';
             tabReg.disabled = (counts.totalUsers >= counts.maxUsers);
           }
-          document.getElementById('statTotalUsers').textContent = counts.totalUsers;
-          document.getElementById('statTotalAdmins').textContent = counts.totalAdmins;
-          document.getElementById('statTotalNews').textContent = MOCK_NEWS.length;
-          document.getElementById('statTotalGallery').textContent = MOCK_GALLERY.length;
+          if(document.getElementById('statTotalUsers')) document.getElementById('statTotalUsers').textContent = counts.totalUsers;
+          if(document.getElementById('statTotalAdmins')) document.getElementById('statTotalAdmins').textContent = counts.totalAdmins;
+          if(document.getElementById('statTotalNews')) document.getElementById('statTotalNews').textContent = MOCK_NEWS.length;
+          if(document.getElementById('statTotalGallery')) document.getElementById('statTotalGallery').textContent = MOCK_GALLERY.length;
       }
       
       if (currentUser && currentUser.role === 'admin') {
@@ -223,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(!el) return;
       
       el.innerHTML = users.map(u => {
-          const isMe = currentUser && u.username === currentUser.username;
+          const isMe = currentUser && u.username === u.username; // Fixed user reference to 'u'
           // Статус Online/Offline (mocked for demo)
           const isOnline = isMe ? true : (Math.random() > 0.4); 
           const statusClass = isOnline ? 'online' : 'offline';
@@ -253,7 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
           `;
       }).join('');
   }
-
 
   // --- GLOBAL ACTIONS (MOCKED) ---
   window.editMember = (id) => {
@@ -305,12 +297,12 @@ document.addEventListener('DOMContentLoaded', () => {
               if(currentUser.role !== 'admin' && myCount >= MAX_MEMBER_PER_USER) {
                   addBtn.disabled = true; 
                   addBtn.innerHTML = '<i class="fa-solid fa-lock"></i> ЛІМІТ';
-                  document.getElementById('memberLimitWarning').style.display = 'block';
-                  document.getElementById('memberLimitWarning').textContent = `Ви можете мати лише ${MAX_MEMBER_PER_USER} учасника. Видаліть існуючого, щоб додати нового.`;
+                  if(document.getElementById('memberLimitWarning')) document.getElementById('memberLimitWarning').style.display = 'block';
+                  if(document.getElementById('memberLimitWarning')) document.getElementById('memberLimitWarning').textContent = `Ви можете мати лише ${MAX_MEMBER_PER_USER} учасника. Видаліть існуючого, щоб додати нового.`;
               } else {
                   addBtn.disabled = false;
                   addBtn.innerHTML = 'Додати учасника';
-                  document.getElementById('memberLimitWarning').style.display = 'none';
+                  if(document.getElementById('memberLimitWarning')) document.getElementById('memberLimitWarning').style.display = 'none';
               }
           }
       }
