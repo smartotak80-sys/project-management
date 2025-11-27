@@ -1,4 +1,4 @@
-// script.js — CUSTOM EDIT MODAL
+// script.js — UPDATED ADMIN PANEL LOGIC
 
 document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- STATE ---
   let members = [];
+  let news = []; 
+  let gallery = [];
   let currentUser = loadCurrentUser(); 
 
   // --- API ---
@@ -72,10 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (m) { members = m; renderMembers(); }
       
       const n = await apiFetch('/api/news');
-      if (n) renderNews(n);
+      if (n) { news = n; renderNews(n); }
       
       const g = await apiFetch('/api/gallery');
-      if (g) renderGallery(g);
+      if (g) { gallery = g; renderGallery(g); }
 
       const counts = await apiFetch('/api/users/count');
       if(counts){
@@ -91,8 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
               tabReg.style.opacity = '1';
             }
           }
-          if(document.getElementById('totalUsersSidebar')) document.getElementById('totalUsersSidebar').textContent = counts.totalUsers;
+          if(document.getElementById('statTotalUsers')) document.getElementById('statTotalUsers').textContent = counts.totalUsers;
+          if(document.getElementById('statTotalAdmins')) document.getElementById('statTotalAdmins').textContent = counts.totalAdmins || 0;
       }
+      
+      if(document.getElementById('statTotalNews')) document.getElementById('statTotalNews').textContent = news.length;
+      if(document.getElementById('statTotalGallery')) document.getElementById('statTotalGallery').textContent = gallery.length;
 
       if (currentUser && currentUser.role === 'admin') {
           const users = await apiFetch('/api/users');
@@ -214,59 +220,38 @@ document.addEventListener('DOMContentLoaded', () => {
       if(!el) return;
       el.innerHTML = users.map(u => `
         <div class="user-card-mini">
-           <div class="u-info"><span class="u-name">${u.username}</span><span class="u-role">${u.role}</span></div>
+           <div class="u-info"><span class="u-name">${u.username}</span><span class="u-role ${u.role}">${u.role}</span></div>
            ${(currentUser.username !== u.username && u.role!=='admin') ? `<button class="btn-ban" onclick="window.banUser('${u.username}')"><i class="fa-solid fa-ban"></i></button>` : ''}
         </div>`).join('');
   }
 
   // --- ACTIONS ---
-  
-  // ФУНКЦІЯ РЕДАГУВАННЯ ЧЕРЕЗ НОВЕ МОДАЛЬНЕ ВІКНО
   window.editMember = (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
-      
       const modal = document.getElementById('editMemberModal');
-      const form = document.getElementById('editMemberForm');
-      
-      // Заповнюємо поля
       document.getElementById('editMemberId').value = id;
       document.getElementById('editMemberName').value = m.name;
       document.getElementById('editMemberRole').value = m.role;
       document.getElementById('editMemberDiscord').value = m.links?.discord || '';
       document.getElementById('editMemberYoutube').value = m.links?.youtube || '';
       document.getElementById('editMemberTg').value = m.links?.tg || '';
-
-      // Показуємо вікно
       modal.classList.add('show');
   };
 
-  // ОБРОБНИК ЗБЕРЕЖЕННЯ ЗМІН (РЕДАГУВАННЯ)
   const editMemberForm = document.getElementById('editMemberForm');
   if (editMemberForm) {
       editMemberForm.addEventListener('submit', async (e) => {
           e.preventDefault();
-          
           const id = document.getElementById('editMemberId').value;
-          const newName = document.getElementById('editMemberName').value;
-          const newRole = document.getElementById('editMemberRole').value;
-          const newDiscord = document.getElementById('editMemberDiscord').value;
-          const newYoutube = document.getElementById('editMemberYoutube').value;
-          const newTg = document.getElementById('editMemberTg').value;
-
-          const updateData = {
-              name: newName.trim(),
-              role: newRole.trim(),
-              discord: newDiscord,
-              youtube: newYoutube,
-              tg: newTg
+          const body = {
+              name: document.getElementById('editMemberName').value.trim(),
+              role: document.getElementById('editMemberRole').value.trim(),
+              discord: document.getElementById('editMemberDiscord').value,
+              youtube: document.getElementById('editMemberYoutube').value,
+              tg: document.getElementById('editMemberTg').value
           };
-
-          const res = await apiFetch(`/api/members/${id}`, {
-              method: 'PUT',
-              body: JSON.stringify(updateData)
-          });
-
+          const res = await apiFetch(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify(body) });
           if(res) {
               document.getElementById('editMemberModal').classList.remove('show');
               loadInitialData();
@@ -275,13 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
   
-  // Закриття вікна редагування
-  const closeEditModalBtn = document.getElementById('closeEditMemberModal');
-  if(closeEditModalBtn) {
-      closeEditModalBtn.addEventListener('click', () => {
-          document.getElementById('editMemberModal').classList.remove('show');
-      });
-  }
+  document.getElementById('closeEditMemberModal')?.addEventListener('click', () => {
+      document.getElementById('editMemberModal').classList.remove('show');
+  });
 
   window.deleteMember = async (id) => { customConfirm('Видалити?', async (r)=>{ if(r && await apiFetch(`/api/members/${id}`, {method:'DELETE'})) loadInitialData(); }); };
   window.deleteNews = async (id) => { customConfirm('Видалити?', async (r)=>{ if(r && await apiFetch(`/api/news/${id}`, {method:'DELETE'})) loadInitialData(); }); };
@@ -291,6 +272,40 @@ document.addEventListener('DOMContentLoaded', () => {
       const lb = document.getElementById('lightbox'); 
       if(lb) { lb.classList.add('open'); document.getElementById('lightboxImage').src = url; } 
   };
+
+  // --- ADMIN PANEL LOGIC (TABS & CLOCK) ---
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panes = document.querySelectorAll('.tab-pane');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panes.forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const target = document.getElementById(tab.getAttribute('data-tab'));
+      if(target) target.classList.add('active');
+    });
+  });
+
+  // Живий годинник
+  setInterval(() => {
+    const now = new Date();
+    const clock = document.getElementById('adminClock');
+    if(clock) clock.textContent = now.toLocaleTimeString('uk-UA');
+    
+    // Фейкове оновлення навантаження (System Tab)
+    if(document.getElementById('tab-sys') && document.getElementById('tab-sys').classList.contains('active')) {
+       if(Math.random() > 0.7) {
+           const cpu = Math.floor(Math.random() * 30) + 10;
+           const mem = Math.floor(Math.random() * 20) + 30;
+           document.getElementById('cpuVal').textContent = cpu + '%';
+           document.getElementById('cpuBar').style.width = cpu + '%';
+           document.getElementById('memVal').textContent = mem + '%';
+           document.getElementById('memBar').style.width = mem + '%';
+       }
+    }
+  }, 1000);
+
 
   // --- EVENTS ---
   document.getElementById('navToggle')?.addEventListener('click', ()=>document.getElementById('mainNav').classList.toggle('open'));
@@ -357,6 +372,13 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('addMemberModal').classList.remove('show');
           loadInitialData();
       }
+  });
+  
+  document.getElementById('userSearchSidebar')?.addEventListener('input', (e) => {
+      apiFetch('/api/users').then(users => {
+          const filtered = users.filter(u => u.username.toLowerCase().includes(e.target.value.toLowerCase()));
+          renderAdminSidebar(filtered);
+      });
   });
 
   const animated = document.querySelectorAll('.animated-content');
