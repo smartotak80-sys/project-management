@@ -320,6 +320,23 @@
     </div>
   </div>
 
+  <div id="editMemberModal" class="custom-modal">
+    <div class="custom-modal-content">
+      <span id="closeEditMemberModal" class="close-modal">&times;</span>
+      <h3><i class="fa-solid fa-user-pen"></i> Редагувати учасника</h3>
+      <form id="editMemberForm" class="auth-form">
+        <input type="hidden" id="editMemberId">
+        <input type="text" id="editMemberName" placeholder="Ім'я учасника" required>
+        <input type="text" id="editMemberRole" placeholder="Роль" required>
+        <h4 class="social-header">Соцмережі (не обов'язково)</h4>
+        <input type="text" id="editMemberDiscord" placeholder="Discord юзернейм">
+        <input type="url" id="editMemberYoutube" placeholder="YouTube URL">
+        <input type="url" id="editMemberTg" placeholder="Telegram URL">
+        <button type="submit" class="btn btn-primary full-width">ЗБЕРЕГТИ ЗМІНИ</button>
+      </form>
+    </div>
+  </div>
+  
   <div id="customConfirmModal" class="custom-modal confirm-modal">
     <div class="custom-modal-content">
         <span id="closeConfirmModal" class="close-modal">&times;</span>
