@@ -334,3 +334,26 @@
         <input type="url" id="editMemberTg" placeholder="Telegram URL">
         <button type="submit" class="btn btn-primary full-width">ЗБЕРЕГТИ ЗМІНИ</button>
       </form>
+    </div>
+  </div>
+  
+  <div id="customConfirmModal" class="custom-modal confirm-modal">
+    <div class="custom-modal-content">
+        <span id="closeConfirmModal" class="close-modal">&times;</span>
+        <i class="fa-solid fa-triangle-exclamation" style="color: var(--accent); font-size: 30px; margin-bottom: 15px;"></i>
+        <p id="confirmMessage" style="font-size: 16px; margin-bottom: 25px;"></p>
+        <div class="confirm-actions">
+            <button id="confirmCancelBtn" class="btn btn-outline" style="min-width: 120px;">Скасувати</button>
+            <button id="confirmOkBtn" class="btn btn-primary" style="min-width: 120px;">Так, продовжити</button>
+        </div>
+    </div>
+  </div>
+
+  <div id="lightbox" class="lightbox-modal">
+    <span id="lightboxCloseBtn" class="lightbox-close">&times;</span>
+    <div class="lightbox-content">
+        <img id="lightboxImage" src="" alt="Gallery Image">
+    </div>
+  </div>
+</body>
+</html>
