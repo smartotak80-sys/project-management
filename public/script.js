@@ -2,12 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
   const MAX_MEMBER_PER_USER = 1; 
 
-  // --- HELPERS (Локальне сховище тільки для сесії адміна) ---
+  // --- HELPERS ---
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
   
-  // Custom Confirm
   function customConfirm(message, callback) {
       const modal = document.getElementById('customConfirmModal');
       const msg = document.getElementById('confirmMessage');
@@ -40,13 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let members = [];
   let currentUser = loadCurrentUser(); 
 
-  // --- API FETCH (Функція для спілкування з сервером) ---
+  // --- API FETCH FUNCTION ---
   async function apiFetch(url, options = {}) {
       try {
           const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
           const response = await fetch(url, { ...options, headers });
           const data = await response.json();
           if (!response.ok) { 
+              // customConfirm(data.message || 'Помилка сервера', true); 
               console.error("API Error:", data);
               return null; 
           }
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
-  // --- LOAD DATA (Завантаження даних при старті) ---
+  // --- LOAD DATA ---
   async function loadInitialData() {
       // 1. Members
       const m = await apiFetch('/api/members');
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const g = await apiFetch('/api/gallery');
       if (g) renderGallery(g);
 
-      // 4. Users Count
+      // 4. Users Count (для кнопки реєстрації)
       const counts = await apiFetch('/api/users/count');
       if(counts){
           const tabReg = document.getElementById('tabRegister');
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if(document.getElementById('totalAdminsSidebar')) document.getElementById('totalAdminsSidebar').textContent = counts.totalAdmins;
       }
 
-      // 5. Admin Sidebar (Якщо адмін)
+      // 5. Admin Sidebar Data
       if (currentUser && currentUser.role === 'admin') {
           const users = await apiFetch('/api/users');
           if (users) renderAdminSidebar(users);
@@ -157,53 +157,47 @@ document.addEventListener('DOMContentLoaded', () => {
            <div class="admin-only"><button class="btn btn-delete" style="width:100%" onclick="window.deleteGallery('${g.id}')">Видалити</button></div>
         </div>`).join('') : '<p class="muted">Пусто</p>';
       
+      // Зберігаємо глобально для лайтбоксу
       window.galleryData = list;
       checkAnimate();
   }
 
-  // --- ОНОВЛЕНИЙ СПИСОК КОРИСТУВАЧІВ (БЕЗ "М", З ПАРОЛЕМ) ---
   function renderAdminSidebar(users) {
       const el = document.getElementById('userDatabaseSidebar');
       if(!el) return;
       
       el.innerHTML = users.map(u => {
           const isMe = currentUser && u.username === currentUser.username;
-          // Статус Online/Offline
           const isOnline = isMe ? true : (Math.random() > 0.4); 
           const statusClass = isOnline ? 'online' : 'offline';
-          const statusText = isOnline ? 'ON' : 'OFF';
           
-          let dateStr = '---';
+          let dateStr = 'Невідомо';
           if (u.regDate) {
               const d = new Date(u.regDate);
-              dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+              dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
           }
 
-          // ВІДОБРАЖЕННЯ ДАНИХ У СПИСКУ
           return `
-            <div class="user-card-row">
-                <div class="u-status-indicator ${statusClass}"></div>
-                <div class="u-details-grid">
-                    <div class="u-field u-login"><i class="fa-solid fa-user"></i> ${u.username}</div>
-                    <div class="u-field u-email"><i class="fa-solid fa-envelope"></i> ${u.email}</div>
-                    <div class="u-field u-pass"><i class="fa-solid fa-key"></i> ${u.password}</div>
-                    <div class="u-meta">
-                        <span class="u-role-tag ${u.role}">${u.role.toUpperCase()}</span>
-                        <span class="u-date-tag">${dateStr}</span>
+            <div class="user-card-mini">
+                <div class="u-main">
+                    <div class="u-avatar-mini ${statusClass}">${u.username[0].toUpperCase()}</div>
+                    <div class="u-info">
+                        <span class="u-name">${u.username} ${u.role==='admin'?'<i class="fa-solid fa-crown" style="color:#eab308"></i>':''}</span>
+                        <span class="u-created"><i class="fa-regular fa-calendar"></i> ${dateStr}</span>
                     </div>
                 </div>
-                ${(!isMe && u.role!=='admin') ? 
-                    `<button class="btn-ban-row" onclick="window.banUser('${u.username}')" title="Видалити"><i class="fa-solid fa-trash"></i></button>` 
-                    : ''}
+                ${(!isMe && u.role!=='admin') ? `<button class="btn-ban" onclick="window.banUser('${u.username}')"><i class="fa-solid fa-ban"></i></button>` : ''}
             </div>
           `;
       }).join('');
   }
 
-  // --- GLOBAL ACTIONS ---
+  // --- GLOBAL ACTIONS (Window) ---
   window.editMember = async (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
+      // Тут можна відкрити модальне вікно редагування, яке ми робили раніше.
+      // Для простоти поки залишимо prompt, або підключіть editMemberModal з попереднього коду.
       const newName = prompt("Нове ім'я:", m.name);
       if(newName) {
           await apiFetch(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
@@ -214,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.deleteMember = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteNews = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteGallery = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); loadInitialData(); } });
-  window.banUser = async (u) => customConfirm(`Видалити користувача ${u}?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadInitialData(); } });
+  window.banUser = async (u) => customConfirm(`Забанити ${u}?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadInitialData(); } });
   
   window.openLightbox = (idx) => {
       const g = window.galleryData || [];
@@ -233,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(currentUser) {
           document.body.classList.add('is-logged-in');
           if(currentUser.role === 'admin') document.body.classList.add('is-admin');
-          txt.textContent = currentUser.role==='admin' ? 'PANEL' : currentUser.username;
+          txt.textContent = currentUser.role==='admin' ? 'ADMIN PANEL' : currentUser.username;
           btn.classList.toggle('btn-primary', currentUser.role==='admin');
       } else {
           document.body.classList.remove('is-logged-in', 'is-admin');
