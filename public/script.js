@@ -1,7 +1,8 @@
-// script.js — UNIQUE CHECK UI
+// script.js — MEMBER LIMIT UI
 
 document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
+  const MAX_MEMBER_PER_USER = 1; // Константа для UI перевірки
   
   // --- HELPERS ---
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
@@ -81,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if(counts){
           const tabReg = document.getElementById('tabRegister');
           if (tabReg) {
-            // Якщо користувачів >= ліміту, блокуємо кнопку
             if (counts.totalUsers >= counts.maxUsers) {
               tabReg.textContent = 'Реєстрація (Закрито)';
               tabReg.disabled = true;
@@ -222,8 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const body = { username: regUser.value, email: regEmail.value, password: regPass.value };
       if(regPass.value!==regPassConfirm.value) return customConfirm('Паролі різні');
-      
-      // Відправляємо запит. Якщо повернеться помилка (дублікат), apiFetch покаже її в customConfirm
       const res = await apiFetch('/api/auth/register', {method:'POST', body:JSON.stringify(body)});
       if(res) { customConfirm('Готово!'); location.reload(); }
   });
@@ -234,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if(res && res.success) { saveCurrentUser(res.user); location.reload(); }
   });
 
-  // Adding Content
   document.getElementById('addNewsBtn')?.addEventListener('click', async ()=>{
       if(await apiFetch('/api/news', {method:'POST', body:JSON.stringify({title:newsTitle.value, date:newsDate.value, summary:newsSummary.value})})) loadInitialData();
   });
@@ -242,15 +239,26 @@ document.addEventListener('DOMContentLoaded', () => {
       if(await apiFetch('/api/gallery', {method:'POST', body:JSON.stringify({url:galleryUrl.value})})) loadInitialData();
   });
   
-  // Member Modal
+  // Member Modal & Limit Check
   document.getElementById('addMemberBtn')?.addEventListener('click', ()=>{
       if(!currentUser) return customConfirm('Увійдіть');
+      
+      // КЛІЄНТСЬКА ПЕРЕВІРКА ЛІМІТУ
+      if (currentUser.role !== 'admin') {
+          const myMembers = members.filter(m => m.owner === currentUser.username);
+          if (myMembers.length >= MAX_MEMBER_PER_USER) {
+              return customConfirm(`Ви вже створили 1 учасника. Видаліть старого, щоб створити нового.`);
+          }
+      }
+      
       document.getElementById('addMemberModal').classList.add('show');
   });
+
   document.getElementById('closeMemberModal')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.remove('show'));
   document.getElementById('addMemberForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const body = { name:memberNewName.value, role:memberNewRole.value, discord:memberNewDiscord.value, youtube:memberNewYoutube.value, tg:memberNewTg.value };
+      // Сервер теж перевірить ліміт, але ми вже перевірили його вище
       if(await apiFetch('/api/members', {method:'POST', body:JSON.stringify(body)})) {
           document.getElementById('addMemberModal').classList.remove('show');
           loadInitialData();
