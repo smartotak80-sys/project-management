@@ -1,4 +1,4 @@
-// script.js — ВЕРСІЯ З ДЕТАЛЬНИМ ПОШУКОМ ПОМИЛОК
+// script.js — FIXED HEADERS ENCODING
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- КОНСТАНТИ ---
@@ -135,13 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let allUsersCache = [];
 
 
-  // --- API ФУНКЦІЇ (ОНОВЛЕНА ЛОГІКА ПОМИЛОК) ---
+  // --- API ФУНКЦІЇ (ОНОВЛЕНА ЛОГІКА КОДУВАННЯ) ---
   
   function getAuthHeaders() {
       if (!currentUser) return {};
+      // ВИПРАВЛЕННЯ: Кодуємо заголовки, щоб пропустити емодзі та кирилицю
       return {
-          'X-Auth-User': currentUser.username,
-          'X-Auth-Role': currentUser.role
+          'X-Auth-User': encodeURIComponent(currentUser.username),
+          'X-Auth-Role': encodeURIComponent(currentUser.role)
       };
   }
 
@@ -155,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const response = await fetch(url, { ...options, headers });
           
-          // Перевіряємо тип контенту перед парсингом JSON
           const contentType = response.headers.get("content-type");
           if (!contentType || !contentType.includes("application/json")) {
               const text = await response.text();
@@ -166,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (!response.ok) {
               const message = data.message || `Помилка API: ${response.status}`;
-              // Не показуємо алерт для 401 (не авторизований), просто повертаємо null
               if (response.status !== 401) {
                   customConfirm(message);
               }
@@ -174,9 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           return data;
       } catch (error) {
-          console.error("Деталі помилки Fetch:", error);
-          // ТУТ МИ ПОБАЧИМО РЕАЛЬНУ ПРИЧИНУ
-          customConfirm(`DEBUG ERROR: ${error.message}`);
+          console.error("Fetch Error:", error);
+          customConfirm(`Помилка з'єднання: ${error.message}`);
           return null;
       }
   }
@@ -184,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- ФУНКЦІЇ ЗАВАНТАЖЕННЯ ---
   async function loadInitialData() {
-      console.log("Починаємо завантаження даних...");
       
       const membersData = await apiFetch('/api/members');
       if (membersData) {
@@ -561,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAdminSidebarData(userSearchSidebar ? userSearchSidebar.value : '');
       } else {
         customConfirm(`Вийти з акаунту?`, (res) => {
-          if (res) { currentUser = null; removeCurrentUser(); updateAuthUI(); loadInitialData(); }
+          if (res) { currentUser = null; removeCurrentUser(); updateAuthUI(); loadInitialData();}
         });
       }
     } else {
