@@ -2,12 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
   const MAX_MEMBER_PER_USER = 1; 
 
-  // --- HELPERS ---
+  // --- HELPERS (Локальне сховище тільки для сесії адміна) ---
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
   
-  // Custom Confirm Modal
+  // Custom Confirm
   function customConfirm(message, callback) {
       const modal = document.getElementById('customConfirmModal');
       const msg = document.getElementById('confirmMessage');
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if(okBtn) okBtn.textContent = 'Зрозуміло';
       } else {
           if(cancelBtn) cancelBtn.style.display = 'inline-block';
-          if(okBtn) okBtn.textContent = 'Так';
+          if(okBtn) okBtn.textContent = 'Так, продовжити';
       }
       msg.textContent = message;
       modal.classList.add('show');
@@ -40,37 +40,56 @@ document.addEventListener('DOMContentLoaded', () => {
   let members = [];
   let currentUser = loadCurrentUser(); 
 
-  // --- API FETCH ---
+  // --- API FETCH (Функція для спілкування з сервером) ---
   async function apiFetch(url, options = {}) {
       try {
           const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
           const response = await fetch(url, { ...options, headers });
           const data = await response.json();
-          if (!response.ok) return null;
+          if (!response.ok) { 
+              console.error("API Error:", data);
+              return null; 
+          }
           return data;
       } catch (error) {
           console.error("Network Error:", error);
+          customConfirm("Помилка з'єднання з сервером.", true);
           return null;
       }
   }
 
-  // --- LOAD DATA ---
+  // --- LOAD DATA (Завантаження даних при старті) ---
   async function loadInitialData() {
+      // 1. Members
       const m = await apiFetch('/api/members');
       if (m) { members = m; renderMembers(); }
       
+      // 2. News
       const n = await apiFetch('/api/news');
       if (n) renderNews(n);
       
+      // 3. Gallery
       const g = await apiFetch('/api/gallery');
       if (g) renderGallery(g);
 
+      // 4. Users Count
       const counts = await apiFetch('/api/users/count');
       if(counts){
+          const tabReg = document.getElementById('tabRegister');
+          if (tabReg) {
+            if (counts.totalUsers >= counts.maxUsers) {
+              tabReg.textContent = 'Реєстрація (Закрито)';
+              tabReg.disabled = true;
+            } else {
+              tabReg.textContent = 'Реєстрація';
+              tabReg.disabled = false;
+            }
+          }
           if(document.getElementById('totalUsersSidebar')) document.getElementById('totalUsersSidebar').textContent = counts.totalUsers;
           if(document.getElementById('totalAdminsSidebar')) document.getElementById('totalAdminsSidebar').textContent = counts.totalAdmins;
       }
 
+      // 5. Admin Sidebar (Якщо адмін)
       if (currentUser && currentUser.role === 'admin') {
           const users = await apiFetch('/api/users');
           if (users) renderAdminSidebar(users);
@@ -80,9 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- RENDERERS ---
+
   function renderMembers(filter='') {
     const grid = document.getElementById('membersGrid');
     if(!grid) return;
+    
     const list = members.filter(m => (m.name + ' ' + m.role).toLowerCase().includes(filter.toLowerCase()));
     
     if(list.length===0) { grid.innerHTML = '<p class="muted">Немає учасників</p>'; return; }
@@ -91,21 +112,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const isOwner = currentUser && currentUser.username === m.owner;
       const isAdmin = currentUser?.role === 'admin';
       
+      let socialLinksHtml = '<div class="social-links">';
+      if (m.links?.discord) socialLinksHtml += `<span class="social-link"><i class="fa-brands fa-discord"></i></span>`;
+      if (m.links?.youtube) socialLinksHtml += `<a href="${m.links.youtube}" target="_blank" class="social-link link-yt"><i class="fa-brands fa-youtube"></i></a>`;
+      if (m.links?.tg) socialLinksHtml += `<a href="${m.links.tg}" target="_blank" class="social-link link-tg"><i class="fa-brands fa-telegram"></i></a>`;
+      socialLinksHtml += '</div>';
+
       return `
         <div class="member animated-content">
-          <h3>${m.name}</h3>
-          <div class="role-badge">${m.role}</div>
-          <div class="social-links">
-             ${m.links?.discord ? `<span class="social-link"><i class="fa-brands fa-discord"></i></span>` : ''}
+          <div class="member-top">
+            <h3>${m.name}</h3>
+            <div class="role-badge">${m.role}</div>
+            ${socialLinksHtml}
           </div>
           ${(isOwner || isAdmin) ? 
-            `<div class="member-actions admin-only">
-              <button class="btn-edit" onclick="window.editMember('${m.id}')"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn-delete" onclick="window.deleteMember('${m.id}')"><i class="fa-solid fa-trash"></i></button>
+            `<div class="member-actions admin-only" style="display:flex; gap:10px; margin-top:15px;">
+              <button class="btn btn-edit" onclick="window.editMember('${m.id}')"><i class="fa-solid fa-pen"></i> РЕД.</button>
+              <button class="btn btn-delete" onclick="window.deleteMember('${m.id}')"><i class="fa-solid fa-trash"></i> ВИД.</button>
             </div>` : ''}
         </div>
       `;
     }).join('');
+    
     checkAnimate();
   }
 
@@ -115,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
       el.innerHTML = list.length ? list.map(n => `
         <div class="news-item animated-content">
            <strong>${n.title}</strong><div class="meta">${n.date}</div><p>${n.summary}</p>
-           <div class="admin-only"><button class="btn-delete" style="background:none; border:none; color:red; cursor:pointer;" onclick="window.deleteNews('${n.id}')">Видалити</button></div>
+           <div class="admin-only"><button class="btn btn-delete" onclick="window.deleteNews('${n.id}')">Видалити</button></div>
         </div>`).join('') : '<p class="muted">Немає подій</p>';
       checkAnimate();
   }
@@ -126,46 +154,53 @@ document.addEventListener('DOMContentLoaded', () => {
       el.innerHTML = list.length ? list.map((g, idx) => `
         <div class="animated-content">
            <img src="${g.url}" onclick="window.openLightbox(${idx})">
-           <div class="admin-only"><button class="btn-delete" style="width:100%; margin-top:5px; background:none; border:1px solid red; color:red; cursor:pointer;" onclick="window.deleteGallery('${g.id}')">Видалити</button></div>
+           <div class="admin-only"><button class="btn btn-delete" style="width:100%" onclick="window.deleteGallery('${g.id}')">Видалити</button></div>
         </div>`).join('') : '<p class="muted">Пусто</p>';
+      
       window.galleryData = list;
       checkAnimate();
   }
 
+  // --- ОНОВЛЕНИЙ СПИСОК КОРИСТУВАЧІВ (БЕЗ "М", З ПАРОЛЕМ) ---
   function renderAdminSidebar(users) {
       const el = document.getElementById('userDatabaseSidebar');
       if(!el) return;
       
       el.innerHTML = users.map(u => {
           const isMe = currentUser && u.username === currentUser.username;
+          // Статус Online/Offline
           const isOnline = isMe ? true : (Math.random() > 0.4); 
           const statusClass = isOnline ? 'online' : 'offline';
+          const statusText = isOnline ? 'ON' : 'OFF';
+          
           let dateStr = '---';
           if (u.regDate) {
               const d = new Date(u.regDate);
-              dateStr = `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
+              dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
           }
 
+          // ВІДОБРАЖЕННЯ ДАНИХ У СПИСКУ
           return `
             <div class="user-card-row">
-                <div class="u-header">
-                    <span class="u-login"><span class="u-status ${statusClass}"></span> ${u.username}</span>
-                    ${(!isMe && u.role!=='admin') ? `<button class="btn-ban-row" onclick="window.banUser('${u.username}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+                <div class="u-status-indicator ${statusClass}"></div>
+                <div class="u-details-grid">
+                    <div class="u-field u-login"><i class="fa-solid fa-user"></i> ${u.username}</div>
+                    <div class="u-field u-email"><i class="fa-solid fa-envelope"></i> ${u.email}</div>
+                    <div class="u-field u-pass"><i class="fa-solid fa-key"></i> ${u.password}</div>
+                    <div class="u-meta">
+                        <span class="u-role-tag ${u.role}">${u.role.toUpperCase()}</span>
+                        <span class="u-date-tag">${dateStr}</span>
+                    </div>
                 </div>
-                <div class="u-details">
-                    <div class="u-detail-row"><i class="fa-solid fa-envelope"></i> ${u.email}</div>
-                    <div class="u-detail-row"><i class="fa-solid fa-key"></i> <span class="u-pass-text">${u.password}</span></div>
-                </div>
-                <div class="u-footer">
-                    <span class="u-role-tag ${u.role}">${u.role.toUpperCase()}</span>
-                    <span>${dateStr}</span>
-                </div>
+                ${(!isMe && u.role!=='admin') ? 
+                    `<button class="btn-ban-row" onclick="window.banUser('${u.username}')" title="Видалити"><i class="fa-solid fa-trash"></i></button>` 
+                    : ''}
             </div>
           `;
       }).join('');
   }
 
-  // --- ACTIONS ---
+  // --- GLOBAL ACTIONS ---
   window.editMember = async (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
@@ -191,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   };
 
-  // --- UI & AUTH ---
+  // --- AUTH & UI ---
   function updateAuthUI() {
       const btn = document.getElementById('openAuthBtn');
       const txt = document.getElementById('authBtnText');
@@ -205,23 +240,27 @@ document.addEventListener('DOMContentLoaded', () => {
           txt.textContent = 'Вхід';
       }
       
+      // Кнопка додавання
       const addBtn = document.getElementById('addMemberBtn');
       if(addBtn) {
           if(currentUser) {
               const myCount = members.filter(m => m.owner === currentUser.username).length;
               if(currentUser.role !== 'admin' && myCount >= MAX_MEMBER_PER_USER) {
-                  addBtn.disabled = true; addBtn.innerHTML = '<i class="fa-solid fa-lock"></i> ЛІМІТ';
+                  addBtn.disabled = true; 
+                  addBtn.innerHTML = '<i class="fa-solid fa-lock"></i> ЛІМІТ';
               } else {
-                  addBtn.disabled = false; addBtn.innerHTML = 'Додати учасника';
+                  addBtn.disabled = false;
+                  addBtn.innerHTML = 'Додати учасника';
               }
           }
       }
   }
 
-  // --- EVENT LISTENERS ---
+  // EVENT LISTENERS
   document.getElementById('navToggle')?.addEventListener('click', ()=>document.getElementById('mainNav').classList.toggle('open'));
   document.getElementById('lightboxCloseBtn')?.addEventListener('click', ()=>document.getElementById('lightbox').classList.remove('open'));
   
+  // Auth
   document.getElementById('openAuthBtn')?.addEventListener('click', ()=>{
       if(currentUser) {
           if(currentUser.role==='admin') { 
@@ -239,43 +278,38 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('closeSidebar')?.addEventListener('click', ()=>document.getElementById('adminSidebar').classList.remove('open'));
   document.getElementById('adminLogoutBtn')?.addEventListener('click', ()=>{ removeCurrentUser(); location.reload(); });
 
+  // Forms
   document.getElementById('loginForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const res = await apiFetch('/api/auth/login', { method:'POST', body: JSON.stringify({ username: loginUser.value, password: loginPass.value }) });
-      if(res && res.success) { saveCurrentUser(res.user); location.reload(); } else { customConfirm(res?.message || 'Помилка'); }
+      if(res && res.success) {
+          saveCurrentUser(res.user);
+          location.reload();
+      } else {
+          customConfirm(res?.message || 'Помилка');
+      }
   });
 
   document.getElementById('registerForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(regPass.value !== regPassConfirm.value) return customConfirm('Паролі різні');
       const res = await apiFetch('/api/auth/register', { method:'POST', body: JSON.stringify({ username: regUser.value, email: regEmail.value, password: regPass.value }) });
-      if(res && res.success) { customConfirm('Успіх! Увійдіть.'); location.reload(); } else { customConfirm(res?.message || 'Помилка'); }
+      if(res && res.success) {
+          customConfirm('Успіх! Увійдіть.');
+          location.reload();
+      } else {
+          customConfirm(res?.message || 'Помилка');
+      }
   });
 
-  const addNewsBtn = document.getElementById('addNewsBtn');
-  if(addNewsBtn) {
-      addNewsBtn.addEventListener('click', async () => {
-          const body = { title: newsTitle.value, date: newsDate.value, summary: newsSummary.value };
-          if(!body.title || !body.date) return customConfirm('Заповніть поля');
-          await apiFetch('/api/news', { method: 'POST', body: JSON.stringify(body) });
-          loadInitialData();
-      });
-  }
-
-  const addGalleryBtn = document.getElementById('addGalleryBtn');
-  if(addGalleryBtn) {
-      addGalleryBtn.addEventListener('click', async () => {
-          if(!galleryUrl.value) return;
-          await apiFetch('/api/gallery', { method: 'POST', body: JSON.stringify({ url: galleryUrl.value }) });
-          loadInitialData();
-      });
-  }
-
+  // Adding Content
   document.getElementById('addMemberForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(!currentUser) return;
       const body = {
-          name: memberNewName.value, role: memberNewRole.value, owner: currentUser.username,
+          name: memberNewName.value,
+          role: memberNewRole.value,
+          owner: currentUser.username,
           links: { discord: memberNewDiscord.value, youtube: memberNewYoutube.value, tg: memberNewTg.value }
       };
       await apiFetch('/api/members', { method:'POST', body: JSON.stringify(body) });
@@ -286,13 +320,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('addMemberBtn')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.add('show'));
   document.getElementById('closeMemberModal')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.remove('show'));
 
-  // Switch Auth Tabs
-  const tabLogin = document.getElementById('tabLogin');
-  const tabRegister = document.getElementById('tabRegister');
-  if(tabLogin && tabRegister) {
-      tabLogin.addEventListener('click', () => { tabLogin.classList.add('active'); tabRegister.classList.remove('active'); document.getElementById('loginForm').style.display='block'; document.getElementById('registerForm').style.display='none'; });
-      tabRegister.addEventListener('click', () => { tabRegister.classList.add('active'); tabLogin.classList.remove('active'); document.getElementById('registerForm').style.display='block'; document.getElementById('loginForm').style.display='none'; });
-  }
+  // Admin Clock
+  setInterval(() => {
+    const now = new Date();
+    const clock = document.getElementById('adminClock');
+    if(clock) clock.textContent = now.toLocaleTimeString('uk-UA', {hour12:false});
+  }, 1000);
 
   // Animation
   const animated = document.querySelectorAll('.animated-content');
@@ -302,5 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   window.addEventListener('scroll', checkAnimate);
 
+  // Init
   loadInitialData();
 });
