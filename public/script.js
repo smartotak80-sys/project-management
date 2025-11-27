@@ -1,4 +1,4 @@
-// script.js — EDIT BUTTON ADDED
+// script.js — FULL BUTTON NAMES
 
 document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if(m.links?.tg) socials += `<a href="${m.links.tg}" target="_blank" class="social-link link-tg"><i class="fa-brands fa-telegram"></i></a>`;
           socials += '</div>';
           
-          // ТУТ ДОДАНО КНОПКУ РЕДАГУВАННЯ
+          // --- ЗМІНЕНО ТЕКСТ КНОПОК ТУТ ---
           return `
             <div class="member animated-content">
               <div class="member-top">
@@ -175,12 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${socials}
               </div>
               ${(isOwner || isAdmin) ? `
-              <div class="member-actions admin-only" style="display:flex; gap:10px; margin-top:15px;">
-                  <button class="btn" style="flex:1; border:1px solid #aaa; color:#fff;" onclick="window.editMember(${m.id})">
-                    <i class="fa-solid fa-pen"></i> Ред.
+              <div class="member-actions admin-only" style="display:flex; gap:10px; margin-top:15px; flex-wrap: wrap;">
+                  <button class="btn" style="flex:1; border:1px solid #aaa; color:#fff; min-width: 120px;" onclick="window.editMember(${m.id})">
+                    <i class="fa-solid fa-pen"></i> РЕДАГУВАТИ
                   </button>
-                  <button class="btn btn-delete" style="flex:1;" onclick="window.deleteMember(${m.id})">
-                    <i class="fa-solid fa-trash"></i> Вид.
+                  <button class="btn btn-delete" style="flex:1; min-width: 120px;" onclick="window.deleteMember(${m.id})">
+                    <i class="fa-solid fa-trash"></i> ВИДАЛИТИ
                   </button>
               </div>` : ''}
             </div>`;
@@ -222,14 +222,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- ACTIONS ---
   
-  // ФУНКЦІЯ РЕДАГУВАННЯ
   window.editMember = async (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
       
-      // Використовуємо прості prompt для редагування (найшвидший спосіб без зміни HTML)
       const newName = prompt("Введіть нове ім'я:", m.name);
-      if(newName === null) return; // Натиснуто "Скасувати"
+      if(newName === null) return; 
 
       const newRole = prompt("Введіть нову роль:", m.role);
       if(newRole === null) return;
@@ -239,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const newTg = prompt("Telegram (залиште пустим, щоб видалити):", m.links?.tg || '');
 
       const updateData = {
-          name: newName.trim() || m.name, // Якщо пусте, залишаємо старе (або можна дозволити пусте)
+          name: newName.trim() || m.name, 
           role: newRole.trim() || m.role,
           discord: newDiscord,
           youtube: newYoutube,
@@ -317,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentUser.role !== 'admin') {
           const myMembers = members.filter(m => m.owner === currentUser.username);
           if (myMembers.length >= MAX_MEMBER_PER_USER) {
-              // Ліміт перевіряється, але кнопка має бути заблокована візуально
               return;
           }
       }
