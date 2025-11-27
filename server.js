@@ -96,7 +96,6 @@ app.put('/api/members/:id', authenticateUser, async (req, res) => {
     
     m.name = req.body.name;
     m.role = req.body.role;
-    // Оновлюємо лінки
     m.links = {
         discord: req.body.discord,
         youtube: req.body.youtube,
