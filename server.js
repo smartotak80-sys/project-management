@@ -9,10 +9,12 @@ import { Pool } from "pg";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 8080;
-const ADMIN_LOGIN = process.env.ADMIN_LOGIN || "famillybarracuda@gmail.com";
-const ADMIN_PASS = process.env.ADMIN_PASS || "barracuda123";
-const ADMIN_SECRET = process.env.ADMIN_SECRET || "super-secret-change-it";
+PORT=8080
+DATABASE_URL=postgresql://postgres:ZhmhAaXxPUAUDccaHyKiDfpnvprwJdQl@metro.proxy.rlwy.net:44975/railway
+ADMIN_LOGIN=famillybarracuda@gmail.com
+ADMIN_PASS=barracuda123
+ADMIN_SECRET=please-change-this-secret
+
 
 // Database
 const DATABASE_URL = process.env.DATABASE_URL;
