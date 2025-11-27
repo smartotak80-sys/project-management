@@ -103,6 +103,8 @@ body {
 .btn-outline { border: 1px solid var(--glass-border); color: var(--text-muted); }
 .btn-outline:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #fff; }
 
+.full-width { width: 100%; }
+
 /* Scroll Animation Helper */
 .animated-content { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
 .animated-content.animate-in { opacity: 1; transform: translateY(0); }
@@ -229,6 +231,28 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 }
 .custom-modal-content { border-color: #3b82f6; box-shadow: 0 0 30px rgba(59, 130, 246, 0.2); }
 .confirm-modal .custom-modal-content { border-color: var(--accent); box-shadow: 0 0 30px rgba(255, 42, 42, 0.2); text-align: center; }
+
+/* Стилі для форм у модальних вікнах */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Проміжок між інпутами і кнопкою */
+}
+.auth-form input {
+    margin: 0; /* Прибираємо дефолтні марджини, якщо були */
+}
+/* Забезпечення, що інпути і кнопка займають повну ширину */
+.auth-form input, 
+.auth-form button {
+    width: 100%;
+}
+.social-header {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+}
 
 .close-auth, .close-modal { position: absolute; top: 15px; right: 20px; color: var(--text-muted); font-size: 28px; cursor: pointer; transition: 0.3s; }
 .close-auth:hover, .close-modal:hover { color: #fff; transform: rotate(90deg); }
@@ -442,12 +466,6 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 
   .section { padding: 40px 0; }
   .section h2 { font-size: 24px; }
-  
-  /* Collapse controls */
-  .members-controls, .gallery-controls, .events-controls { flex-direction: column; }
-  .members-controls input, .members-controls button,
-  .gallery-controls input, .gallery-controls button,
-  .events-controls input, .events-controls textarea, .events-controls button { width: 100%; min-width: 100%; }
   
   /* Адаптація модальних вікон (займають майже весь екран) */
   .auth-content, .custom-modal-content {
