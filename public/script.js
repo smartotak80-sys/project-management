@@ -1,39 +1,33 @@
-// script.js — Railway-aware client (updated)
-// - Attempts to POST member to server for everyone to see.
-// - If server rejects non-admin POST, keep a local unsynced queue and show locally.
-// - Admins use token from /auth/login (server returns token).
-// - Shows members/news/gallery from server, merges local-unsynced members for local view.
-
-const API_BASE = "https://project-management-production-f175.up.railway.app";
+// script.js — Client for "Variant 1" (everyone sees all; user can create 1 member; events/gallery admin-only)
+const API_BASE = "https://project-management-production-f175.up.railway.app"; // <- твій URL
 const CURRENT_USER_KEY = 'barakuda_current_user';
-const LOCAL_UNSYNC_MEMBERS_KEY = 'barakuda_local_unsynced_members_v1';
-const MEMBERS_KEY = 'barakuda_members_v3'; // local cache key (optional)
-const NEWS_KEY = 'barakuda_news_v1';
-const GALLERY_KEY = 'barakuda_gallery_v1';
-const USERS_KEY = 'barakuda_users_db';
 
-let currentUser = loadLocal(CURRENT_USER_KEY) || null;
-let adminToken = currentUser?.adminToken || null;
-
-// ---------- helpers ----------
-function loadLocal(k){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){return null} }
+// ---------- storage helpers ----------
+function loadLocal(k){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null }catch(e){return null} }
 function saveLocal(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function clearLocal(k){ try{ localStorage.removeItem(k); }catch(e){} }
 function esc(s){ return String(s||'').replace(/[&<>"'`=/]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','=':'&#x3D;','`':'&#x60'}[c])); }
 
-async function apiGET(path){ const r = await fetch(API_BASE + path); if(!r.ok) throw r; return r.json(); }
+// ---------- api helpers ----------
+async function apiGET(path){
+  const r = await fetch(API_BASE + path);
+  if(!r.ok) throw r;
+  return r.json();
+}
 async function apiPOST(path, body, token){
   const headers = {'Content-Type':'application/json'};
   if(token) headers['Authorization'] = `Bearer ${token}`;
   const r = await fetch(API_BASE + path, { method:'POST', headers, body: JSON.stringify(body) });
-  let json; try{ json = await r.json(); }catch(e){ json = null; }
+  let json = null;
+  try{ json = await r.json() }catch(e){}
   return { ok: r.ok, status: r.status, body: json };
 }
 async function apiDELETE(path, token){
   const headers = {};
   if(token) headers['Authorization'] = `Bearer ${token}`;
   const r = await fetch(API_BASE + path, { method:'DELETE', headers });
-  let json; try{ json = await r.json(); }catch(e){ json = null; }
+  let json = null;
+  try{ json = await r.json() }catch(e){}
   return { ok: r.ok, status: r.status, body: json };
 }
 
@@ -48,7 +42,6 @@ const authModal = document.getElementById('authModal');
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 const tabLogin = document.getElementById('tabLogin');
-const tabRegister = document.getElementById('tabRegister');
 
 const addMemberBtn = document.getElementById('addMemberBtn');
 const addMemberModal = document.getElementById('addMemberModal');
@@ -72,63 +65,71 @@ const adminSidebar = document.getElementById('adminSidebar');
 const closeSidebar = document.getElementById('closeSidebar');
 const adminLogoutBtn = document.getElementById('adminLogoutBtn');
 const userDatabaseSidebar = document.getElementById('userDatabaseSidebar');
-const totalUsersSidebar = document.getElementById('totalUsersSidebar');
-const totalAdminsSidebar = document.getElementById('totalAdminsSidebar');
 
 const memberSearch = document.getElementById('memberSearch');
+
+let currentUser = loadLocal(CURRENT_USER_KEY) || null;
+let adminToken = currentUser?.adminToken || null;
 
 // ---------- UI helpers ----------
 function updateAuthUI(){
   if(!authBtnText) return;
   if(currentUser){
     authBtnText.textContent = esc(currentUser.username);
-    if(currentUser.role === 'admin'){ openAuthBtn.classList.remove('btn-outline'); openAuthBtn.classList.add('btn-primary'); }
-    else { openAuthBtn.classList.remove('btn-primary'); openAuthBtn.classList.add('btn-outline'); }
+    if(currentUser.role === 'admin'){
+      openAuthBtn.classList.remove('btn-outline'); openAuthBtn.classList.add('btn-primary');
+      openAuthBtn.style.boxShadow = "0 0 12px var(--accent)";
+    } else {
+      openAuthBtn.classList.remove('btn-primary'); openAuthBtn.classList.add('btn-outline');
+      openAuthBtn.style.boxShadow = "none";
+    }
   } else {
     authBtnText.textContent = 'Вхід';
     openAuthBtn.classList.add('btn-primary');
     openAuthBtn.classList.remove('btn-outline');
+    openAuthBtn.style.boxShadow = "none";
   }
 
-  // Admin-only controls visibility
   const isAdmin = currentUser && currentUser.role === 'admin';
   if(addNewsBtn) addNewsBtn.style.display = isAdmin ? 'inline-block' : 'none';
   if(addGalleryBtn) addGalleryBtn.style.display = isAdmin ? 'inline-block' : 'none';
   if(addMemberBtn) addMemberBtn.style.display = currentUser ? 'inline-block' : 'none';
 }
 
-// ---------- Render ----------
-function renderMembers(allMembers, filter=''){
+// ---------- render ----------
+function renderMembers(list = [], filter = ''){
   if(!membersGrid) return;
   const lower = (filter||'').toLowerCase();
-  const list = (allMembers||[]).filter(m => (m.name + ' ' + (m.role||'')).toLowerCase().includes(lower));
-  if(list.length===0){ membersGrid.innerHTML = '<p class="muted">Немає учасників</p>'; return; }
+  const items = (list||[]).filter(m => (m.name + ' ' + (m.role||'')).toLowerCase().includes(lower));
+  if(items.length === 0){ membersGrid.innerHTML = '<p class="muted">Немає учасників</p>'; return; }
   const frag = document.createDocumentFragment();
-  list.forEach(m=>{
+  items.forEach(m => {
     const el = document.createElement('div');
     el.className = 'member animated-content';
     el.setAttribute('data-id', m.id);
     const isOwner = currentUser && currentUser.username === m.owner && currentUser.role !== 'admin';
     const canManage = currentUser && (currentUser.role === 'admin' || isOwner);
+
     let social = '';
     if(m.links){
       if(m.links.discord) social += `<span class="social-link" title="Discord: ${esc(m.links.discord)}"><i class="fa-brands fa-discord"></i></span>`;
       if(m.links.youtube) social += `<a href="${esc(m.links.youtube)}" target="_blank" class="social-link link-yt"><i class="fa-brands fa-youtube"></i></a>`;
       if(m.links.tg) social += `<a href="${esc(m.links.tg)}" target="_blank" class="social-link link-tg"><i class="fa-brands fa-telegram"></i></a>`;
     }
+
     el.innerHTML = `
       <div class="member-top">
         <div class="info">
           <h3>${esc(m.name)}</h3>
           <div class="role-badge">${esc(m.role)}</div>
           <div class="social-links">${social}</div>
-          ${isOwner?'<small style="color:#555;display:block;margin-top:5px;">(Ваш запис)</small>':''}
+          ${isOwner ? '<small style="color:#555; display:block; margin-top:6px;">(Ваш запис)</small>' : ''}
         </div>
       </div>
-      ${canManage?`<div class="member-actions">
-        ${currentUser.role==='admin'?`<button class="btn btn-delete" data-action="delete" data-id="${m.id}"><i class="fa-solid fa-trash"></i> Видалити</button>`:''}
-        ${isOwner?`<button class="btn btn-edit" data-action="edit" data-id="${m.id}"><i class="fa-solid fa-pen"></i> Редагувати</button>`:''}
-      </div>`:''}
+      ${canManage ? `<div class="member-actions">
+          ${currentUser.role === 'admin' ? `<button class="btn btn-delete" data-action="delete" data-id="${m.id}"><i class="fa-solid fa-trash"></i> Видалити</button>` : ''}
+          ${isOwner ? `<button class="btn btn-edit" data-action="edit" data-id="${m.id}"><i class="fa-solid fa-pen"></i> Редагувати</button>` : ''}
+        </div>` : ''}
     `;
     frag.appendChild(el);
   });
@@ -136,76 +137,84 @@ function renderMembers(allMembers, filter=''){
   membersGrid.appendChild(frag);
 }
 
-function renderNews(news){
+function renderNews(list = []){
   if(!newsList) return;
-  if(!news || news.length===0){ newsList.innerHTML = '<p class="muted">Немає подій</p>'; return; }
+  if(!list || list.length===0){ newsList.innerHTML = '<p class="muted">Немає подій</p>'; return; }
   newsList.innerHTML = '';
-  [...news].reverse().forEach(n=>{
+  [...list].reverse().forEach(n=>{
     const el = document.createElement('div');
     el.className = 'news-item animated-content';
     el.innerHTML = `
       <strong>${esc(n.title)}</strong>
       <div class="meta">${esc(n.date)}</div>
       <p>${esc(n.summary)}</p>
-      ${ currentUser && currentUser.role==='admin' ? `<div style="margin-top:8px;"><button class="btn btn-delete" data-action="delete-news" data-id="${n.id}">Видалити</button></div>` : '' }
+      ${currentUser && currentUser.role === 'admin' ? `<div style="margin-top:8px"><button class="btn btn-delete" data-action="delete-news" data-id="${n.id}">Видалити</button></div>` : ''}
     `;
     newsList.appendChild(el);
   });
 }
 
-function renderGallery(gallery){
+function renderGallery(list = []){
   if(!galleryGrid) return;
-  if(!gallery || gallery.length===0){ galleryGrid.innerHTML = '<p class="muted">Галерея пуста</p>'; return; }
+  if(!list || list.length===0){ galleryGrid.innerHTML = '<p class="muted">Галерея пуста</p>'; return; }
   galleryGrid.innerHTML = '';
-  gallery.forEach((g, idx)=>{
+  list.forEach((g, idx)=>{
     const d = document.createElement('div');
     d.className = 'animated-content';
     d.innerHTML = `
-      <img src="${esc(g.url)}" alt="gallery photo" onerror="this.src='https://i.postimg.cc/k47tX6Qd/hero-placeholder.jpg'" data-index="${idx}" data-action="lightbox">
-      ${ currentUser && currentUser.role==='admin' ? `<div style="margin-top:6px"><button class="btn btn-delete" data-id="${g.id}" data-action="delete-gallery">Видалити</button></div>` : '' }
+      <img src="${esc(g.url)}" alt="gallery photo" onerror="this.src='https://i.postimg.cc/k47tX6Qd/hero-placeholder.jpg'">
+      ${currentUser && currentUser.role === 'admin' ? `<div style="margin-top:6px"><button class="btn btn-delete" data-id="${g.id}" data-action="delete-gallery">Видалити</button></div>` : ''}
     `;
     galleryGrid.appendChild(d);
   });
 }
 
-// ---------- Merge server + local-unsynced ----------
-function mergeMembers(serverMembers){
-  // Load unsynced local members which couldn't be posted
-  const unsynced = loadLocal(LOCAL_UNSYNC_MEMBERS_KEY) || [];
-  // Merge by unique id (local unsynced have ids too)
-  const map = new Map();
-  (serverMembers || []).forEach(m => map.set(String(m.id), m));
-  unsynced.forEach(m => {
-    if(!map.has(String(m.id))) map.set(String(m.id), m);
-  });
-  return Array.from(map.values());
-}
-
-// ---------- Load everything ----------
+// ---------- loadAll ----------
 async function loadAll(){
   try{
-    const mRes = await apiGET('/api/members').catch(()=>null);
-    const nRes = await apiGET('/api/news').catch(()=>null);
-    const gRes = await apiGET('/api/gallery').catch(()=>null);
+    const [mRes, nRes, gRes] = await Promise.allSettled([
+      fetch(API_BASE + '/api/members'),
+      fetch(API_BASE + '/api/news'),
+      fetch(API_BASE + '/api/gallery')
+    ]);
 
-    const serverMembers = mRes && (mRes.members || mRes) ? (mRes.members || mRes) : [];
-    const serverNews = nRes && (nRes.news || nRes) ? (nRes.news || nRes) : [];
-    const serverGallery = gRes && (gRes.gallery || gRes) ? (gRes.gallery || gRes) : [];
+    // members
+    if(mRes.status === 'fulfilled' && mRes.value.ok){
+      const json = await mRes.value.json();
+      const members = json.members || json || [];
+      saveLocal('cached_members', members);
+      renderMembers(members, memberSearch ? memberSearch.value : '');
+    } else {
+      // fallback to cache
+      const cached = loadLocal('cached_members') || [];
+      renderMembers(cached, memberSearch ? memberSearch.value : '');
+    }
 
-    const mergedMembers = mergeMembers(serverMembers);
-    // render
-    renderMembers(mergedMembers, memberSearch ? memberSearch.value : '');
-    renderNews(serverNews);
-    renderGallery(serverGallery);
+    // news
+    if(nRes.status === 'fulfilled' && nRes.value.ok){
+      const json = await nRes.value.json();
+      const news = json.news || json || [];
+      saveLocal('cached_news', news);
+      renderNews(news);
+    } else {
+      renderNews(loadLocal('cached_news') || []);
+    }
 
-  }catch(err){
-    console.error('loadAll error', err);
-    // On error, still render cached + local unsynced
-    const cachedMembers = loadLocal(MEMBERS_KEY) || [];
-    const merged = mergeMembers(cachedMembers);
-    renderMembers(merged, memberSearch ? memberSearch.value : '');
-    renderNews(loadLocal(NEWS_KEY) || []);
-    renderGallery(loadLocal(GALLERY_KEY) || []);
+    // gallery
+    if(gRes.status === 'fulfilled' && gRes.value.ok){
+      const json = await gRes.value.json();
+      const gallery = json.gallery || json || [];
+      saveLocal('cached_gallery', gallery);
+      renderGallery(gallery);
+    } else {
+      renderGallery(loadLocal('cached_gallery') || []);
+    }
+
+  }catch(e){
+    console.error('loadAll error', e);
+    renderMembers(loadLocal('cached_members') || [], memberSearch ? memberSearch.value : '');
+    renderNews(loadLocal('cached_news') || []);
+    renderGallery(loadLocal('cached_gallery') || []);
   }
 }
 
@@ -217,7 +226,7 @@ async function tryGetMe(){
 }
 
 async function loginHandler(username, password){
-  // Try admin endpoint
+  // try admin login first
   try{
     const r = await fetch(API_BASE + '/auth/login', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -236,18 +245,16 @@ async function loginHandler(username, password){
         return;
       }
     }
-  }catch(e){
-    // ignore, try normal login
-  }
+  }catch(e){ /* ignore */ }
 
-  // Normal login against API (if server supports it)
+  // normal login
   try{
-    const res = await fetch(API_BASE + '/api/login', {
+    const r = await fetch(API_BASE + '/api/login', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ username, password })
     });
-    const data = await res.json().catch(()=>null);
-    if(res.ok && data && data.ok && data.user){
+    const data = await r.json().catch(()=>null);
+    if(r.ok && data && data.ok && data.user){
       currentUser = { username: data.user.username, role: data.user.role || 'member' };
       saveLocal(CURRENT_USER_KEY, currentUser);
       updateAuthUI();
@@ -264,42 +271,38 @@ async function loginHandler(username, password){
 }
 
 async function registerHandler(username, email, password){
-  // Try server register first (if API supports)
   try{
     const r = await fetch(API_BASE + '/api/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ username, email, password })
     });
     const data = await r.json().catch(()=>null);
-    if(r.ok && data && data.ok){ alert('Зареєстровано — тепер увійдіть'); if(tabLogin) tabLogin.click(); return; }
-  }catch(e){
-    // fallback to local-only registration
-  }
+    if(r.ok && data && data.ok){ alert('Зареєстровано — увійдіть'); if(tabLogin) tabLogin.click(); return; }
+  }catch(e){ /* fallback to local registration below */ }
 
-  // Local fallback
-  const users = loadLocal(USERS_KEY) || [];
-  if(users.find(u=>u.username===username)) return alert('Логін зайнятий');
-  users.push({ username, email, password, role: 'member', regDate: new Date().toISOString() });
-  saveLocal(USERS_KEY, users);
-  alert('Зареєстровано локально — увійдіть');
+  // fallback local
+  const users = loadLocal('local_users') || [];
+  if(users.find(u=>u.username===username)) return alert('Логін зайнятий (локально)');
+  users.push({ username, email, password, role:'member', regDate: new Date().toISOString() });
+  saveLocal('local_users', users);
+  alert('Зареєстровано локально. Зайдіть в систему.');
   if(tabLogin) tabLogin.click();
 }
 
-// ---------- Add member flow (user limited to 1) ----------
+// ---------- member creation (limit 1 per user for normal users) ----------
 async function canUserCreateMember(username){
-  // Check server count
   try{
-    const r = await apiGET('/api/members');
-    const arr = r.members || r || [];
-    const owned = arr.filter(m=>m.owner === username).length;
-    const unsynced = loadLocal(LOCAL_UNSYNC_MEMBERS_KEY) || [];
-    const ownedLocal = unsynced.filter(m=>m.owner===username).length;
-    return (owned + ownedLocal) === 0;
+    const r = await fetch(API_BASE + '/api/members');
+    if(!r.ok) throw r;
+    const json = await r.json();
+    const arr = json.members || json || [];
+    const owned = arr.filter(m => m.owner === username).length;
+    return owned === 0;
   }catch(e){
-    // If server unreachable, allow based on local unsynced
-    const unsynced = loadLocal(LOCAL_UNSYNC_MEMBERS_KEY) || [];
-    const ownedLocal = unsynced.filter(m=>m.owner===username).length;
-    return ownedLocal === 0;
+    // if server is down, conservatively allow based on cache
+    const cached = loadLocal('cached_members') || [];
+    const owned = cached.filter(m => m.owner === username).length;
+    return owned === 0;
   }
 }
 
@@ -313,125 +316,89 @@ async function addMemberHandler(formData){
     links: { discord: formData.discord||'', youtube: formData.youtube||'', tg: formData.tg||'' }
   };
 
-  // If admin — post with token
+  // admin posts with token to server
   if(currentUser.role === 'admin'){
     const resp = await apiPOST('/api/members', payload, currentUser.adminToken || adminToken);
-    if(resp.ok){ alert('Учасника додано'); addMemberForm.reset(); addMemberModal.classList.remove('show'); await loadAll(); return; }
-    else { alert('Помилка сервера при додаванні: ' + (resp.body?.error||resp.status)); return; }
+    if(resp.ok){ addMemberForm.reset(); addMemberModal.classList.remove('show'); await loadAll(); alert('Учасника додано (сервер)'); }
+    else alert(resp.body?.error || `Помилка: ${resp.status}`);
+    return;
   }
 
-  // Regular user: try to POST without token (server must allow this to make it global)
-  try{
-    const resp = await apiPOST('/api/members', payload);
-    if(resp.ok){ alert('Учасника додано на сервер (тепер доступний усім)'); addMemberForm.reset(); addMemberModal.classList.remove('show'); await loadAll(); return; }
-    // if server returns 401/403 => not allowed
-    if(resp.status === 401 || resp.status === 403){
-      // Save locally as unsynced
-      const unsynced = loadLocal(LOCAL_UNSYNC_MEMBERS_KEY) || [];
-      unsynced.push(payload);
-      saveLocal(LOCAL_UNSYNC_MEMBERS_KEY, unsynced);
-      // merge and render so this user sees it immediately
-      const srv = (await apiGET('/api/members').catch(()=>({members:[]})) ) || { members: [] };
-      const merged = mergeMembers(srv.members || srv);
-      renderMembers(merged, memberSearch ? memberSearch.value : '');
-      addMemberForm.reset(); addMemberModal.classList.remove('show');
-      alert('Сервер не дозволяє додавати учасників без адміна — запис збережено локально (показаний тільки вам)'); 
-      return;
-    }
-    // other error: push to local as fallback
-    const unsynced = loadLocal(LOCAL_UNSYNC_MEMBERS_KEY) || [];
-    unsynced.push(payload);
-    saveLocal(LOCAL_UNSYNC_MEMBERS_KEY, unsynced);
-    const srv2 = (await apiGET('/api/members').catch(()=>({members:[]})) ) || { members: [] };
-    renderMembers(mergeMembers(srv2.members || srv2), memberSearch ? memberSearch.value : '');
-    addMemberForm.reset(); addMemberModal.classList.remove('show');
-    alert('Не вдалося записати на сервер — збережено локально');
-  }catch(e){
-    console.error('addMemberHandler error', e);
-    const unsynced = loadLocal(LOCAL_UNSYNC_MEMBERS_KEY) || [];
-    unsynced.push(payload);
-    saveLocal(LOCAL_UNSYNC_MEMBERS_KEY, unsynced);
-    const srv2 = (await apiGET('/api/members').catch(()=>({members:[]})) ) || { members: [] };
-    renderMembers(mergeMembers(srv2.members || srv2), memberSearch ? memberSearch.value : '');
-    addMemberForm.reset(); addMemberModal.classList.remove('show');
-    alert('Помилка мережі — запис збережено локально');
+  // normal user: check limit, then try to post (server must accept non-admin POST for global visibility)
+  const allowed = await canUserCreateMember(currentUser.username);
+  if(!allowed){ memberLimitWarning.textContent = 'Ви вже створили одного учасника — ліміт 1'; memberLimitWarning.style.display = 'block'; return; }
+  memberLimitWarning.style.display = 'none';
+
+  const resp = await apiPOST('/api/members', payload); // no token
+  if(resp.ok){
+    addMemberForm.reset(); addMemberModal.classList.remove('show'); await loadAll(); alert('Учасника додано — видно всім');
+    return;
   }
+
+  // If server refused (401/403), inform admin action required
+  if(resp.status === 401 || resp.status === 403){
+    alert('Сервер вимагає адмінський доступ для додавання учасників. Щоб звичайні користувачі могли створювати учасників (щоб їх бачили всі), треба змінити server.js і дозволити POST /api/members без requireAdmin. Я можу скинути патч для server.js — скажи "патч server".');
+    return;
+  }
+
+  // other error
+  alert('Не вдалося додати на сервер — перевір сервер або мережу.');
 }
 
-// ---------- Admin deletes (only admin) ----------
+// ---------- deletes (admin only) ----------
 async function deleteMemberHandler(id){
-  if(!(currentUser && currentUser.role==='admin')){ alert('Тільки адмін'); return; }
+  if(!(currentUser && currentUser.role === 'admin')){ alert('Тільки адмін може видаляти'); return; }
   if(!confirm('Видалити учасника?')) return;
   const r = await apiDELETE(`/api/members/${id}`, currentUser.adminToken || adminToken);
-  if(r.ok){ await loadAll(); } else alert(r.body?.error || 'Помилка видалення');
+  if(r.ok) await loadAll(); else alert(r.body?.error || 'Помилка видалення');
 }
 async function deleteNewsHandler(id){
-  if(!(currentUser && currentUser.role==='admin')){ alert('Тільки адмін'); return; }
+  if(!(currentUser && currentUser.role === 'admin')){ alert('Тільки адмін'); return; }
   if(!confirm('Видалити новину?')) return;
   const r = await apiDELETE(`/api/news/${id}`, currentUser.adminToken || adminToken);
-  if(r.ok){ await loadAll(); } else alert(r.body?.error || 'Помилка');
+  if(r.ok) await loadAll(); else alert(r.body?.error || 'Помилка');
 }
 async function deleteGalleryHandler(id){
-  if(!(currentUser && currentUser.role==='admin')){ alert('Тільки адмін'); return; }
+  if(!(currentUser && currentUser.role === 'admin')){ alert('Тільки адмін'); return; }
   if(!confirm('Видалити фото?')) return;
   const r = await apiDELETE(`/api/gallery/${id}`, currentUser.adminToken || adminToken);
-  if(r.ok){ await loadAll(); } else alert(r.body?.error || 'Помилка');
+  if(r.ok) await loadAll(); else alert(r.body?.error || 'Помилка');
 }
 
-// ---------- Add news/gallery (admin) ----------
+// ---------- add news/gallery (admin only) ----------
 async function addNewsHandler(){
-  if(!(currentUser && currentUser.role==='admin')){ alert('Тільки адмін'); return; }
+  if(!(currentUser && currentUser.role === 'admin')){ alert('Тільки адмін'); return; }
   const payload = { id: Date.now(), title: newsTitle.value.trim(), date: newsDate.value, summary: newsSummary.value.trim() };
   if(!payload.title || !payload.date || !payload.summary) return alert('Заповніть всі поля');
   const r = await apiPOST('/api/news', payload, currentUser.adminToken || adminToken);
   if(r.ok){ newsTitle.value=''; newsDate.value=''; newsSummary.value=''; await loadAll(); alert('Додано'); } else alert(r.body?.error || 'Помилка');
 }
 async function addGalleryHandler(){
-  if(!(currentUser && currentUser.role==='admin')){ alert('Тільки адмін'); return; }
+  if(!(currentUser && currentUser.role === 'admin')){ alert('Тільки адмін'); return; }
   const url = galleryUrl.value.trim();
   if(!url) return alert('Вкажіть URL');
   const r = await apiPOST('/api/gallery', { id: Date.now(), url }, currentUser.adminToken || adminToken);
   if(r.ok){ galleryUrl.value=''; await loadAll(); alert('Фото додано'); } else alert(r.body?.error || 'Помилка');
 }
 
-// ---------- Event listeners ----------
+// ---------- event delegation ----------
 document.addEventListener('click', (e)=>{
   const btn = e.target.closest('[data-action]');
   if(!btn) return;
   const action = btn.getAttribute('data-action');
   const id = btn.getAttribute('data-id');
   if(action === 'delete') deleteMemberHandler(id);
-  if(action === 'edit') {
-    // only owner or admin can edit local unsynced or (if admin) server side
-    const membersAll = mergeMembers((loadLocal(MEMBERS_KEY) || []));
-    const m = membersAll.find(x => String(x.id) === String(id));
-    if(!m) return alert('Не знайдено');
-    if(!currentUser) return alert('Увійдіть');
-    if(currentUser.role!=='admin' && currentUser.username !== m.owner) return alert('Недостатньо прав');
-    // use prompt like before
-    const newName = prompt(`Редагувати ім'я для ${m.name}:`, m.name);
-    if(newName === null || newName.trim() === '') return;
-    const newRole = prompt(`Редагувати роль для ${newName}:`, m.role);
-    if(newRole === null || newRole.trim() === '') return;
-    m.name = newName.trim();
-    m.role = newRole.trim();
-    // if admin: ideally call server edit endpoint (not present). For now update local unsynced or instruct admin to edit on server.
-    const unsynced = loadLocal(LOCAL_UNSYNC_MEMBERS_KEY) || [];
-    const idx = unsynced.findIndex(x=>String(x.id)===String(m.id));
-    if(idx !== -1){
-      unsynced[idx] = m;
-      saveLocal(LOCAL_UNSYNC_MEMBERS_KEY, unsynced);
-      alert('Локальний запис оновлено');
-      loadAll();
-    } else {
-      alert('Щоб змінити серверний запис, використовуй адмінпанель або змінений сервер (PATCH endpoint). Цей UI оновив локальну відображувану копію.');
-    }
-  }
   if(action === 'delete-news') deleteNewsHandler(id);
   if(action === 'delete-gallery') deleteGalleryHandler(id);
+  if(action === 'edit'){
+    // minimal edit for owner (client-side prompt -> server edit endpoint not present)
+    const name = prompt('Нове імʼя:');
+    if(!name) return;
+    alert('Редагування серверного запису потребує серверного PATCH endpoint. Зверніться до адміна.');
+  }
 });
 
-// login/register forms
+// ---------- forms ----------
 if(loginForm){
   loginForm.addEventListener('submit', async ev=>{
     ev.preventDefault();
@@ -454,10 +421,10 @@ if(registerForm){
 
 if(addMemberBtn){
   addMemberBtn.addEventListener('click', async ()=>{
-    if(!currentUser){ alert('Увійдіть, щоб додати учасника'); return; }
+    if(!currentUser){ alert('Увійдіть щоб додати учасника'); return; }
     if(currentUser.role !== 'admin'){
       const ok = await canUserCreateMember(currentUser.username);
-      if(!ok){ memberLimitWarning.textContent = `Ви вже створили одного учасника.`; memberLimitWarning.style.display = 'block'; return; }
+      if(!ok){ memberLimitWarning.textContent = 'Ви вже створили одного учасника — ліміт 1'; memberLimitWarning.style.display = 'block'; return; }
       memberLimitWarning.style.display = 'none';
     }
     addMemberModal.classList.add('show'); document.body.style.overflow = 'hidden';
@@ -481,58 +448,34 @@ if(addMemberForm){
 if(addNewsBtn) addNewsBtn.addEventListener('click', addNewsHandler);
 if(addGalleryBtn) addGalleryBtn.addEventListener('click', addGalleryHandler);
 
+// auth button
 if(openAuthBtn){
   openAuthBtn.addEventListener('click', ()=>{
     if(currentUser){
-      if(confirm('Вийти з акаунту?')){ currentUser = null; adminToken = null; clearLocal(CURRENT_USER_KEY); updateAuthUI(); loadAll(); }
+      if(currentUser.role === 'admin'){
+        if(adminSidebar) adminSidebar.classList.add('open');
+      } else {
+        if(confirm('Вийти з акаунту?')){
+          currentUser = null; adminToken = null; clearLocal(CURRENT_USER_KEY); updateAuthUI(); loadAll();
+        }
+      }
     } else {
       if(authModal) authModal.classList.add('show');
     }
   });
 }
 
-// search
-if(memberSearch){
-  memberSearch.addEventListener('input', (e) => loadAll().then(()=> {
-    // after loadAll will re-render with filter applied by renderMembers call (we re-call renderMembers manually)
-    // But renderMembers in loadAll uses current value; to be safe, re-run merge/render:
-    apiGET('/api/members').then(r => {
-      const merged = mergeMembers(r.members || r || []);
-      renderMembers(merged, memberSearch.value);
-    }).catch(()=> {
-      const merged = mergeMembers(loadLocal(MEMBERS_KEY) || []);
-      renderMembers(merged, memberSearch.value);
-    });
-  }));
-}
+// member search
+if(memberSearch) memberSearch.addEventListener('input', ()=> loadAll().then(()=> {
+  // re-filter in renderMembers will use memberSearch.value if possible (we re-call fetch in loadAll)
+  // to be safe, re-run render with cached data:
+  const cached = loadLocal('cached_members') || [];
+  renderMembers(cached, memberSearch.value);
+}));
 
-// ---------- Init ----------
+// ---------- initial ----------
 document.addEventListener('DOMContentLoaded', async ()=>{
   await tryGetMe();
   updateAuthUI();
   await loadAll();
 });
-
-// ---------- NOTES for server (if you want all user-created members to be global visible) ----------
-/*
-  1) Current server.js requires admin for POST /api/members.
-     To allow normal users to create members visible to everyone, modify server.js:
-     
-     - Either remove requireAdmin middleware from POST /api/members;
-       i.e. change:
-         app.post("/api/members", requireAdmin, (req,res)=>{...});
-       to:
-         app.post("/api/members", (req,res)=>{ ... });
-       (ensure you still validate required fields)
-
-     - Or add a special endpoint that accepts unauthenticated POSTS and inserts them into DB
-       (maybe with field owner set to username passed in body).
-
-  2) Security note: allowing unauthenticated writes can enable spam. Consider:
-     - Require registration + JWT tokens (server issues token on /api/login), and client uses it.
-     - Or add rate-limits / moderation queue.
-
-  3) If you want, я можу також прислати готовий патч для server.js,
-     щоб POST /api/members приймав запис від звичайних користувачів (і тоді всі побачать відразу).
-*/
-
