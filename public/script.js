@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
   
-  // Custom Confirm
+  // Custom Confirm/Alert Modal
   function customConfirm(message, callback) {
       const modal = document.getElementById('customConfirmModal');
       const msg = document.getElementById('confirmMessage');
@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentUser = loadCurrentUser(); 
 
   // --- API FETCH (Функція для спілкування з сервером) ---
-  // Тільки реальний API-виклик. При помилці з'єднання видає попередження.
   async function apiFetch(url, options = {}) {
       try {
           const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
@@ -49,8 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const data = await response.json();
           if (!response.ok) { 
               console.error("API Error:", data);
-              // Якщо є повідомлення про помилку від сервера
-              customConfirm(data.message || "Помилка сервера. Перевірте логін або статус бекенду.");
+              customConfirm(data.message || "Помилка сервера. Перевірте логін або статус бекенду.", true);
               return null; 
           }
           return data;
@@ -91,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
           // Оновлення статистики в Адмін-панелі
           if(document.getElementById('statTotalUsers')) document.getElementById('statTotalUsers').textContent = counts.totalUsers;
           if(document.getElementById('statTotalAdmins')) document.getElementById('statTotalAdmins').textContent = counts.totalAdmins;
-          // Новини та Галерея
           if(document.getElementById('statTotalNews')) document.getElementById('statTotalNews').textContent = n ? n.length : 0;
           if(document.getElementById('statTotalGallery')) document.getElementById('statTotalGallery').textContent = g ? g.length : 0;
       }
