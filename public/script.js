@@ -1,4 +1,4 @@
-// script.js — FULL BUTTON NAMES
+// script.js — CUSTOM EDIT MODAL
 
 document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
@@ -166,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
           if(m.links?.tg) socials += `<a href="${m.links.tg}" target="_blank" class="social-link link-tg"><i class="fa-brands fa-telegram"></i></a>`;
           socials += '</div>';
           
-          // --- ЗМІНЕНО ТЕКСТ КНОПОК ТУТ ---
           return `
             <div class="member animated-content">
               <div class="member-top">
@@ -222,38 +221,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- ACTIONS ---
   
-  window.editMember = async (id) => {
+  // ФУНКЦІЯ РЕДАГУВАННЯ ЧЕРЕЗ НОВЕ МОДАЛЬНЕ ВІКНО
+  window.editMember = (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
       
-      const newName = prompt("Введіть нове ім'я:", m.name);
-      if(newName === null) return; 
+      const modal = document.getElementById('editMemberModal');
+      const form = document.getElementById('editMemberForm');
+      
+      // Заповнюємо поля
+      document.getElementById('editMemberId').value = id;
+      document.getElementById('editMemberName').value = m.name;
+      document.getElementById('editMemberRole').value = m.role;
+      document.getElementById('editMemberDiscord').value = m.links?.discord || '';
+      document.getElementById('editMemberYoutube').value = m.links?.youtube || '';
+      document.getElementById('editMemberTg').value = m.links?.tg || '';
 
-      const newRole = prompt("Введіть нову роль:", m.role);
-      if(newRole === null) return;
-
-      const newDiscord = prompt("Discord (залиште пустим, щоб видалити):", m.links?.discord || '');
-      const newYoutube = prompt("YouTube (залиште пустим, щоб видалити):", m.links?.youtube || '');
-      const newTg = prompt("Telegram (залиште пустим, щоб видалити):", m.links?.tg || '');
-
-      const updateData = {
-          name: newName.trim() || m.name, 
-          role: newRole.trim() || m.role,
-          discord: newDiscord,
-          youtube: newYoutube,
-          tg: newTg
-      };
-
-      const res = await apiFetch(`/api/members/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify(updateData)
-      });
-
-      if(res) {
-          loadInitialData();
-          customConfirm('Учасника оновлено!');
-      }
+      // Показуємо вікно
+      modal.classList.add('show');
   };
+
+  // ОБРОБНИК ЗБЕРЕЖЕННЯ ЗМІН (РЕДАГУВАННЯ)
+  const editMemberForm = document.getElementById('editMemberForm');
+  if (editMemberForm) {
+      editMemberForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const id = document.getElementById('editMemberId').value;
+          const newName = document.getElementById('editMemberName').value;
+          const newRole = document.getElementById('editMemberRole').value;
+          const newDiscord = document.getElementById('editMemberDiscord').value;
+          const newYoutube = document.getElementById('editMemberYoutube').value;
+          const newTg = document.getElementById('editMemberTg').value;
+
+          const updateData = {
+              name: newName.trim(),
+              role: newRole.trim(),
+              discord: newDiscord,
+              youtube: newYoutube,
+              tg: newTg
+          };
+
+          const res = await apiFetch(`/api/members/${id}`, {
+              method: 'PUT',
+              body: JSON.stringify(updateData)
+          });
+
+          if(res) {
+              document.getElementById('editMemberModal').classList.remove('show');
+              loadInitialData();
+              customConfirm('Учасника оновлено!');
+          }
+      });
+  }
+  
+  // Закриття вікна редагування
+  const closeEditModalBtn = document.getElementById('closeEditMemberModal');
+  if(closeEditModalBtn) {
+      closeEditModalBtn.addEventListener('click', () => {
+          document.getElementById('editMemberModal').classList.remove('show');
+      });
+  }
 
   window.deleteMember = async (id) => { customConfirm('Видалити?', async (r)=>{ if(r && await apiFetch(`/api/members/${id}`, {method:'DELETE'})) loadInitialData(); }); };
   window.deleteNews = async (id) => { customConfirm('Видалити?', async (r)=>{ if(r && await apiFetch(`/api/news/${id}`, {method:'DELETE'})) loadInitialData(); }); };
