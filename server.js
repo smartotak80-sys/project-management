@@ -1,4 +1,11 @@
 // server.js (ESM)
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Потім використовуй
+const DATABASE_URL = process.env.DATABASE_URL;
+const PORT = process.env.PORT || 8080;
+
 import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
