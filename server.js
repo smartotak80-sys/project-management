@@ -1,4 +1,4 @@
-// server.js — LIMIT 1 USER
+// server.js — UNIQUE EMAIL & LOGIN + LIMIT 1
 require('dotenv').config();
 const express = require("express");
 const path = require("path");
@@ -35,9 +35,11 @@ const gallerySchema = new mongoose.Schema({
     id: { type: Number, required: true, unique: true },
     url: { type: String, required: true }
 });
+
+// ВАЖЛИВО: Додано unique: true для захисту на рівні бази даних
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
-    email: { type: String, unique: true, sparse: true },
+    email: { type: String, required: true, unique: true }, // Тепер email обов'язковий і унікальний
     password: { type: String, required: true },
     role: { type: String, default: 'member' },
     regDate: { type: Date, default: Date.now }
@@ -55,7 +57,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // --- НАЛАШТУВАННЯ ---
 const ADMIN_LOGIN = 'famillybarracuda@gmail.com'; 
 const ADMIN_PASS = 'barracuda123';
-const MAX_USERS = 1; // <--- ТІЛЬКИ 1 АКАУНТ
+const MAX_USERS = 1; // ЛІМІТ 1 КОРИСТУВАЧ
 const MAX_MEMBER_PER_USER = 1;
 
 // Auth Middleware (Decoder)
@@ -92,11 +94,21 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
     const { username, email, password } = req.body;
     
-    // Перевіряємо загальну кількість користувачів у базі
+    // 1. Перевірка ліміту
     const count = await User.countDocuments();
-    
     if (count >= MAX_USERS) {
         return res.status(400).json({ success: false, message: 'Реєстрацію закрито. Ліміт користувачів вичерпано.' });
+    }
+
+    // 2. Перевірка на унікальність (логін АБО email)
+    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (existingUser) {
+        if (existingUser.username === username) {
+            return res.status(400).json({ success: false, message: 'Цей ЛОГІН вже зайнятий!' });
+        }
+        if (existingUser.email === email) {
+            return res.status(400).json({ success: false, message: 'Цей EMAIL вже використовується!' });
+        }
     }
     
     try {
@@ -104,7 +116,11 @@ app.post('/api/auth/register', async (req, res) => {
         await newUser.save();
         res.json({ success: true, message: 'Акаунт створено успішно!' });
     } catch (error) {
-        res.status(400).json({ success: false, message: 'Цей логін або email вже зайнятий.' });
+        // Додатковий захист, якщо база даних поверне помилку дублікату (код 11000)
+        if (error.code === 11000) {
+            return res.status(400).json({ success: false, message: 'Логін або Email вже існують.' });
+        }
+        res.status(500).json({ success: false, message: 'Помилка сервера.' });
     }
 });
 
