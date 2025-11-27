@@ -1,5 +1,3 @@
-// script.js — UPDATED ADMIN PANEL LOGIC
-
 document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
   const MAX_MEMBER_PER_USER = 1; 
@@ -20,9 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isAlert) {
           if(cancelBtn) cancelBtn.style.display = 'none';
           if(okBtn) okBtn.textContent = 'Зрозуміло';
+          if(document.getElementById('confirmTitle')) document.getElementById('confirmTitle').innerHTML = '<i class="fa-solid fa-circle-info"></i> Повідомлення';
       } else {
           if(cancelBtn) cancelBtn.style.display = 'inline-block';
           if(okBtn) okBtn.textContent = 'Так, продовжити';
+          if(document.getElementById('confirmTitle')) document.getElementById('confirmTitle').innerHTML = '<i class="fa-solid fa-circle-question"></i> Підтвердіть дію';
       }
       msg.textContent = message;
       modal.classList.add('show');
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(lb) { lb.classList.add('open'); document.getElementById('lightboxImage').src = url; } 
   };
 
-  // --- ADMIN PANEL LOGIC (TABS & CLOCK) ---
+  // --- ADMIN PANEL LOGIC (TABS, CLOCK, SESSION) ---
   const tabs = document.querySelectorAll('.tab-btn');
   const panes = document.querySelectorAll('.tab-pane');
 
@@ -287,13 +287,45 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Живий годинник
+  // Змінна для відліку сесії
+  let sessionStartTime = Date.now();
+
+  // Живий годинник та статистика
   setInterval(() => {
     const now = new Date();
-    const clock = document.getElementById('adminClock');
-    if(clock) clock.textContent = now.toLocaleTimeString('uk-UA');
     
-    // Фейкове оновлення навантаження (System Tab)
+    // 1. Оновлення Годинника (HH:MM:SS)
+    const clock = document.getElementById('adminClock');
+    if(clock) clock.textContent = now.toLocaleTimeString('uk-UA', { hour12: false });
+
+    // 2. Оновлення Дати (DD.MM.YYYY)
+    const dateEl = document.getElementById('adminDate');
+    if(dateEl) {
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        dateEl.textContent = `${day}.${month}.${year}`;
+    }
+
+    // 3. Оновлення Таймера Сесії
+    const sessionEl = document.getElementById('adminSession');
+    if(sessionEl) {
+        const diff = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+        const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+        const s = String(diff % 60).padStart(2, '0');
+        sessionEl.textContent = `${h}:${m}:${s}`;
+    }
+
+    // 4. Оновлення Пінгу (Імітація)
+    const pingEl = document.getElementById('adminPing');
+    if(pingEl && Math.random() > 0.5) { 
+        const ping = Math.floor(Math.random() * 40) + 10; 
+        pingEl.textContent = `${ping}ms`;
+        pingEl.style.color = ping > 40 ? '#eab308' : '#22c55e';
+    }
+    
+    // 5. Фейкове оновлення навантаження (System Tab)
     if(document.getElementById('tab-sys') && document.getElementById('tab-sys').classList.contains('active')) {
        if(Math.random() > 0.7) {
            const cpu = Math.floor(Math.random() * 30) + 10;
@@ -305,6 +337,25 @@ document.addEventListener('DOMContentLoaded', () => {
        }
     }
   }, 1000);
+
+  // --- MONITOR NETWORK STATUS (ONLINE/OFFLINE) ---
+  function updateOnlineStatus() {
+      const statusEl = document.getElementById('adminStatus');
+      if (!statusEl) return;
+
+      if (navigator.onLine) {
+          statusEl.textContent = 'ONLINE';
+          statusEl.classList.remove('offline');
+          statusEl.classList.add('online');
+      } else {
+          statusEl.textContent = 'OFFLINE';
+          statusEl.classList.remove('online');
+          statusEl.classList.add('offline');
+      }
+  }
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
 
 
   // --- EVENTS ---
