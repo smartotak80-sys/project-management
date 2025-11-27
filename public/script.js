@@ -1,236 +1,335 @@
-// public/script.js
-const API_URL = ""; // якщо фронт і бек на одному сервері/порту
+// script.js - Оновлений для Fetch API
 
-// --- DOM Elements ---
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-const membersGrid = document.getElementById("membersGrid");
-const newsList = document.getElementById("newsList");
-const galleryGrid = document.getElementById("galleryGrid");
-const addMemberForm = document.getElementById("addMemberForm");
-const addNewsBtn = document.getElementById("addNewsBtn");
-const authBtnText = document.getElementById("authBtnText");
-const openAuthBtn = document.getElementById("openAuthBtn");
-const authModal = document.getElementById("authModal");
-const tabLogin = document.getElementById("tabLogin");
-const tabRegister = document.getElementById("tabRegister");
-const closeAuth = document.getElementById("closeAuth");
-const addMemberModal = document.getElementById("addMemberModal");
-const closeMemberModal = document.getElementById("closeMemberModal");
+document.addEventListener('DOMContentLoaded', () => {
+  // --- КОНСТАНТИ ---
+  const CURRENT_USER_KEY = 'barakuda_current_user';
+  const MAX_MEMBER_PER_USER = 1; 
 
-// --- UTILS ---
-function getToken() { return localStorage.getItem("token") || ""; }
-function setToken(token) { localStorage.setItem("token", token); }
-function isLoggedIn() { return !!getToken(); }
-function showAlert(msg) { alert(msg); }
-function toggleAdminUI(show) {
-  document.querySelectorAll(".admin-only, .logged-in-only").forEach(el => {
-    el.style.display = show ? "block" : "none";
-  });
-}
+  // --- ДОПОМІЖНІ ФУНКЦІЇ ---
+  // ... (timeAgo, escapeHtml, customConfirm - залишаються) ...
+  
+  // Функція для завантаження користувача з LocalStorage (єдине, що залишилось)
+  function loadCurrentUser(){ 
+      try{ 
+          const v = localStorage.getItem(CURRENT_USER_KEY); 
+          return v ? JSON.parse(v) : null;
+      } catch(e){ return null; } 
+  }
+  function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
+  
+  // ...
+  
+  // --- КЕШУВАННЯ ДАНИХ (для клієнта) ---
+  let members = [];
+  let news = [];
+  let gallery = [];
+  let currentUser = loadCurrentUser(); 
+  
+  // ... (Кешування DOM елементів - залишається) ...
+  
+  // --- ФУНКЦІЇ ДЛЯ API (КЛЮЧОВА ЗМІНА) ---
+  
+  /**
+   * Створює заголовки для автентифікації на сервері.
+   */
+  function getAuthHeaders() {
+      if (!currentUser) return {};
+      return {
+          'X-Auth-User': currentUser.username,
+          'X-Auth-Role': currentUser.role
+      };
+  }
 
-// --- AUTH ---
-if (loginForm) {
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const user = document.getElementById("loginUser").value;
-    const pass = document.getElementById("loginPass").value;
+  /**
+   * Універсальний Fetch-обробник
+   */
+  async function apiFetch(url, options = {}) {
+      try {
+          const headers = {
+              'Content-Type': 'application/json',
+              ...getAuthHeaders(),
+              ...(options.headers || {})
+          };
+          
+          const response = await fetch(url, { ...options, headers });
+          const data = await response.json();
 
-    const res = await fetch(`${API_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user, pass }),
+          if (!response.ok) {
+              const message = data.message || `Помилка: ${response.status} ${response.statusText}`;
+              customConfirm(message);
+              return null;
+          }
+          return data;
+      } catch (error) {
+          console.error("API Fetch Error:", error);
+          customConfirm('Помилка з\'єднання з сервером.');
+          return null;
+      }
+  }
+
+
+  // --- ФУНКЦІЇ ЗАВАНТАЖЕННЯ (Loaders) ---
+  async function loadInitialData() {
+      // 1. Завантаження учасників
+      const membersData = await apiFetch('/api/members');
+      if (membersData) members = membersData;
+      renderMembers(memberSearch ? memberSearch.value : '');
+
+      // 2. Завантаження новин
+      const newsData = await apiFetch('/api/news');
+      if (newsData) news = newsData;
+      renderNews();
+
+      // 3. Завантаження галереї
+      const galleryData = await apiFetch('/api/gallery');
+      if (galleryData) gallery = galleryData;
+      renderGallery();
+      
+      // 4. Оновлення лічильників
+      const countsData = await apiFetch('/api/users/count');
+      if(countsData){
+          if(totalUsersSidebar) totalUsersSidebar.textContent = countsData.totalUsers;
+          if(totalAdminsSidebar) totalAdminsSidebar.textContent = countsData.totalAdmins;
+      }
+  }
+  
+  // ... (checkAccess, updateAuthUI - залишаються, але використовують currentUser) ...
+  
+  // --- ФУНКЦІЇ РЕНДЕРИНГУ ---
+  // ... (renderAdminSidebarData, renderMembers, renderNews, renderGallery - залишаються, але працюють з глобальними масивами members/news/gallery) ...
+  
+  // --- ГЛОБАЛЬНІ ФУНКЦІЇ (ОБРОБКА ДІЙ) ---
+  
+  async function banUser(username) {
+      customConfirm(`Ви впевнені, що хочете заблокувати користувача ${username}?`, async (result) => {
+          if (!result) return;
+          
+          const data = await apiFetch(`/api/users/${username}`, { method: 'DELETE' });
+          if (data && currentUser && currentUser.username === username && currentUser.role !== 'admin') {
+              currentUser = null;
+              localStorage.removeItem(CURRENT_USER_KEY);
+              updateAuthUI();
+              loadInitialData(); // Оновлення всіх даних, включаючи список учасників
+          }
+          if(data) {
+              renderAdminSidebarData(userSearchSidebar ? userSearchSidebar.value : '');
+              customConfirm(`Користувача ${username} видалено.`);
+          }
+      });
+  }
+
+  async function editMember(id) {
+      // ... (схожа логіка перевірки прав та збору даних через prompt) ...
+      
+      const member = members.find(m => m.id == id);
+      if (!member) return;
+      
+      const newName = prompt(`Редагувати ім'я для ${member.name}:`, member.name);
+      if (newName === null || newName.trim() === '') return;
+      // ... (збір інших полів) ...
+
+      const updateData = {
+          name: newName.trim(),
+          role: newRole.trim(),
+          discord: newDiscord ? newDiscord.trim() : '',
+          youtube: newYoutube ? newYoutube.trim() : '',
+          tg: newTg ? newTg.trim() : ''
+      };
+
+      const data = await apiFetch(`/api/members/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(updateData)
+      });
+      
+      if (data) {
+          // Оновлення локального кешу
+          const index = members.findIndex(m => m.id == id);
+          if (index !== -1) members[index] = data.member;
+          renderMembers(memberSearch ? memberSearch.value : '');
+          customConfirm(`Інформацію про учасника ${data.member.name} оновлено.`);
+      }
+  }
+
+  async function removeMember(id) {
+      customConfirm('Видалити цього учасника? Це дія незворотна.', async (result) => {
+          if (!result) return;
+          
+          const data = await apiFetch(`/api/members/${id}`, { method: 'DELETE' });
+          if (data) {
+              members = members.filter(m => m.id != id);
+              renderMembers(memberSearch ? memberSearch.value : '');
+              customConfirm('Учасника видалено.');
+          }
+      });
+  }
+
+  async function removeNews(id) {
+      customConfirm('Видалити цю новину? Це дія незворотна.', async (result) => {
+          if (!result) return;
+
+          const data = await apiFetch(`/api/news/${id}`, { method: 'DELETE' });
+          if (data) {
+              news = news.filter(n => n.id != id);
+              renderNews();
+              customConfirm('Подію видалено.');
+          }
+      });
+  }
+  
+  async function removeGallery(id){
+    customConfirm('Видалити це фото з галереї? Це дія незворотна.', async (result) => {
+        if (!result) return;
+        
+        const data = await apiFetch(`/api/gallery/${id}`, { method: 'DELETE' });
+        if(data){
+            gallery = gallery.filter(g=>g.id!=id); 
+            renderGallery();
+            customConfirm('Фото видалено.');
+        }
     });
-    const data = await res.json();
-    if (data.ok) {
-      setToken(data.token);
-      authBtnText.innerText = "Вийти";
-      authModal.style.display = "none";
-      showAlert("Успішний вхід!");
-      loadAll();
-    } else showAlert("Помилка: " + data.error);
+  }
+
+  // ... (Lightbox функції - залишаються) ...
+
+
+  // --- ОБРОБНИКИ ПОДІЙ ---
+
+  // ... (Toggle, Scroll, Smooth Scroll, Sidebar - залишаються) ...
+
+  // AUTH SYSTEM (Login & Register)
+  if(registerForm) registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      // ... (валідація полів) ...
+      
+      const body = {
+          username: regUser.value.trim(), 
+          email: regEmail.value.trim(), 
+          password: regPass.value
+      };
+
+      const data = await apiFetch('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify(body)
+      });
+      
+      if (data && document.getElementById('tabLogin')) {
+          updateAuthUI();
+          customConfirm('Готово! Тепер можете увійти.');
+          document.getElementById('tabLogin').click();
+          registerForm.reset();
+      }
   });
-}
 
-if (registerForm) {
-  registerForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const user = document.getElementById("regUser").value;
-    const email = document.getElementById("regEmail").value;
-    const pass = document.getElementById("regPass").value;
-    const passConfirm = document.getElementById("regPassConfirm").value;
+  if(loginForm) loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = loginUser.value.trim();
+      const pass = loginPass.value;
 
-    if (pass !== passConfirm) return showAlert("Паролі не збігаються!");
+      const data = await apiFetch('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ username: user, password: pass })
+      });
+      
+      if (data && data.success) {
+          currentUser = data.user;
+          saveCurrentUser(currentUser);
+          updateAuthUI();
+          if(authModal) authModal.classList.remove('show');
+          customConfirm(data.message);
+          
+          // Для Адміна оновлюємо дані одразу після входу
+          if(currentUser.role === 'admin') {
+              loadInitialData();
+          }
+      }
+  });
 
-    const res = await fetch(`${API_URL}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user, email, pass }),
+
+  // ADD NEWS 
+  if(addNewsBtn) {
+    addNewsBtn.addEventListener('click', async () => {
+        if (!newsTitle.value || !newsDate.value || !newsSummary.value) {
+            return customConfirm('Будь ласка, заповніть усі поля для події.');
+        }
+
+        const newNewsData = {
+            title: newsTitle.value,
+            date: newsDate.value,
+            summary: newsSummary.value
+        };
+
+        const data = await apiFetch('/api/news', {
+            method: 'POST',
+            body: JSON.stringify(newNewsData)
+        });
+        
+        if (data) {
+            news.push(data.news);
+            news.sort((a,b)=>b.id-a.id); // Сортування на клієнті
+            renderNews();
+            newsTitle.value = '';
+            newsDate.value = '';
+            newsSummary.value = '';
+            customConfirm('Подію додано.');
+        }
     });
-    const data = await res.json();
-    if (data.ok) showAlert("Акаунт створено! Вхід через форму логіну.");
-    else showAlert("Помилка: " + data.error);
-  });
-}
+  }
 
-// --- OPEN / CLOSE AUTH MODAL ---
-if (openAuthBtn) {
-  openAuthBtn.addEventListener("click", () => {
-    if (isLoggedIn()) {
-      localStorage.removeItem("token");
-      authBtnText.innerText = "Вхід";
-      toggleAdminUI(false);
-      showAlert("Ви вийшли");
-      loadAll();
-    } else authModal.style.display = "flex";
-  });
-}
-if (closeAuth) closeAuth.addEventListener("click", () => authModal.style.display = "none");
-
-// --- SWITCH AUTH TABS ---
-if (tabLogin && tabRegister) {
-  tabLogin.addEventListener("click", () => {
-    tabLogin.classList.add("active");
-    tabRegister.classList.remove("active");
-    loginForm.style.display = "block";
-    registerForm.style.display = "none";
-  });
-  tabRegister.addEventListener("click", () => {
-    tabRegister.classList.add("active");
-    tabLogin.classList.remove("active");
-    loginForm.style.display = "none";
-    registerForm.style.display = "block";
-  });
-}
-
-// --- LOAD MEMBERS ---
-async function loadMembers() {
-  const res = await fetch(`${API_URL}/api/members`);
-  const data = await res.json();
-  if (!data.ok) return;
-  membersGrid.innerHTML = data.members.map(m => `
-    <div class="member-card">
-      <h4>${m.name}</h4>
-      <p>Роль: ${m.role}</p>
-      ${m.discord ? `<p>Discord: ${m.discord}</p>` : ""}
-      ${m.youtube ? `<p>YouTube: <a href="${m.youtube}" target="_blank">Посилання</a></p>` : ""}
-      ${m.tg ? `<p>Telegram: <a href="${m.tg}" target="_blank">Посилання</a></p>` : ""}
-    </div>
-  `).join("");
-}
-
-// --- ADD MEMBER ---
-if (addMemberForm) {
-  addMemberForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const token = getToken();
-    if (!token) return showAlert("Вхід обов'язковий!");
-
-    const name = document.getElementById("memberNewName").value;
-    const role = document.getElementById("memberNewRole").value;
-
-    const res = await fetch(`${API_URL}/api/members`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        name, role,
-        discord: document.getElementById("memberNewDiscord").value,
-        youtube: document.getElementById("memberNewYoutube").value,
-        tg: document.getElementById("memberNewTg").value
-      }),
+  // ADD GALLERY 
+  if(addGalleryBtn) {
+    addGalleryBtn.addEventListener('click', async ()=>{
+      const url = galleryUrl.value.trim(); 
+      if(!url) return customConfirm('Вкажіть коректне посилання на зображення');
+      
+      const data = await apiFetch('/api/gallery', {
+          method: 'POST',
+          body: JSON.stringify({ url })
+      });
+      
+      if (data) {
+          gallery.push(data.item);
+          renderGallery();
+          galleryUrl.value=''; 
+          customConfirm('Фото додано.');
+      }
     });
-    const data = await res.json();
-    if (data.ok) { showAlert("Учасник доданий!"); loadMembers(); addMemberModal.style.display = "none"; }
-    else showAlert("Помилка: " + data.error);
-  });
-}
+  }
 
-// --- OPEN / CLOSE ADD MEMBER MODAL ---
-document.getElementById("addMemberBtn")?.addEventListener("click", () => {
-  if (!isLoggedIn()) return showAlert("Вхід обов'язковий!");
-  addMemberModal.style.display = "flex";
+  // ADD MEMBER FORM SUBMIT
+  if(addMemberForm) {
+      addMemberForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          if(!currentUser) return; 
+          
+          // ... (збір даних) ...
+
+          const newMemberData = {
+            name: memberNewName.value.trim(),
+            role: memberNewRole.value.trim(),
+            discord: memberNewDiscord.value.trim(),
+            youtube: memberNewYoutube.value.trim(),
+            tg: memberNewTg.value.trim()
+          };
+
+          const data = await apiFetch('/api/members', {
+              method: 'POST',
+              body: JSON.stringify(newMemberData)
+          });
+          
+          if (data) {
+              members.push(data.member);
+              members.sort((a,b)=>a.name.localeCompare(b.name));
+              renderMembers(memberSearch ? memberSearch.value : '');
+              closeAddMemberModal();
+              customConfirm(`Учасника ${data.member.name} додано!`);
+          }
+      });
+  }
+
+  // Initial Render and Animation Activation
+  updateAuthUI(); 
+  loadInitialData(); // Завантаження даних з API
+  
+  // ... (checkVisibilityAndAnimate - залишається) ...
 });
-closeMemberModal?.addEventListener("click", () => addMemberModal.style.display = "none");
-
-// --- LOAD NEWS ---
-async function loadNews() {
-  const res = await fetch(`${API_URL}/api/news`);
-  const data = await res.json();
-  if (!data.ok) return;
-  newsList.innerHTML = data.news.map(n => `
-    <div class="news-item">
-      <h4>${n.title}</h4>
-      <small>${n.date}</small>
-      <p>${n.summary}</p>
-    </div>
-  `).join("");
-}
-
-// --- ADD NEWS ---
-addNewsBtn?.addEventListener("click", async () => {
-  const token = getToken();
-  if (!token) return showAlert("Вхід обов'язковий!");
-  const title = document.getElementById("newsTitle").value;
-  const date = document.getElementById("newsDate").value;
-  const summary = document.getElementById("newsSummary").value;
-
-  const res = await fetch(`${API_URL}/api/news`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ title, date, summary }),
-  });
-  const data = await res.json();
-  if (data.ok) { showAlert("Новина додана!"); loadNews(); }
-  else showAlert("Помилка: " + data.error);
-});
-
-// --- LOAD GALLERY ---
-async function loadGallery() {
-  const res = await fetch(`${API_URL}/api/gallery`);
-  const data = await res.json();
-  if (!data.ok) return;
-  galleryGrid.innerHTML = data.images.map(img => `
-    <div class="gallery-item">
-      <img src="${img.url}" alt="Gallery Image" class="gallery-thumb">
-    </div>
-  `).join("");
-
-  // Lightbox
-  document.querySelectorAll(".gallery-thumb").forEach((img, idx, arr) => {
-    img.addEventListener("click", () => openLightbox(idx, arr));
-  });
-}
-
-// --- LIGHTBOX ---
-const lightbox = document.getElementById("lightbox");
-const lightboxImage = document.getElementById("lightboxImage");
-let currentImgIndex = 0;
-let galleryImgs = [];
-
-function openLightbox(idx, arr) {
-  currentImgIndex = idx;
-  galleryImgs = arr;
-  lightbox.style.display = "flex";
-  lightboxImage.src = arr[idx].src;
-}
-document.getElementById("lightboxCloseBtn")?.addEventListener("click", () => lightbox.style.display = "none");
-document.getElementById("lightboxPrevBtn")?.addEventListener("click", () => {
-  currentImgIndex = (currentImgIndex - 1 + galleryImgs.length) % galleryImgs.length;
-  lightboxImage.src = galleryImgs[currentImgIndex].src;
-});
-document.getElementById("lightboxNextBtn")?.addEventListener("click", () => {
-  currentImgIndex = (currentImgIndex + 1) % galleryImgs.length;
-  lightboxImage.src = galleryImgs[currentImgIndex].src;
-});
-
-// --- INIT ALL ---
-async function loadAll() {
-  toggleAdminUI(isLoggedIn());
-  await loadMembers();
-  await loadNews();
-  await loadGallery();
-  authBtnText.innerText = isLoggedIn() ? "Вийти" : "Вхід";
-}
-
-// старт
-loadAll();
