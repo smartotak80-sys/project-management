@@ -7,16 +7,15 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Отримуємо URL бази даних з Railway
+// Отримуємо URL бази даних з Railway Variables або локальний
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URL;
 
-// Підключення до MongoDB
 if (MONGO_URI) {
     mongoose.connect(MONGO_URI)
         .then(() => console.log("✅ MongoDB Connected"))
         .catch(err => console.error("❌ MongoDB Error:", err));
 } else {
-    console.error("❌ MONGODB_URI not found in environment variables!");
+    console.warn("⚠️ MONGODB_URI не знайдено. Переконайтеся, що ви додали змінну оточення.");
 }
 
 // Middleware
@@ -58,9 +57,9 @@ const GallerySchema = new mongoose.Schema({
 });
 const Gallery = mongoose.model('Gallery', GallerySchema);
 
-// --- API ROUTES ---
+// --- API МАРШРУТИ ---
 
-// 1. AUTH
+// 1. АВТОРИЗАЦІЯ
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -77,7 +76,7 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
-    // Адмін-хак (щоб точно зайти)
+    // Адмін-доступ (Hardcoded backup)
     if(username === 'famillybarracuda@gmail.com' && password === 'barracuda123') {
          return res.json({ success: true, user: { username: 'ADMIN 🦈', role: 'admin' } });
     }
@@ -93,25 +92,27 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// 2. MEMBERS
+// 2. УЧАСНИКИ
 app.get('/api/members', async (req, res) => {
     const members = await Member.find().sort({ createdAt: -1 });
     res.json(members.map(m => ({ ...m._doc, id: m._id })));
 });
 app.post('/api/members', async (req, res) => {
-    await new Member(req.body).save();
+    try {
+        await new Member(req.body).save();
+        res.json({ success: true });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/api/members/:id', async (req, res) => {
+    await Member.findByIdAndDelete(req.params.id);
     res.json({ success: true });
 });
 app.put('/api/members/:id', async (req, res) => {
     await Member.findByIdAndUpdate(req.params.id, req.body);
     res.json({ success: true });
 });
-app.delete('/api/members/:id', async (req, res) => {
-    await Member.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-});
 
-// 3. NEWS
+// 3. НОВИНИ
 app.get('/api/news', async (req, res) => {
     const news = await News.find().sort({ createdAt: -1 });
     res.json(news.map(n => ({ ...n._doc, id: n._id })));
@@ -125,7 +126,7 @@ app.delete('/api/news/:id', async (req, res) => {
     res.json({ success: true });
 });
 
-// 4. GALLERY
+// 4. ГАЛЕРЕЯ
 app.get('/api/gallery', async (req, res) => {
     const gallery = await Gallery.find().sort({ createdAt: -1 });
     res.json(gallery.map(g => ({ ...g._doc, id: g._id })));
@@ -139,7 +140,7 @@ app.delete('/api/gallery/:id', async (req, res) => {
     res.json({ success: true });
 });
 
-// 5. USERS (ADMIN)
+// 5. КОРИСТУВАЧІ (ДЛЯ АДМІНКИ)
 app.get('/api/users', async (req, res) => {
     const users = await User.find().sort({ regDate: -1 });
     res.json(users);
@@ -155,7 +156,7 @@ app.get('/api/users/count', async (req, res) => {
     res.json({ totalUsers: total, totalAdmins: admins, maxUsers: 50 });
 });
 
-// FRONTEND
+// Front-end routing
 app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
