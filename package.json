@@ -4,11 +4,13 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "migrate": "node init_db.js"
   },
   "dependencies": {
-    "express": "4.18.2",
-    "cors": "2.8.5",
-    "jsonwebtoken": "9.0.2"
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.0"
   }
 }
