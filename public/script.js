@@ -6,9 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAX_MEMBER_PER_USER = 1; 
 
   // --- ДОПОМІЖНІ ФУНКЦІЇ ---
-  // ... (timeAgo, escapeHtml, customConfirm - залишаються) ...
-  
-  // Функція для завантаження користувача з LocalStorage (єдине, що залишилось)
   function loadCurrentUser(){ 
       try{ 
           const v = localStorage.getItem(CURRENT_USER_KEY); 
@@ -16,8 +13,76 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch(e){ return null; } 
   }
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
+  function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
   
-  // ...
+  function timeAgo(dateString) {
+      if (!dateString) return 'Невідомо';
+      const now = new Date();
+      const past = new Date(dateString);
+      const diffSeconds = Math.floor((now - past) / 1000);
+      const minutes = Math.floor(diffSeconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+
+      if (diffSeconds < 60) return `${diffSeconds} сек. тому`;
+      if (minutes < 60) return `${minutes} хв. тому`;
+      if (hours < 24) return `${hours} год. тому`;
+      if (days < 30) return `${days} дн. тому`;
+      
+      return past.toLocaleDateString('uk-UA'); 
+  }
+
+  // Функція для стилізованого customConfirm (залишається без змін)
+  function customConfirm(message, callback) {
+      const modal = document.getElementById('customConfirmModal');
+      const msg = document.getElementById('confirmMessage');
+      const okBtn = document.getElementById('confirmOkBtn');
+      const cancelBtn = document.getElementById('confirmCancelBtn');
+      const closeBtn = document.getElementById('closeConfirmModal');
+      
+      const isAlert = callback === undefined; 
+      if (isAlert) {
+          if(cancelBtn) cancelBtn.style.display = 'none';
+          if(okBtn) okBtn.textContent = 'Зрозуміло';
+          if(document.getElementById('confirmTitle')) document.getElementById('confirmTitle').innerHTML = '<i class="fa-solid fa-circle-info"></i> Повідомлення';
+      } else {
+          if(cancelBtn) cancelBtn.style.display = 'inline-block';
+          if(okBtn) okBtn.textContent = 'Так, продовжити';
+          if(document.getElementById('confirmTitle')) document.getElementById('confirmTitle').innerHTML = '<i class="fa-solid fa-circle-question"></i> Підтвердіть дію';
+      }
+
+      if (!modal) return isAlert ? window.alert(message) : callback(window.confirm(message)); 
+
+      msg.textContent = message;
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+
+      const cleanup = (result) => {
+          modal.classList.remove('show');
+          document.body.style.overflow = 'auto';
+          
+          okBtn.onclick = null;
+          cancelBtn.onclick = null;
+          closeBtn.onclick = null;
+          modal.onclick = null;
+          
+          if (!isAlert) callback(result);
+      };
+
+      const handleOk = () => cleanup(true);
+      const handleCancel = () => cleanup(false);
+      const handleOutsideClick = (e) => {
+          if (e.target === modal && !isAlert) cleanup(false);
+          if (e.target === modal && isAlert) cleanup(true);
+      };
+      
+      if(okBtn) okBtn.onclick = handleOk;
+      if(cancelBtn && !isAlert) cancelBtn.onclick = handleCancel;
+      if(closeBtn) closeBtn.onclick = handleCancel;
+      modal.onclick = handleOutsideClick;
+  }
+  window.customConfirm = customConfirm;
+
   
   // --- КЕШУВАННЯ ДАНИХ (для клієнта) ---
   let members = [];
@@ -25,24 +90,70 @@ document.addEventListener('DOMContentLoaded', () => {
   let gallery = [];
   let currentUser = loadCurrentUser(); 
   
-  // ... (Кешування DOM елементів - залишається) ...
+  // --- КЕШУВАННЯ DOM ЕЛЕМЕНТІВ (залишається) ---
+  if(document.getElementById('year')) document.getElementById('year').textContent = new Date().getFullYear();
+  const navToggle = document.getElementById('navToggle');
+  const mainNav = document.getElementById('mainNav');
+  const membersGrid = document.getElementById('membersGrid');
+  const newsList = document.getElementById('newsList');
+  const galleryGrid = document.getElementById('galleryGrid');
+  const memberSearch = document.getElementById('memberSearch');
+  const adminSidebar = document.getElementById('adminSidebar');
+  const closeSidebar = document.getElementById('closeSidebar');
+  const userDatabaseSidebar = document.getElementById('userDatabaseSidebar');
+  const totalUsersSidebar = document.getElementById('totalUsersSidebar');
+  const totalAdminsSidebar = document.getElementById('totalAdminsSidebar');
+  const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImage = document.getElementById('lightboxImage');
+  const lightboxCloseBtn = document.getElementById('lightboxCloseBtn');
+  const lightboxPrevBtn = document.getElementById('lightboxPrevBtn');
+  const lightboxNextBtn = document.getElementById('lightboxNextBtn');
+  const authModal = document.getElementById('authModal');
+  const openAuthBtn = document.getElementById('openAuthBtn');
+  const authBtnText = document.getElementById('authBtnText');
+  const addNewsBtn = document.getElementById('addNewsBtn');
+  const galleryUrl = document.getElementById('galleryUrl');
+  const addGalleryBtn = document.getElementById('addGalleryBtn');
+  const newsTitle = document.getElementById('newsTitle');
+  const newsDate = document.getElementById('newsDate');
+  const newsSummary = document.getElementById('newsSummary');
+  const regUser = document.getElementById('regUser');
+  const regEmail = document.getElementById('regEmail');
+  const regPass = document.getElementById('regPass');
+  const regPassConfirm = document.getElementById('regPassConfirm');
+  const loginUser = document.getElementById('loginUser');
+  const loginPass = document.getElementById('loginPass');
+  const registerForm = document.getElementById('registerForm');
+  const loginForm = document.getElementById('loginForm');
+  const addMemberBtn = document.getElementById('addMemberBtn');
+  const tabRegister = document.getElementById('tabRegister');
+  const userSearchSidebar = document.getElementById('userSearchSidebar');
+  const addMemberModal = document.getElementById('addMemberModal');
+  const closeMemberModal = document.getElementById('closeMemberModal');
+  const addMemberForm = document.getElementById('addMemberForm');
+  const memberNewName = document.getElementById('memberNewName');
+  const memberNewRole = document.getElementById('memberNewRole');
+  const memberNewDiscord = document.getElementById('memberNewDiscord');
+  const memberNewYoutube = document.getElementById('memberNewYoutube');
+  const memberNewTg = document.getElementById('memberNewTg');
+  const memberLimitWarning = document.getElementById('memberLimitWarning');
+
+  let currentImageIndex = 0;
+  let allUsersCache = []; // Кеш користувачів для адмін-панелі
+
+
+  // --- API ФУНКЦІЇ ---
   
-  // --- ФУНКЦІЇ ДЛЯ API (КЛЮЧОВА ЗМІНА) ---
-  
-  /**
-   * Створює заголовки для автентифікації на сервері.
-   */
   function getAuthHeaders() {
       if (!currentUser) return {};
+      // Надсилаємо дані користувача в заголовках для авторизації на бекенді
       return {
           'X-Auth-User': currentUser.username,
           'X-Auth-Role': currentUser.role
       };
   }
 
-  /**
-   * Універсальний Fetch-обробник
-   */
   async function apiFetch(url, options = {}) {
       try {
           const headers = {
@@ -61,8 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           return data;
       } catch (error) {
-          console.error("API Fetch Error:", error);
-          customConfirm('Помилка з\'єднання з сервером.');
+          customConfirm('Помилка з\'єднання з сервером. Перевірте мережу або Railway.');
           return null;
       }
   }
@@ -90,44 +200,139 @@ document.addEventListener('DOMContentLoaded', () => {
       if(countsData){
           if(totalUsersSidebar) totalUsersSidebar.textContent = countsData.totalUsers;
           if(totalAdminsSidebar) totalAdminsSidebar.textContent = countsData.totalAdmins;
+          // Оновлюємо UI реєстрації тут, оскільки ліміт перевіряється на сервері
+          if (tabRegister) {
+            const canRegister = countsData.totalUsers < 100; // Використовуємо ліміт із сервера
+            if (!canRegister) {
+              tabRegister.textContent = 'Реєстрація (Зайнято)';
+              tabRegister.disabled = true;
+            } else {
+              tabRegister.textContent = 'Реєстрація';
+              tabRegister.disabled = false;
+            }
+          }
+      }
+
+      // 5. Завантаження користувачів для Адмін-панелі (якщо адміністратор)
+      if (currentUser && currentUser.role === 'admin') {
+          const usersData = await apiFetch('/api/users');
+          if (usersData) allUsersCache = usersData;
       }
   }
+
+  // --- UI & РЕНДЕРИНГ (АДАПТОВАНО) ---
   
-  // ... (checkAccess, updateAuthUI - залишаються, але використовують currentUser) ...
+  function checkAccess() {
+    const body = document.body;
+    body.classList.toggle('is-logged-in', !!currentUser);
+    body.classList.toggle('is-admin', currentUser && currentUser.role === 'admin');
+  }
+
+  function updateAuthUI() {
+      // ... (схожа логіка як в оригіналі, але без перевірки canRegister, яка тепер у loadInitialData)
+      if (!openAuthBtn || !authBtnText) return;
+      
+      if (currentUser) {
+        if (currentUser.role === 'admin') {
+          authBtnText.textContent = 'ADMIN PANEL';
+          openAuthBtn.classList.remove('btn-outline');
+          openAuthBtn.classList.add('btn-primary');
+          openAuthBtn.style.boxShadow = "0 0 15px var(--accent)";
+        } else {
+          authBtnText.textContent = currentUser.username;
+          openAuthBtn.classList.remove('btn-primary');
+          openAuthBtn.classList.add('btn-outline');
+          openAuthBtn.style.boxShadow = "none";
+        }
+      } else {
+        authBtnText.textContent = 'Вхід';
+        openAuthBtn.classList.add('btn-primary');
+        openAuthBtn.classList.remove('btn-outline');
+        openAuthBtn.style.boxShadow = "none";
+      }
+
+      checkAccess();
+  }
+
+  function renderAdminSidebarData(filter = '') {
+      if (!userDatabaseSidebar) return;
+      
+      const lowerFilter = filter.toLowerCase().trim();
+      const filteredUsers = allUsersCache.filter(u => 
+          u.username.toLowerCase().includes(lowerFilter) || 
+          (u.email && u.email.toLowerCase().includes(lowerFilter))
+      );
+      
+      const fragment = document.createDocumentFragment();
+      
+      filteredUsers.forEach(u => {
+        const isMe = currentUser && u.username === currentUser.username;
+        
+        const creationInfo = u.regDate ? 
+            `<small class="u-date" style="color:#777; font-size:10px;">Створено: ${new Date(u.regDate).toLocaleDateString('uk-UA')} (${timeAgo(u.regDate)})</small>` : 
+            `<small class="u-date" style="color:#777; font-size:10px;">Дата невідома</small>`;
+            
+        const div = document.createElement('div');
+        div.className = 'user-card-mini';
+        div.setAttribute('data-username', u.username); 
+        
+        div.innerHTML = `
+          <div class="u-info">
+            <span class="u-name">${u.username}</span>
+            <span class="u-role ${u.role}">${u.role === 'admin' ? 'ADMIN' : 'USER'}</span>
+            ${creationInfo}
+          </div>
+          ${!isMe && u.role !== 'admin' ? 
+            `<button class="btn-ban" data-action="ban"><i class="fa-solid fa-ban"></i></button>` : ''}
+        `;
+        fragment.appendChild(div);
+      });
+      
+      userDatabaseSidebar.innerHTML = '';
+      userDatabaseSidebar.appendChild(fragment); 
+  }
   
-  // --- ФУНКЦІЇ РЕНДЕРИНГУ ---
-  // ... (renderAdminSidebarData, renderMembers, renderNews, renderGallery - залишаються, але працюють з глобальними масивами members/news/gallery) ...
-  
-  // --- ГЛОБАЛЬНІ ФУНКЦІЇ (ОБРОБКА ДІЙ) ---
+  // --- (renderMembers, renderNews, renderGallery - залишаються як у оригіналі, працюючи з локальними members/news/gallery масивами) ---
+
+
+  // --- ГЛОБАЛЬНІ ФУНКЦІЇ (ОБРОБКА ДІЙ API) ---
   
   async function banUser(username) {
       customConfirm(`Ви впевнені, що хочете заблокувати користувача ${username}?`, async (result) => {
           if (!result) return;
           
           const data = await apiFetch(`/api/users/${username}`, { method: 'DELETE' });
-          if (data && currentUser && currentUser.username === username && currentUser.role !== 'admin') {
-              currentUser = null;
-              localStorage.removeItem(CURRENT_USER_KEY);
-              updateAuthUI();
-              loadInitialData(); // Оновлення всіх даних, включаючи список учасників
-          }
-          if(data) {
+          if (data) {
+              // Оновлюємо кеш та UI
+              allUsersCache = allUsersCache.filter(u => u.username !== username);
               renderAdminSidebarData(userSearchSidebar ? userSearchSidebar.value : '');
+              loadInitialData(); // Оновлення лічильників та учасників
+
+              // Якщо забанили самого себе (якщо не адмін)
+              if(currentUser && currentUser.username === username && currentUser.role !== 'admin') {
+                  currentUser = null;
+                  removeCurrentUser();
+                  updateAuthUI();
+              }
               customConfirm(`Користувача ${username} видалено.`);
           }
       });
   }
 
   async function editMember(id) {
-      // ... (схожа логіка перевірки прав та збору даних через prompt) ...
-      
       const member = members.find(m => m.id == id);
       if (!member) return;
       
       const newName = prompt(`Редагувати ім'я для ${member.name}:`, member.name);
       if (newName === null || newName.trim() === '') return;
-      // ... (збір інших полів) ...
-
+      
+      const newRole = prompt(`Редагувати роль для ${newName}:`, member.role);
+      if (newRole === null || newRole.trim() === '') return;
+      
+      const newDiscord = prompt(`Discord (${member.links?.discord || 'немає'}):`, member.links?.discord || '');
+      const newYoutube = prompt(`YouTube URL (${member.links?.youtube || 'немає'}):`, member.links?.youtube || '');
+      const newTg = prompt(`Telegram URL (${member.links?.tg || 'немає'}):`, member.links?.tg || '');
+      
       const updateData = {
           name: newName.trim(),
           role: newRole.trim(),
@@ -142,7 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       if (data) {
-          // Оновлення локального кешу
           const index = members.findIndex(m => m.id == id);
           if (index !== -1) members[index] = data.member;
           renderMembers(memberSearch ? memberSearch.value : '');
@@ -189,23 +393,71 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ... (Lightbox функції - залишаються) ...
+  // --- ОБРОБНИКИ ПОДІЙ (АДАПТОВАНО) ---
 
+  // ... (Delegation, Scroll Events, Smooth Scroll - залишаються) ...
 
-  // --- ОБРОБНИКИ ПОДІЙ ---
+  // Admin Sidebar 
+  if(closeSidebar) closeSidebar.addEventListener('click', () => {
+    if(adminSidebar) adminSidebar.classList.remove('open');
+  });
+  if(adminLogoutBtn) {
+    adminLogoutBtn.addEventListener('click', () => {
+        customConfirm('Ви впевнені, що хочете вийти з адмін-панелі?', (result) => {
+            if (result) {
+                currentUser = null;
+                removeCurrentUser();
+                if(adminSidebar) adminSidebar.classList.remove('open');
+                updateAuthUI();
+                loadInitialData();
+            }
+        });
+    });
+  }
 
-  // ... (Toggle, Scroll, Smooth Scroll, Sidebar - залишаються) ...
+  // Обробник подій: Пошук користувачів в Адмін-панелі
+  if (userSearchSidebar) {
+      userSearchSidebar.addEventListener('input', (e) => {
+          renderAdminSidebarData(e.target.value); 
+      });
+  }
 
-  // AUTH SYSTEM (Login & Register)
+  // AUTH SYSTEM
+  if(openAuthBtn) openAuthBtn.addEventListener('click', async () => {
+    if (currentUser) {
+      if (currentUser.role === 'admin') {
+        // Оновлюємо кеш користувачів перед відкриттям панелі
+        await loadInitialData(); 
+        if(adminSidebar) adminSidebar.classList.add('open');
+        renderAdminSidebarData(userSearchSidebar ? userSearchSidebar.value : '');
+      } else {
+        customConfirm(`Ви впевнені, що хочете вийти з акаунту ${currentUser.username}?`, (result) => {
+          if (result) {
+            currentUser = null;
+            removeCurrentUser();
+            updateAuthUI();
+            loadInitialData(); 
+          }
+        });
+      }
+    } else {
+      if(authModal) authModal.classList.add('show');
+    }
+  });
+
+  // REGISTER
   if(registerForm) registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      // ... (валідація полів) ...
       
-      const body = {
-          username: regUser.value.trim(), 
-          email: regEmail.value.trim(), 
-          password: regPass.value
-      };
+      const user = regUser.value.trim();
+      const email = regEmail.value.trim();
+      const pass = regPass.value;
+
+      if(user.length < 3) return customConfirm('Логін має бути довший 3 символів');
+      if(pass.length < 6) return customConfirm('Пароль має бути довший 6 символів');
+      if(pass !== regPassConfirm.value) return customConfirm('Паролі не співпадають');
+      
+      const body = { username: user, email: email, password: pass };
 
       const data = await apiFetch('/api/auth/register', {
           method: 'POST',
@@ -213,13 +465,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       if (data && document.getElementById('tabLogin')) {
-          updateAuthUI();
+          loadInitialData(); // Оновлюємо лічильники
           customConfirm('Готово! Тепер можете увійти.');
           document.getElementById('tabLogin').click();
           registerForm.reset();
       }
   });
 
+  // LOGIN
   if(loginForm) loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = loginUser.value.trim();
@@ -237,10 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if(authModal) authModal.classList.remove('show');
           customConfirm(data.message);
           
-          // Для Адміна оновлюємо дані одразу після входу
-          if(currentUser.role === 'admin') {
-              loadInitialData();
-          }
+          loadInitialData();
       }
   });
 
@@ -265,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (data) {
             news.push(data.news);
-            news.sort((a,b)=>b.id-a.id); // Сортування на клієнті
+            news.sort((a,b)=>b.id-a.id); 
             renderNews();
             newsTitle.value = '';
             newsDate.value = '';
@@ -302,8 +552,6 @@ document.addEventListener('DOMContentLoaded', () => {
           
           if(!currentUser) return; 
           
-          // ... (збір даних) ...
-
           const newMemberData = {
             name: memberNewName.value.trim(),
             role: memberNewRole.value.trim(),
@@ -327,9 +575,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
+
   // Initial Render and Animation Activation
   updateAuthUI(); 
-  loadInitialData(); // Завантаження даних з API
+  loadInitialData(); 
   
-  // ... (checkVisibilityAndAnimate - залишається) ...
+  // (checkVisibilityAndAnimate - залишається)
 });
