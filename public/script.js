@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentUser = loadCurrentUser(); 
 
   // --- API FETCH (MOCKED/REAL - TRY REAL, FALLBACK TO MOCK) ---
+  // Якщо ви запустите цей файл без Node.js, він буде використовувати MOCK-дані.
   async function apiFetch(url, options = {}) {
       const method = options.method || 'GET';
 
@@ -81,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
       }
       
-      // MOCK AUTH
+      // MOCK AUTH (для коректного входу в адмін-панель: ADMIN 🦈 / barracuda123)
       if (url === '/api/auth/login' && method === 'POST') {
           const body = JSON.parse(options.body);
           const user = MOCK_USERS.find(u => u.username === body.username && u.password === body.password);
@@ -101,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // All other mutations (POST, PUT, DELETE) simulate success
       if (method !== 'GET') {
+          // Якщо це POST/PUT/DELETE, ми імітуємо успіх, але дані на сторінці не оновляться, оскільки база даних не справжня.
           return { success: true, message: 'Mocked Success' };
       }
       
@@ -216,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(!el) return;
       
       el.innerHTML = users.map(u => {
-          const isMe = currentUser && u.username === u.username; // Fixed user reference to 'u'
+          const isMe = currentUser && u.username === u.username;
           // Статус Online/Offline (mocked for demo)
           const isOnline = isMe ? true : (Math.random() > 0.4); 
           const statusClass = isOnline ? 'online' : 'offline';
