@@ -1,17 +1,14 @@
 {
   "name": "barracuda-api",
   "version": "1.0.0",
+  "description": "Barracuda Family Stake RP Website API",
   "main": "server.js",
-  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "migrate": "node init_db.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.2",
-    "pg": "^8.11.0"
+    "express": "^4.19.2",
+    "mongoose": "^8.4.1", 
+    "dotenv": "^16.4.5" 
   }
 }
