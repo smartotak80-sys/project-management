@@ -4,7 +4,7 @@
 // - Admins use token from /auth/login (server returns token).
 // - Shows members/news/gallery from server, merges local-unsynced members for local view.
 
-const API_BASE = (typeof API_BASE !== 'undefined') ? API_BASE : "https://project-management-production-f175.up.railway.app";;
+const API_BASE = "https://project-management-production-f175.up.railway.app";
 const CURRENT_USER_KEY = 'barakuda_current_user';
 const LOCAL_UNSYNC_MEMBERS_KEY = 'barakuda_local_unsynced_members_v1';
 const MEMBERS_KEY = 'barakuda_members_v3'; // local cache key (optional)
