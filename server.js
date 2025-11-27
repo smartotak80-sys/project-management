@@ -1,4 +1,4 @@
-// server.js — UNIQUE EMAIL & LOGIN + LIMIT 1
+// server.js — MAX 1 MEMBER PER USER
 require('dotenv').config();
 const express = require("express");
 const path = require("path");
@@ -35,11 +35,9 @@ const gallerySchema = new mongoose.Schema({
     id: { type: Number, required: true, unique: true },
     url: { type: String, required: true }
 });
-
-// ВАЖЛИВО: Додано unique: true для захисту на рівні бази даних
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true }, // Тепер email обов'язковий і унікальний
+    email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, default: 'member' },
     regDate: { type: Date, default: Date.now }
@@ -57,10 +55,10 @@ app.use(express.static(path.join(__dirname, "public")));
 // --- НАЛАШТУВАННЯ ---
 const ADMIN_LOGIN = 'famillybarracuda@gmail.com'; 
 const ADMIN_PASS = 'barracuda123';
-const MAX_USERS = 1; // ЛІМІТ 1 КОРИСТУВАЧ
-const MAX_MEMBER_PER_USER = 1;
+const MAX_USERS = 1; // Ліміт акаунтів
+const MAX_MEMBER_PER_USER = 1; // ЛІМІТ УЧАСНИКІВ НА 1 АКАУНТ
 
-// Auth Middleware (Decoder)
+// Auth Middleware
 const authenticateAdmin = (req, res, next) => {
     const user = req.headers['x-auth-user'] ? decodeURIComponent(req.headers['x-auth-user']) : '';
     const role = req.headers['x-auth-role'] ? decodeURIComponent(req.headers['x-auth-role']) : '';
@@ -93,22 +91,13 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/auth/register', async (req, res) => {
     const { username, email, password } = req.body;
-    
-    // 1. Перевірка ліміту
     const count = await User.countDocuments();
-    if (count >= MAX_USERS) {
-        return res.status(400).json({ success: false, message: 'Реєстрацію закрито. Ліміт користувачів вичерпано.' });
-    }
+    if (count >= MAX_USERS) return res.status(400).json({ success: false, message: 'Реєстрацію закрито. Ліміт користувачів вичерпано.' });
 
-    // 2. Перевірка на унікальність (логін АБО email)
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
-        if (existingUser.username === username) {
-            return res.status(400).json({ success: false, message: 'Цей ЛОГІН вже зайнятий!' });
-        }
-        if (existingUser.email === email) {
-            return res.status(400).json({ success: false, message: 'Цей EMAIL вже використовується!' });
-        }
+        if (existingUser.username === username) return res.status(400).json({ success: false, message: 'Цей ЛОГІН вже зайнятий!' });
+        if (existingUser.email === email) return res.status(400).json({ success: false, message: 'Цей EMAIL вже використовується!' });
     }
     
     try {
@@ -116,10 +105,7 @@ app.post('/api/auth/register', async (req, res) => {
         await newUser.save();
         res.json({ success: true, message: 'Акаунт створено успішно!' });
     } catch (error) {
-        // Додатковий захист, якщо база даних поверне помилку дублікату (код 11000)
-        if (error.code === 11000) {
-            return res.status(400).json({ success: false, message: 'Логін або Email вже існують.' });
-        }
+        if (error.code === 11000) return res.status(400).json({ success: false, message: 'Логін або Email вже існують.' });
         res.status(500).json({ success: false, message: 'Помилка сервера.' });
     }
 });
@@ -141,11 +127,23 @@ app.delete('/api/users/:username', authenticateAdmin, async (req, res) => {
 
 // Content Routes
 app.get('/api/members', async (req, res) => { res.json(await Member.find().sort({ name: 1 })); });
+
+// СТВОРЕННЯ УЧАСНИКА (З ПЕРЕВІРКОЮ ЛІМІТУ)
 app.post('/api/members', authenticateUser, async (req, res) => {
     const { name, role, discord, youtube, tg } = req.body;
+    
+    // Якщо не адмін, перевіряємо ліміт
+    if (req.currentUser.role !== 'admin') {
+        const count = await Member.countDocuments({ owner: req.currentUser.username });
+        if (count >= MAX_MEMBER_PER_USER) {
+            return res.status(400).json({ message: `Ви вже створили ${MAX_MEMBER_PER_USER} учасника. Видаліть старого, щоб додати нового.` });
+        }
+    }
+
     await new Member({ id: Date.now(), name, role, owner: req.currentUser.username, links: { discord, youtube, tg } }).save();
     res.json({ success: true });
 });
+
 app.put('/api/members/:id', authenticateUser, async (req, res) => {
     const m = await Member.findOne({ id: req.params.id });
     if(!m) return res.status(404).json({message:'Not found'});
