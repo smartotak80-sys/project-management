@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Barracuda Family — Stake RP</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Courier+New&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
@@ -150,7 +150,6 @@
     <footer class="site-footer">
       <div class="container animated-content" data-delay="0s">
         <p>© <span id="year"></span> Barakuda Family — Stake RP. Всі права захищені.</p>
-        <p style="margin-top: 5px;">Ваші права захищені.</p>
       </div>
     </footer>
   </div>
@@ -167,9 +166,32 @@
     <div class="admin-profile-section">
       <div class="profile-glitch-avatar" data-text="ADM">ADM</div>
       <div class="profile-details">
-        <span class="p-name">ADMINISTRATOR</span>
-        <span class="p-role">System Root</span>
-        <span id="adminClock" class="p-clock">00:00:00</span>
+        <div class="p-header">
+           <span class="p-name">ADMINISTRATOR</span>
+           <span id="adminStatus" class="p-status online">ONLINE</span>
+        </div>
+        
+        <div class="p-dashboard-row">
+           <div class="p-data-box">
+              <i class="fa-regular fa-calendar"></i>
+              <span id="adminDate">--.--.----</span>
+           </div>
+           <div class="p-data-box time-box">
+              <i class="fa-regular fa-clock"></i>
+              <span id="adminClock">00:00:00</span>
+           </div>
+        </div>
+
+        <div class="p-extra-info">
+           <div class="p-extra-item">
+             <small>SESSION</small>
+             <span id="adminSession">00:00:00</span>
+           </div>
+           <div class="p-extra-item">
+             <small>PING</small>
+             <span id="adminPing" style="color: #22c55e;">12ms</span>
+           </div>
+        </div>
       </div>
       <button id="adminLogoutBtn" class="logout-mini-btn" title="Вийти"><i class="fa-solid fa-power-off"></i></button>
     </div>
@@ -187,8 +209,7 @@
           <i class="fa-solid fa-search"></i>
           <input id="userSearchSidebar" placeholder="Пошук у базі даних..."> 
         </div>
-        <div class="user-list-container" id="userDatabaseSidebar">
-          </div>
+        <div class="user-list-container" id="userDatabaseSidebar"></div>
       </div>
 
       <div id="tab-stats" class="tab-pane">
@@ -226,9 +247,9 @@
         <div class="activity-log">
           <h4>Остання активність</h4>
           <ul class="fake-logs">
-            <li><span class="log-time">Зараз</span> Система в нормі</li>
-            <li><span class="log-time">10хв</span> Оновлення кешу</li>
-            <li><span class="log-time">1год</span> Бекап бази даних</li>
+            <li><span class="log-time">Зараз</span> Перевірка статусу системи</li>
+            <li><span class="log-time">10хв</span> Оновлення даних користувачів</li>
+            <li><span class="log-time">1год</span> Автоматичний бекап бази</li>
           </ul>
         </div>
       </div>
@@ -236,23 +257,19 @@
       <div id="tab-sys" class="tab-pane">
         <div class="system-status-box">
           <h4>Server Status <span class="badge-online">ONLINE</span></h4>
-          
           <div class="sys-meter">
             <div class="meter-label"><span>CPU Load</span> <span id="cpuVal">12%</span></div>
             <div class="meter-bar"><div class="meter-fill" id="cpuBar" style="width: 12%"></div></div>
           </div>
-          
           <div class="sys-meter">
             <div class="meter-label"><span>Memory</span> <span id="memVal">34%</span></div>
             <div class="meter-bar"><div class="meter-fill" id="memBar" style="width: 34%"></div></div>
           </div>
-
           <div class="sys-meter">
             <div class="meter-label"><span>Database</span> <span>Connected</span></div>
             <div class="meter-bar"><div class="meter-fill" style="width: 100%; background: #22c55e;"></div></div>
           </div>
         </div>
-        
         <div class="sys-info-text">
           <p>Version: v2.5.0 (Stable)</p>
           <p>Region: Europe (UA)</p>
@@ -262,6 +279,7 @@
 
     </div>
   </div>
+
   <div id="authModal" class="auth-modal">
     <div class="auth-content">
       <span id="closeAuth" class="close-auth">&times;</span>
@@ -307,18 +325,14 @@
     <div class="custom-modal-content">
       <span id="closeEditMemberModal" class="close-modal">&times;</span>
       <h3><i class="fa-solid fa-user-pen"></i> Редагувати учасника</h3>
-      
       <form id="editMemberForm" class="auth-form">
         <input type="hidden" id="editMemberId">
-        
         <input type="text" id="editMemberName" placeholder="Ім'я учасника" required>
         <input type="text" id="editMemberRole" placeholder="Роль" required>
-        
         <h4 class="social-header">Соцмережі (не обов'язково)</h4>
         <input type="text" id="editMemberDiscord" placeholder="Discord юзернейм">
         <input type="url" id="editMemberYoutube" placeholder="YouTube URL">
         <input type="url" id="editMemberTg" placeholder="Telegram URL">
-
         <button type="submit" class="btn btn-primary full-width">ЗБЕРЕГТИ ЗМІНИ</button>
       </form>
     </div>
@@ -328,10 +342,10 @@
     <div class="custom-modal-content">
       <span id="closeConfirmModal" class="close-modal">&times;</span>
       <h3 id="confirmTitle"><i class="fa-solid fa-circle-question"></i> Підтвердіть дію</h3>
-      <p id="confirmMessage">Ви впевнені, що хочете виконати цю дію?</p>
+      <p id="confirmMessage">Ви впевнені?</p>
       <div class="confirm-actions">
-        <button id="confirmOkBtn" class="btn btn-primary">Так, продовжити</button>
-        <button id="confirmCancelBtn" class="btn btn-outline">Відмінити</button>
+        <button id="confirmOkBtn" class="btn btn-primary">Так</button>
+        <button id="confirmCancelBtn" class="btn btn-outline">Ні</button>
       </div>
     </div>
   </div>
