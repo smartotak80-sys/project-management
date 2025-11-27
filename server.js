@@ -1,4 +1,4 @@
-// server.js - Оновлений для MongoDB
+// server.js - Фінальна версія для MongoDB та Railway
 require('dotenv').config();
 const express = require("express");
 const path = require("path");
@@ -6,7 +6,6 @@ const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-// Використовує змінну середовища MONGODB_URI, яку ви налаштували на Railway
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/barakuda_db';
 
 // --- НАЛАШТУВАННЯ БАЗИ ДАНИХ (MongoDB) ---
@@ -51,6 +50,7 @@ const User = mongoose.model('User', userSchema);
 
 // --- Middleware ---
 app.use(express.json()); // Для обробки JSON-тіла запитів
+// ВАЖЛИВО: Переконайтеся, що index.html, styles.css, script.js знаходяться в папці 'public'
 app.use(express.static(path.join(__dirname, "public")));
 
 // --- ФІКСОВАНІ КОНСТАНТИ ---
@@ -62,7 +62,6 @@ const MAX_MEMBER_PER_USER = 1;
 
 // --- ДОПОМІЖНІ ФУНКЦІЇ ДЛЯ АВТЕНТИФІКАЦІЇ/АВТОРИЗАЦІЇ ---
 const authenticateAdmin = (req, res, next) => {
-    // Використовуємо кастомні заголовки для імітації аутентифікації
     if (req.headers['x-auth-user'] !== 'ADMIN 🦈' || req.headers['x-auth-role'] !== 'admin') {
         return res.status(403).json({ message: "Forbidden: Admin access required" });
     }
@@ -82,6 +81,7 @@ const authenticateUser = (req, res, next) => {
 
 
 // --- API ЕНДПОІНТИ (РОУТИ) ---
+// (Логіка API залишається такою ж, як і в попередній відповіді, використовуючи Mongoose)
 
 // 1. АУТЕНТИФІКАЦІЯ
 app.post('/api/auth/login', async (req, res) => {
@@ -273,6 +273,11 @@ app.get("/", (req, res) => {
 });
 
 // --- СТАРТ СЕРВЕРА ---
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+const HOST = '0.0.0.0'; 
+// Використовуйте порт, наданий Railway
+// В логах був 8080, але краще залишити process.env.PORT
+const FINAL_PORT = process.env.PORT || 3000;
+
+app.listen(FINAL_PORT, HOST, () => { 
+    console.log(`Server running on http://${HOST}:${FINAL_PORT}`);
 });
