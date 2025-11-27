@@ -2,12 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
   const MAX_MEMBER_PER_USER = 1; 
 
-  // --- HELPERS (Локальне сховище тільки для сесії адміна) ---
+  // --- HELPERS ---
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
   
-  // Custom Confirm
+  // Custom Confirm Modal
   function customConfirm(message, callback) {
       const modal = document.getElementById('customConfirmModal');
       const msg = document.getElementById('confirmMessage');
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let members = [];
   let currentUser = loadCurrentUser(); 
 
-  // --- API FETCH (Функція для спілкування з сервером) ---
+  // --- API FETCH FUNCTION (Зв'язок з сервером) ---
   async function apiFetch(url, options = {}) {
       try {
           const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
-  // --- LOAD DATA (Завантаження даних при старті) ---
+  // --- LOAD DATA ---
   async function loadInitialData() {
       // 1. Members
       const m = await apiFetch('/api/members');
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if(document.getElementById('totalAdminsSidebar')) document.getElementById('totalAdminsSidebar').textContent = counts.totalAdmins;
       }
 
-      // 5. Admin Sidebar (Якщо адмін)
+      // 5. Admin Sidebar
       if (currentUser && currentUser.role === 'admin') {
           const users = await apiFetch('/api/users');
           if (users) renderAdminSidebar(users);
@@ -161,17 +161,14 @@ document.addEventListener('DOMContentLoaded', () => {
       checkAnimate();
   }
 
-  // --- ОНОВЛЕНИЙ СПИСОК КОРИСТУВАЧІВ (БЕЗ "М", З ПАРОЛЕМ) ---
   function renderAdminSidebar(users) {
       const el = document.getElementById('userDatabaseSidebar');
       if(!el) return;
       
       el.innerHTML = users.map(u => {
           const isMe = currentUser && u.username === currentUser.username;
-          // Статус Online/Offline
           const isOnline = isMe ? true : (Math.random() > 0.4); 
           const statusClass = isOnline ? 'online' : 'offline';
-          const statusText = isOnline ? 'ON' : 'OFF';
           
           let dateStr = '---';
           if (u.regDate) {
@@ -179,7 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
               dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
           }
 
-          // ВІДОБРАЖЕННЯ ДАНИХ У СПИСКУ
           return `
             <div class="user-card-row">
                 <div class="u-status-indicator ${statusClass}"></div>
@@ -226,6 +222,55 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   };
 
+  // --- BUTTON LISTENERS (ВИПРАВЛЕНО ДЛЯ РОБОТИ З DB) ---
+  
+  // 1. ADD NEWS
+  const addNewsBtn = document.getElementById('addNewsBtn');
+  if(addNewsBtn) {
+      addNewsBtn.addEventListener('click', async () => {
+          const newsTitle = document.getElementById('newsTitle');
+          const newsDate = document.getElementById('newsDate');
+          const newsSummary = document.getElementById('newsSummary');
+
+          if (!newsTitle.value || !newsDate.value || !newsSummary.value) {
+              return customConfirm('Заповніть всі поля для новини!');
+          }
+
+          const body = {
+              title: newsTitle.value,
+              date: newsDate.value,
+              summary: newsSummary.value
+          };
+
+          const res = await apiFetch('/api/news', { method: 'POST', body: JSON.stringify(body) });
+          if(res) {
+              newsTitle.value = '';
+              newsDate.value = '';
+              newsSummary.value = '';
+              loadInitialData(); // Оновлюємо список
+              customConfirm('Новину успішно додано.');
+          }
+      });
+  }
+
+  // 2. ADD GALLERY
+  const addGalleryBtn = document.getElementById('addGalleryBtn');
+  if(addGalleryBtn) {
+      addGalleryBtn.addEventListener('click', async () => {
+          const galleryUrl = document.getElementById('galleryUrl');
+          if (!galleryUrl.value) return customConfirm('Введіть посилання на зображення!');
+
+          const body = { url: galleryUrl.value };
+          
+          const res = await apiFetch('/api/gallery', { method: 'POST', body: JSON.stringify(body) });
+          if(res) {
+              galleryUrl.value = '';
+              loadInitialData(); // Оновлюємо галерею
+              customConfirm('Фото додано в галерею.');
+          }
+      });
+  }
+
   // --- AUTH & UI ---
   function updateAuthUI() {
       const btn = document.getElementById('openAuthBtn');
@@ -240,7 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
           txt.textContent = 'Вхід';
       }
       
-      // Кнопка додавання
       const addBtn = document.getElementById('addMemberBtn');
       if(addBtn) {
           if(currentUser) {
