@@ -1,8 +1,8 @@
-// script.js — MEMBER LIMIT UI
+// script.js — EDIT BUTTON ADDED
 
 document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
-  const MAX_MEMBER_PER_USER = 1; // Константа для UI перевірки
+  const MAX_MEMBER_PER_USER = 1; 
   
   // --- HELPERS ---
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
@@ -77,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const g = await apiFetch('/api/gallery');
       if (g) renderGallery(g);
 
-      // Перевірка ліміту користувачів
       const counts = await apiFetch('/api/users/count');
       if(counts){
           const tabReg = document.getElementById('tabRegister');
@@ -86,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
               tabReg.textContent = 'Реєстрація (Закрито)';
               tabReg.disabled = true;
               tabReg.style.opacity = '0.5';
-              tabReg.title = "Ліміт користувачів вичерпано";
             } else {
               tabReg.textContent = 'Реєстрація';
               tabReg.disabled = false;
@@ -99,6 +97,35 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentUser && currentUser.role === 'admin') {
           const users = await apiFetch('/api/users');
           if (users) renderAdminSidebar(users);
+      }
+      
+      updateAddMemberButton();
+  }
+
+  function updateAddMemberButton() {
+      const btn = document.getElementById('addMemberBtn');
+      if (!btn || !currentUser) return;
+
+      if (currentUser.role === 'admin') {
+          btn.disabled = false;
+          btn.innerHTML = 'Додати учасника';
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+          return;
+      }
+
+      const myMembersCount = members.filter(m => m.owner === currentUser.username).length;
+      
+      if (myMembersCount >= MAX_MEMBER_PER_USER) {
+          btn.disabled = true;
+          btn.innerHTML = `<i class="fa-solid fa-lock"></i> Ліміт (${myMembersCount}/${MAX_MEMBER_PER_USER})`;
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+      } else {
+          btn.disabled = false;
+          btn.innerHTML = 'Додати учасника';
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
       }
   }
 
@@ -119,11 +146,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       document.body.classList.toggle('is-logged-in', !!currentUser);
       document.body.classList.toggle('is-admin', currentUser?.role === 'admin');
+      updateAddMemberButton();
   }
 
   function renderMembers(filter='') {
       const grid = document.getElementById('membersGrid');
       if(!grid) return;
+      updateAddMemberButton();
+
       const filtered = members.filter(m => (m.name+m.role).toLowerCase().includes(filter.toLowerCase()));
       if(!filtered.length) { grid.innerHTML = '<p class="muted">Немає учасників</p>'; return; }
       
@@ -136,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if(m.links?.tg) socials += `<a href="${m.links.tg}" target="_blank" class="social-link link-tg"><i class="fa-brands fa-telegram"></i></a>`;
           socials += '</div>';
           
+          // ТУТ ДОДАНО КНОПКУ РЕДАГУВАННЯ
           return `
             <div class="member animated-content">
               <div class="member-top">
@@ -143,8 +174,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="role-badge">${m.role}</div>
                 ${socials}
               </div>
-              ${(isOwner || isAdmin) ? `<div class="member-actions admin-only">
-                  <button class="btn btn-delete" onclick="window.deleteMember(${m.id})">Видалити</button>
+              ${(isOwner || isAdmin) ? `
+              <div class="member-actions admin-only" style="display:flex; gap:10px; margin-top:15px;">
+                  <button class="btn" style="flex:1; border:1px solid #aaa; color:#fff;" onclick="window.editMember(${m.id})">
+                    <i class="fa-solid fa-pen"></i> Ред.
+                  </button>
+                  <button class="btn btn-delete" style="flex:1;" onclick="window.deleteMember(${m.id})">
+                    <i class="fa-solid fa-trash"></i> Вид.
+                  </button>
               </div>` : ''}
             </div>`;
       }).join('');
@@ -184,6 +221,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- ACTIONS ---
+  
+  // ФУНКЦІЯ РЕДАГУВАННЯ
+  window.editMember = async (id) => {
+      const m = members.find(x => x.id === id);
+      if(!m) return;
+      
+      // Використовуємо прості prompt для редагування (найшвидший спосіб без зміни HTML)
+      const newName = prompt("Введіть нове ім'я:", m.name);
+      if(newName === null) return; // Натиснуто "Скасувати"
+
+      const newRole = prompt("Введіть нову роль:", m.role);
+      if(newRole === null) return;
+
+      const newDiscord = prompt("Discord (залиште пустим, щоб видалити):", m.links?.discord || '');
+      const newYoutube = prompt("YouTube (залиште пустим, щоб видалити):", m.links?.youtube || '');
+      const newTg = prompt("Telegram (залиште пустим, щоб видалити):", m.links?.tg || '');
+
+      const updateData = {
+          name: newName.trim() || m.name, // Якщо пусте, залишаємо старе (або можна дозволити пусте)
+          role: newRole.trim() || m.role,
+          discord: newDiscord,
+          youtube: newYoutube,
+          tg: newTg
+      };
+
+      const res = await apiFetch(`/api/members/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(updateData)
+      });
+
+      if(res) {
+          loadInitialData();
+          customConfirm('Учасника оновлено!');
+      }
+  };
+
   window.deleteMember = async (id) => { customConfirm('Видалити?', async (r)=>{ if(r && await apiFetch(`/api/members/${id}`, {method:'DELETE'})) loadInitialData(); }); };
   window.deleteNews = async (id) => { customConfirm('Видалити?', async (r)=>{ if(r && await apiFetch(`/api/news/${id}`, {method:'DELETE'})) loadInitialData(); }); };
   window.deleteGallery = async (id) => { customConfirm('Видалити?', async (r)=>{ if(r && await apiFetch(`/api/gallery/${id}`, {method:'DELETE'})) loadInitialData(); }); };
@@ -239,18 +312,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if(await apiFetch('/api/gallery', {method:'POST', body:JSON.stringify({url:galleryUrl.value})})) loadInitialData();
   });
   
-  // Member Modal & Limit Check
   document.getElementById('addMemberBtn')?.addEventListener('click', ()=>{
       if(!currentUser) return customConfirm('Увійдіть');
-      
-      // КЛІЄНТСЬКА ПЕРЕВІРКА ЛІМІТУ
       if (currentUser.role !== 'admin') {
           const myMembers = members.filter(m => m.owner === currentUser.username);
           if (myMembers.length >= MAX_MEMBER_PER_USER) {
-              return customConfirm(`Ви вже створили 1 учасника. Видаліть старого, щоб створити нового.`);
+              // Ліміт перевіряється, але кнопка має бути заблокована візуально
+              return;
           }
       }
-      
       document.getElementById('addMemberModal').classList.add('show');
   });
 
@@ -258,14 +328,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('addMemberForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const body = { name:memberNewName.value, role:memberNewRole.value, discord:memberNewDiscord.value, youtube:memberNewYoutube.value, tg:memberNewTg.value };
-      // Сервер теж перевірить ліміт, але ми вже перевірили його вище
       if(await apiFetch('/api/members', {method:'POST', body:JSON.stringify(body)})) {
           document.getElementById('addMemberModal').classList.remove('show');
           loadInitialData();
       }
   });
 
-  // Animation
   const animated = document.querySelectorAll('.animated-content');
   function checkAnimate() {
       animated.forEach(el => { if(el.getBoundingClientRect().top < window.innerHeight) el.classList.add('animate-in'); });
@@ -273,7 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   window.addEventListener('scroll', checkAnimate);
 
-  // Init
   updateAuthUI();
   loadInitialData();
 });
