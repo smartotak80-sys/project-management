@@ -1,148 +1,107 @@
-/* styles.css — FINAL FIXED */
+/* --- NEW ADMIN USER LIST DESIGN --- */
 
-:root {
-  --bg-dark: #050505;
-  --bg-panel: #0f1012;
-  --accent: #ff2a2a;       
-  --accent-dark: #8a0000;
-  --text-main: #ffffff;
-  --text-muted: #94a3b8;
-  --glass: rgba(20, 20, 25, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --radius: 12px;
-  --font-main: 'Inter', system-ui, sans-serif;
-  --font-mono: 'Courier New', monospace;
+/* Контейнер для списку */
+.user-list-compact {
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px;
 }
 
-* { box-sizing: border-box; }
-html, body { height: 100%; scroll-behavior: smooth; }
-
-body {
-  margin: 0; font-family: var(--font-main);
-  background-color: var(--bg-dark);
-  background-image: radial-gradient(circle at 50% 50%, #1a0505 0%, #050505 100%);
-  color: var(--text-main); line-height: 1.6;
-}
-
-.site { display: flex; flex-direction: column; min-height: 100vh; }
-.container { width: 90%; max-width: 1200px; margin: 0 auto; }
-
-/* HEADER */
-.site-header {
-  background: rgba(5, 5, 5, 0.9); border-bottom: 1px solid var(--glass-border);
-  position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
-}
-.header-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
-.brand { display: flex; align-items: center; gap: 15px; text-decoration: none; color: inherit; }
-.logo { width: 50px; height: 50px; border-radius: var(--radius); background-image: url('https://i.postimg.cc/hzCBQ980/B.png'); background-size: cover; border: 1px solid var(--glass-border); }
-.brand-text .title { font-weight: 800; font-size: 20px; text-transform: uppercase; }
-.brand-text .subtitle { font-size: 11px; color: var(--accent); font-weight: 600; text-transform: uppercase; }
-
-.site-nav ul { display: flex; gap: 10px; list-style: none; margin: 0; padding: 0; }
-.site-nav a { text-decoration: none; color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-weight: 600; transition: 0.3s; font-size: 14px; }
-.site-nav a:hover, .site-nav a.primary { background: rgba(255, 255, 255, 0.05); color: #fff; }
-.site-nav a.primary { border: 1px solid var(--accent); color: var(--accent); }
-.site-nav a.primary:hover { background: var(--accent); color: #fff; }
-.nav-toggle { display: none; background: transparent; border: none; color: #fff; font-size: 24px; cursor: pointer; }
-
-/* HERO */
-.hero { padding: 100px 0; }
-.hero-inner { display: flex; gap: 60px; align-items: center; }
-.hero h1 { font-size: 56px; margin: 0 0 20px; font-weight: 800; text-transform: uppercase; }
-.btn { display: inline-block; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 24px; border-radius: 8px; color: #fff; cursor: pointer; font-weight: 600; text-transform: uppercase; text-decoration: none; transition: 0.3s; }
-.btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-3px); }
-.btn-primary { background: var(--accent); border: none; }
-.btn-primary:hover { background: #d00000; }
-.btn-outline { border: 1px solid var(--glass-border); }
-
-/* SECTIONS */
-.section { padding: 80px 0; }
-.section h2 { font-size: 32px; margin-bottom: 20px; text-transform: uppercase; border-bottom: 2px solid var(--accent); display: inline-block; }
-.section.alt { background: rgba(255, 255, 255, 0.02); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); }
-
-/* CONTROLS */
-input, textarea { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; margin-bottom: 10px; }
-.members-controls, .events-controls, .gallery-controls { display: flex; gap: 10px; flex-wrap: wrap; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--glass-border); }
-
-/* MEMBERS */
-.members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
-.member { background: linear-gradient(145deg, #16181c, #0b0d10); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; transition: 0.3s; }
-.member:hover { border-color: var(--accent); transform: translateY(-5px); }
-.member h3 { margin: 0; color: #fff; font-size: 18px; }
-.role-badge { display: inline-block; font-size: 11px; font-weight: bold; color: var(--accent); background: rgba(255,42,42,0.1); padding: 4px 8px; border-radius: 4px; margin-top: 5px; }
-.social-links { margin-top: 10px; display: flex; gap: 8px; }
-.social-link { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #ccc; text-decoration: none; }
-.member-actions { display: flex; gap: 10px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
-.member-actions button { flex: 1; padding: 5px; font-size: 12px; cursor: pointer; background: transparent; border: 1px solid #555; color: #ccc; border-radius: 4px; }
-.member-actions .btn-edit:hover { border-color: #3b82f6; color: #3b82f6; }
-.member-actions .btn-delete:hover { border-color: #ef4444; color: #ef4444; }
-
-/* NEWS & GALLERY */
-.news-item { background: var(--bg-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border); margin-bottom: 15px; position: relative; border-left: 4px solid var(--accent); }
-.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-.gallery-grid img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; cursor: pointer; transition: 0.3s; border: 1px solid var(--glass-border); }
-.gallery-grid img:hover { border-color: var(--accent); transform: scale(1.05); }
-
-/* ADMIN SIDEBAR (COMMAND CENTER) - FIX */
-.admin-sidebar {
-  position: fixed; top: 0; left: -400px; width: 350px; height: 100%; 
-  background: rgba(10, 10, 12, 0.98); backdrop-filter: blur(15px);
-  border-right: 1px solid var(--accent); z-index: 2000; transition: 0.4s;
-  display: flex; flex-direction: column;
-}
-.admin-sidebar.open { left: 0; }
-.sidebar-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(255,42,42,0.05); }
-.sidebar-title { color: var(--accent); font-weight: 800; letter-spacing: 1px; }
-.close-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
-.sidebar-content { padding: 20px; overflow-y: auto; flex: 1; }
-
-/* ADMIN USER CARDS (FIXED) */
-.user-list-compact { display: flex; flex-direction: column; gap: 10px; }
+/* Картка користувача в списку */
 .user-card-row {
-    background: rgba(255,255,255,0.03); 
-    border: 1px solid rgba(255,255,255,0.05);
-    border-left: 3px solid var(--accent);
+    background: rgba(20, 20, 25, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 2px solid var(--accent); /* Червона лінія зліва */
     padding: 12px;
     border-radius: 6px;
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
     position: relative;
+    transition: all 0.2s ease;
 }
-.u-header { display: flex; justify-content: space-between; align-items: center; }
-.u-login { font-weight: 700; color: #fff; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-.u-status { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.u-status.online { background: #22c55e; box-shadow: 0 0 5px #22c55e; }
-.u-status.offline { background: #64748b; }
-.u-details { font-family: var(--font-mono); font-size: 11px; color: #ccc; display: flex; flex-direction: column; gap: 4px; }
-.u-detail-row { display: flex; gap: 8px; align-items: center; }
-.u-detail-row i { color: #888; width: 12px; text-align: center; }
-.u-pass-text { color: #ef4444; letter-spacing: 0.5px; }
-.u-footer { padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #666; }
-.u-role-tag { background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 3px; text-transform: uppercase; }
-.u-role-tag.admin { color: var(--accent); font-weight: bold; background: rgba(255,42,42,0.1); }
-.btn-ban-row { background: none; border: none; color: #ef4444; cursor: pointer; opacity: 0.6; }
-.btn-ban-row:hover { opacity: 1; transform: scale(1.1); }
 
-/* MODALS */
-.auth-modal, .custom-modal { display: none; position: fixed; z-index: 2100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-.auth-modal.show, .custom-modal.show { display: flex; }
-.auth-content, .custom-modal-content { background: #111; border: 1px solid var(--accent); padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 0 20px rgba(255,42,42,0.2); }
-.close-auth, .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 24px; cursor: pointer; }
+.user-card-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
 
-/* HELPERS */
-.logged-in-only { display: none !important; }
-body.is-logged-in .logged-in-only { display: inline-block !important; }
-.admin-only { display: none !important; }
-body.is-admin .admin-only { display: flex !important; }
-.animated-content { opacity: 0; transform: translateY(20px); transition: 0.6s ease; }
-.animated-content.animate-in { opacity: 1; transform: translateY(0); }
+/* Індикатор статусу (зелена/сіра точка) */
+.u-status-indicator {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 6px;
+    box-shadow: 0 0 5px currentColor;
+}
+.u-status-indicator.online { background-color: #22c55e; color: #22c55e; }
+.u-status-indicator.offline { background-color: #64748b; color: transparent; box-shadow: none; opacity: 0.5; }
 
-@media (max-width: 900px) {
-  .hero-inner { flex-direction: column-reverse; text-align: center; }
-  .hero h1 { font-size: 40px; }
-  .site-nav { display: none; }
-  .nav-toggle { display: block; }
-  .site-nav.open { display: block; position: absolute; left: 0; right: 0; top: 82px; background: #000; padding: 20px; border-bottom: 2px solid var(--accent); z-index: 999; }
-  .site-nav.open ul { flex-direction: column; align-items: center; }
-  .events-controls { position: static; }
-  .admin-sidebar { width: 100%; left: -100%; }
+/* Сітка з даними (Логін, Пошта, Пароль) */
+.u-details-grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.u-field {
+    font-size: 12px;
+    color: #ccc;
+    font-family: 'Courier New', monospace; /* Моноширинний шрифт для даних */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.u-field i {
+    color: var(--text-muted);
+    font-size: 10px;
+    width: 12px;
+    text-align: center;
+}
+
+.u-login { font-weight: 700; color: #fff; font-size: 13px; }
+.u-email { color: var(--text-muted); }
+.u-pass { color: #ef4444; letter-spacing: 0.5px; } /* Пароль червоним */
+
+/* Нижня панель (Роль і Дата) */
+.u-meta {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.u-role-tag {
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+.u-role-tag.admin { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+.u-role-tag.member { background: rgba(255, 255, 255, 0.05); color: #94a3b8; }
+
+.u-date-tag {
+    font-size: 9px;
+    color: #666;
+}
+
+/* Кнопка бану */
+.btn-ban-row {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.5;
+    transition: 0.2s;
+    padding: 5px;
+}
+.btn-ban-row:hover {
+    opacity: 1;
+    transform: scale(1.1);
 }
