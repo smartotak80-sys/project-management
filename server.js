@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+// Використовує змінну середовища MONGODB_URI, яку ви налаштували на Railway
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/barakuda_db';
 
 // --- НАЛАШТУВАННЯ БАЗИ ДАНИХ (MongoDB) ---
@@ -55,13 +56,13 @@ app.use(express.static(path.join(__dirname, "public")));
 // --- ФІКСОВАНІ КОНСТАНТИ ---
 const ADMIN_LOGIN = 'famillybarracuda@gmail.com'; 
 const ADMIN_PASS = 'barracuda123';
-const MAX_USERS = 100; // Збільшено для продакшену
+const MAX_USERS = 100; 
 const MAX_MEMBER_PER_USER = 1;
 
 
 // --- ДОПОМІЖНІ ФУНКЦІЇ ДЛЯ АВТЕНТИФІКАЦІЇ/АВТОРИЗАЦІЇ ---
 const authenticateAdmin = (req, res, next) => {
-    // В реальному проєкті тут має бути перевірка JWT-токену
+    // Використовуємо кастомні заголовки для імітації аутентифікації
     if (req.headers['x-auth-user'] !== 'ADMIN 🦈' || req.headers['x-auth-role'] !== 'admin') {
         return res.status(403).json({ message: "Forbidden: Admin access required" });
     }
@@ -86,7 +87,6 @@ const authenticateUser = (req, res, next) => {
 app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     
-    // Спеціальний вхід для статичного Адміна
     if (username === ADMIN_LOGIN && password === ADMIN_PASS) {
         return res.json({ 
             success: true, 
@@ -110,13 +110,11 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
     const { username, email, password } = req.body;
     
-    // Перевірка ліміту
     const regularUsersCount = await User.countDocuments({ role: { $ne: 'admin' } });
     if (regularUsersCount >= MAX_USERS) {
         return res.status(400).json({ success: false, message: `Досягнуто ліміту користувачів (${MAX_USERS}).` });
     }
     
-    // Базова перевірка даних
     if (!username || !password || username.length < 3 || password.length < 6) {
         return res.status(400).json({ success: false, message: 'Некоректні дані' });
     }
@@ -126,10 +124,9 @@ app.post('/api/auth/register', async (req, res) => {
         await newUser.save();
         res.json({ success: true, message: 'Реєстрація успішна. Тепер можете увійти.' });
     } catch (error) {
-        if (error.code === 11000) { // Duplicate key error
+        if (error.code === 11000) { 
             return res.status(400).json({ success: false, message: 'Логін або Email вже використовуються' });
         }
-        console.error("Registration error:", error);
         res.status(500).json({ success: false, message: 'Помилка сервера при реєстрації' });
     }
 });
@@ -141,14 +138,13 @@ app.get('/api/users/count', async (req, res) => {
 });
 
 app.get('/api/users', authenticateAdmin, async (req, res) => {
-    const users = await User.find({}, { password: 0 }); // Виключаємо паролі
+    const users = await User.find({}, { password: 0 });
     res.json(users);
 });
 
 app.delete('/api/users/:username', authenticateAdmin, async (req, res) => {
     const { username } = req.params;
     
-    // Видалити користувача та його записи Member
     await User.deleteOne({ username });
     await Member.deleteMany({ owner: username });
 
@@ -193,14 +189,12 @@ app.put('/api/members/:id', authenticateUser, async (req, res) => {
     const member = await Member.findOne({ id });
     if (!member) return res.status(404).json({ message: 'Учасника не знайдено' });
 
-    // Перевірка прав доступу
     const isOwner = req.currentUser.username === member.owner;
     const isAdmin = req.currentUser.role === 'admin';
     if (!isAdmin && !isOwner) {
         return res.status(403).json({ message: 'Недостатньо прав для редагування цього учасника.' });
     }
 
-    // Оновлення даних
     member.name = name;
     member.role = role;
     member.links = { discord, youtube, tg };
@@ -214,7 +208,6 @@ app.delete('/api/members/:id', authenticateUser, async (req, res) => {
     const member = await Member.findOne({ id });
     if (!member) return res.status(404).json({ message: 'Учасника не знайдено' });
 
-    // Перевірка прав доступу
     const isOwner = req.currentUser.username === member.owner;
     const isAdmin = req.currentUser.role === 'admin';
     if (!isAdmin && !isOwner) {
@@ -228,7 +221,7 @@ app.delete('/api/members/:id', authenticateUser, async (req, res) => {
 
 // 3. НОВИНИ (News)
 app.get('/api/news', async (req, res) => {
-    const news = await News.find().sort({ id: -1 }); // Новіші перші
+    const news = await News.find().sort({ id: -1 }); 
     res.json(news);
 });
 
