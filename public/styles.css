@@ -1,4 +1,4 @@
-/* styles.css — FINAL ULTIMATE VERSION */
+/* styles.css — FINAL ULTIMATE VERSION (ALL FEATURES INCLUDED) */
 
 :root {
   --bg-dark: #050505;
@@ -141,6 +141,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
   display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; padding: 15px; border-radius: 12px; align-items: center;
 }
 .events-controls textarea { height: 42px; min-height: 42px; resize: none; padding-top: 10px; overflow-y: hidden; white-space: nowrap; }
+.events-controls button { height: 42px; display: flex; align-items: center; justify-content: center; }
 
 /* --- DISCORD BANNER --- */
 .discord-banner {
