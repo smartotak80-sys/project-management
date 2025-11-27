@@ -1,64 +1,122 @@
 import express from "express";
 import cors from "cors";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import pg from "pg";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ===== ПУБЛІЧНІ СТАТИЧНІ ФАЙЛИ =====
-app.use(express.static(path.join(__dirname, "public")));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+// ---- DATABASE ----
+const db = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
-// ===== DATABASE FILE =====
-const DB_PATH = path.join(__dirname, "db.json");
+// ---- CREATE TABLES IF NOT EXISTS ----
+async function initDB() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS members (
+      id SERIAL PRIMARY KEY,
+      name TEXT,
+      role TEXT,
+      discord TEXT,
+      youtube TEXT,
+      tg TEXT
+    );
+  `);
 
-function readDB() {
-  if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify({ users: [], members: [], news: [], gallery: [] }, null, 2));
-  }
-  return JSON.parse(fs.readFileSync(DB_PATH, "utf8"));
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS news (
+      id SERIAL PRIMARY KEY,
+      title TEXT,
+      date TEXT,
+      summary TEXT
+    );
+  `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS gallery (
+      id SERIAL PRIMARY KEY,
+      url TEXT
+    );
+  `);
+
+  console.log("DB READY ✔");
 }
+initDB();
 
-function writeDB(data) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
-}
+// ----------- MEMBERS API --------------------
 
-// ====== API ======
-app.get("/api/members", (req, res) => {
-  const db = readDB();
-  res.json({ ok: true, members: db.members });
+app.get("/api/members", async (req, res) => {
+  const result = await db.query("SELECT * FROM members ORDER BY id DESC");
+  res.json(result.rows);
 });
 
-app.get("/api/news", (req, res) => {
-  const db = readDB();
-  res.json({ ok: true, news: db.news });
+app.post("/api/members", async (req, res) => {
+  const { name, role, discord, youtube, tg } = req.body;
+
+  const result = await db.query(
+    "INSERT INTO members (name, role, discord, youtube, tg) VALUES ($1,$2,$3,$4,$5) RETURNING *",
+    [name, role, discord, youtube, tg]
+  );
+
+  res.json(result.rows[0]);
 });
 
-app.get("/api/gallery", (req, res) => {
-  const db = readDB();
-  res.json({ ok: true, gallery: db.gallery });
+app.delete("/api/members/:id", async (req, res) => {
+  const id = req.params.id;
+  await db.query("DELETE FROM members WHERE id=$1", [id]);
+  res.json({ success: true });
 });
 
-// ====== ADMIN (PLACEHOLDER) ======
-app.post("/api/admin/news", (req, res) => {
-  const db = readDB();
-  const item = { id: Date.now(), ...req.body };
-  db.news.push(item);
-  writeDB(db);
-  res.json({ ok: true, item });
+// ----------- NEWS API ------------------------
+
+app.get("/api/news", async (req, res) => {
+  const result = await db.query("SELECT * FROM news ORDER BY id DESC");
+  res.json(result.rows);
 });
 
-// ===== START SERVER =====
+app.post("/api/news", async (req, res) => {
+  const { title, date, summary } = req.body;
+
+  const result = await db.query(
+    "INSERT INTO news (title,date,summary) VALUES ($1,$2,$3) RETURNING *",
+    [title, date, summary]
+  );
+
+  res.json(result.rows[0]);
+});
+
+app.delete("/api/news/:id", async (req, res) => {
+  const id = req.params.id;
+  await db.query("DELETE FROM news WHERE id=$1", [id]);
+  res.json({ success: true });
+});
+
+// ----------- GALLERY API ---------------------
+
+app.get("/api/gallery", async (req, res) => {
+  const result = await db.query("SELECT * FROM gallery ORDER BY id DESC");
+  res.json(result.rows);
+});
+
+app.post("/api/gallery", async (req, res) => {
+  const { url } = req.body;
+
+  const result = await db.query(
+    "INSERT INTO gallery (url) VALUES ($1) RETURNING *",
+    [url]
+  );
+
+  res.json(result.rows[0]);
+});
+
+app.delete("/api/gallery/:id", async (req, res) => {
+  const id = req.params.id;
+  await db.query("DELETE FROM gallery WHERE id=$1", [id]);
+  res.json({ success: true });
+});
+
+// ---- START SERVER ----
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log("API running on port", PORT);
-});
+app.listen(PORT, () => console.log("API running on port", PORT));
