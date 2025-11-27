@@ -2,41 +2,36 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const bodyParser = require("body-parser");
-const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Отримуємо URL бази даних з налаштувань Railway
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://mongo:eObbUKaDoasbzeesJiSMDdeCegvUPTHW@mongodb.railway.internal:27017";
+// Підключення до MongoDB (Використовуйте вашу змінну з Railway або рядок підключення)
+const MONGO_URI = process.env.MONGO_URL || "mongodb://mongo:eObbUKaDoasbzeesJiSMDdeCegvUPTHW@mongodb.railway.internal:27017"; 
 
-// Підключення до MongoDB
 mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ MongoDB успішно підключено"))
-    .catch(err => console.error("❌ Помилка підключення до MongoDB:", err));
+    .then(() => console.log("✅ MongoDB Connected"))
+    .catch(err => console.error("❌ MongoDB Error:", err));
 
 // Middleware
-app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// --- СХЕМИ БАЗИ ДАНИХ ---
+// --- SCHEMAS (Схеми даних) ---
 
-// Користувачі (Адміни та звичайні)
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
-    email: { type: String, required: true },
-    password: { type: String, required: true }, // Зберігаємо як є, щоб ви могли бачити в адмінці
+    password: { type: String, required: true }, // У реальному проекті варто хешувати паролі!
+    email: { type: String },
     role: { type: String, default: 'member' },
     regDate: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', UserSchema);
 
-// Учасники сім'ї (Ігрові персонажі)
 const MemberSchema = new mongoose.Schema({
     name: String,
     role: String,
-    owner: String, // Логін того, хто додав
+    owner: String, // Хто створив запис
     links: {
         discord: String,
         youtube: String,
@@ -46,7 +41,6 @@ const MemberSchema = new mongoose.Schema({
 });
 const Member = mongoose.model('Member', MemberSchema);
 
-// Новини
 const NewsSchema = new mongoose.Schema({
     title: String,
     date: String,
@@ -55,58 +49,49 @@ const NewsSchema = new mongoose.Schema({
 });
 const News = mongoose.model('News', NewsSchema);
 
-// Галерея
 const GallerySchema = new mongoose.Schema({
     url: String,
     createdAt: { type: Date, default: Date.now }
 });
 const Gallery = mongoose.model('Gallery', GallerySchema);
 
-// --- API ЗАПИТИ (Маршрути) ---
+// --- API ROUTES ---
 
-// 1. АВТОРИЗАЦІЯ
+// 1. AUTH
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { username, email, password } = req.body;
-        
-        // Перевірка чи існує вже такий
-        const existingUser = await User.findOne({ $or: [{ username }, { email }] });
-        if (existingUser) {
-            return res.status(400).json({ success: false, message: 'Логін або Email вже зайняті' });
-        }
+        const { username, password, email } = req.body;
+        // Перевірка ліміту користувачів (якщо треба)
+        // const count = await User.countDocuments({ role: { $ne: 'admin' } });
+        // if (count >= 1) return res.status(403).json({ success: false, message: 'Ліміт реєстрацій вичерпано' });
 
-        const newUser = new User({ username, email, password, role: 'member' });
+        const newUser = new User({ username, password, email, role: 'member' });
         await newUser.save();
-        res.json({ success: true, message: 'Реєстрація успішна' });
+        res.json({ success: true, message: 'Користувача створено' });
     } catch (err) {
-        res.status(500).json({ success: false, message: 'Помилка сервера' });
+        res.status(400).json({ success: false, message: 'Помилка реєстрації (логін зайнятий?)' });
     }
 });
 
 app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
-    
-    // Секретний вхід для Головного Адміна (Hardcoded backup)
+    // Адмін хардкод (або додайте його в БД вручну)
     if(username === 'famillybarracuda@gmail.com' && password === 'barracuda123') {
          return res.json({ success: true, user: { username: 'ADMIN 🦈', role: 'admin' } });
     }
 
-    try {
-        const user = await User.findOne({ username, password });
-        if (user) {
-            res.json({ success: true, user: { username: user.username, role: user.role } });
-        } else {
-            res.status(401).json({ success: false, message: 'Невірний логін або пароль' });
-        }
-    } catch (err) {
-        res.status(500).json({ success: false, message: 'Помилка сервера' });
+    const user = await User.findOne({ username, password });
+    if (user) {
+        res.json({ success: true, user: { username: user.username, role: user.role } });
+    } else {
+        res.status(401).json({ success: false, message: 'Невірні дані' });
     }
 });
 
-// 2. УЧАСНИКИ
+// 2. MEMBERS
 app.get('/api/members', async (req, res) => {
     const members = await Member.find().sort({ createdAt: -1 });
-    // Перетворюємо _id в id для зручності фронтенду
+    // Перетворюємо _id в id для фронтенду
     res.json(members.map(m => ({ ...m._doc, id: m._id })));
 });
 
@@ -128,7 +113,7 @@ app.delete('/api/members/:id', async (req, res) => {
     res.json({ success: true });
 });
 
-// 3. НОВИНИ
+// 3. NEWS
 app.get('/api/news', async (req, res) => {
     const news = await News.find().sort({ createdAt: -1 });
     res.json(news.map(n => ({ ...n._doc, id: n._id })));
@@ -144,7 +129,7 @@ app.delete('/api/news/:id', async (req, res) => {
     res.json({ success: true });
 });
 
-// 4. ГАЛЕРЕЯ
+// 4. GALLERY
 app.get('/api/gallery', async (req, res) => {
     const gallery = await Gallery.find().sort({ createdAt: -1 });
     res.json(gallery.map(g => ({ ...g._doc, id: g._id })));
@@ -160,26 +145,26 @@ app.delete('/api/gallery/:id', async (req, res) => {
     res.json({ success: true });
 });
 
-// 5. АДМІНКА (ОТРИМАННЯ ВСІХ ДАНИХ КОРИСТУВАЧІВ)
+// 5. USERS (Для адмін панелі)
 app.get('/api/users', async (req, res) => {
-    // Повертаємо ВСІ поля, включаючи пароль, як ви просили
-    const users = await User.find().sort({ regDate: -1 });
+    const users = await User.find({}, '-password'); // Не віддавати паролі
     res.json(users);
 });
 
 app.delete('/api/users/:username', async (req, res) => {
     await User.findOneAndDelete({ username: req.params.username });
-    await Member.deleteMany({ owner: req.params.username }); // Видаляємо також записи цього гравця
+    // Також видалити мемберів цього юзера
+    await Member.deleteMany({ owner: req.params.username });
     res.json({ success: true });
 });
 
 app.get('/api/users/count', async (req, res) => {
     const total = await User.countDocuments();
     const admins = await User.countDocuments({ role: 'admin' });
-    res.json({ totalUsers: total, totalAdmins: admins, maxUsers: 50 }); // Ліміт 50, можна змінити
+    res.json({ totalUsers: total, totalAdmins: admins, maxUsers: 1 }); // maxUsers можна змінити
 });
 
-// Запуск сайту
+// Serve Frontend
 app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
