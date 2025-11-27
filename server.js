@@ -1,11 +1,10 @@
-// server.js — FIXED 0.0.0.0 BINDING
+// server.js — FIXED HEADERS DECODING
 require('dotenv').config();
 const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
 
 const app = express();
-// Railway надає порт у process.env.PORT. Якщо його немає, використовуємо 3000.
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -51,10 +50,8 @@ const User = mongoose.model('User', userSchema);
 
 // --- 2. MIDDLEWARE ---
 app.use(express.json());
-// Обслуговування статичних файлів з папки public
 app.use(express.static(path.join(__dirname, "public")));
 
-// Константи
 const ADMIN_LOGIN = 'famillybarracuda@gmail.com'; 
 const ADMIN_PASS = 'barracuda123';
 const MAX_USERS = 100; 
@@ -62,16 +59,25 @@ const MAX_MEMBER_PER_USER = 1;
 
 // Auth Middleware
 const authenticateAdmin = (req, res, next) => {
-    if (req.headers['x-auth-user'] !== 'ADMIN 🦈' || req.headers['x-auth-role'] !== 'admin') {
+    // ВИПРАВЛЕННЯ: Декодуємо заголовки
+    const user = req.headers['x-auth-user'] ? decodeURIComponent(req.headers['x-auth-user']) : '';
+    const role = req.headers['x-auth-role'] ? decodeURIComponent(req.headers['x-auth-role']) : '';
+
+    if (user !== 'ADMIN 🦈' || role !== 'admin') {
         return res.status(403).json({ message: "Forbidden: Admin access required" });
     }
     next();
 };
+
 const authenticateUser = (req, res, next) => {
     if (!req.headers['x-auth-user']) {
         return res.status(401).json({ message: "Unauthorized: Login required" });
     }
-    req.currentUser = { username: req.headers['x-auth-user'], role: req.headers['x-auth-role'] };
+    // ВИПРАВЛЕННЯ: Декодуємо заголовки
+    req.currentUser = { 
+        username: decodeURIComponent(req.headers['x-auth-user']), 
+        role: decodeURIComponent(req.headers['x-auth-role']) 
+    };
     next();
 };
 
@@ -130,7 +136,6 @@ app.get('/api/members', async (req, res) => {
 
 app.post('/api/members', authenticateUser, async (req, res) => {
     const { name, role, discord, youtube, tg } = req.body;
-    // ... validation logic omitted for brevity but assumed present ...
     const newMember = new Member({ id: Date.now(), name, role, owner: req.currentUser.username, links: { discord, youtube, tg } });
     await newMember.save();
     res.json({ success: true, member: newMember });
@@ -143,7 +148,7 @@ app.put('/api/members/:id', authenticateUser, async (req, res) => {
     
     member.name = req.body.name;
     member.role = req.body.role;
-    member.links = req.body; // simple assignment
+    member.links = req.body; 
     await member.save();
     res.json({ success: true, member });
 });
@@ -191,10 +196,8 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// --- 4. ЗАПУСК СЕРВЕРА (КРИТИЧНО: 0.0.0.0) ---
-const HOST = '0.0.0.0'; // Обов'язково для Railway!
-
+// --- 4. ЗАПУСК СЕРВЕРА ---
+const HOST = '0.0.0.0'; 
 app.listen(PORT, HOST, () => {
     console.log(`🚀 Server running on http://${HOST}:${PORT}`);
-    console.log(`📡 Ready for external connections.`);
 });
