@@ -1,200 +1,285 @@
-// server.js
-import dotenv from "dotenv";
-dotenv.config();
+// server.js - Оновлений для MongoDB
+require('dotenv').config();
+const express = require("express");
+const path = require("path");
+const mongoose = require("mongoose");
 
-import express from "express";
-import cors from "cors";
-import jwt from "jsonwebtoken";
-import { fileURLToPath } from "url";
-import path from "path";
-import { Pool } from "pg";
-
-// --- Paths ---
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// --- Config ---
-const PORT = process.env.PORT || 8080;
-const DATABASE_URL = process.env.DATABASE_URL;
-const ADMIN_LOGIN = process.env.ADMIN_LOGIN;
-const ADMIN_PASS = process.env.ADMIN_PASS;
-const ADMIN_SECRET = process.env.ADMIN_SECRET;
-
-if (!DATABASE_URL) console.error("❌ DATABASE_URL is missing!");
-if (!ADMIN_SECRET) console.error("❌ ADMIN_SECRET is missing!");
-
-// --- Database ---
-const pool = new Pool({ connectionString: DATABASE_URL });
-async function query(q, params = []) {
-  const c = await pool.connect();
-  try {
-    return await c.query(q, params);
-  } finally {
-    c.release();
-  }
-}
-
-// --- JWT helpers ---
-function createToken(payload) {
-  return jwt.sign(payload, ADMIN_SECRET, { expiresIn: "8h" });
-}
-function verifyToken(token) {
-  try {
-    return jwt.verify(token, ADMIN_SECRET);
-  } catch {
-    return null;
-  }
-}
-function requireAdmin(req, res, next) {
-  const h = req.headers.authorization;
-  if (!h) return res.status(401).json({ ok: false, error: "No token" });
-
-  const t = h.startsWith("Bearer ") ? h.slice(7) : h;
-  const p = verifyToken(t);
-  if (!p || p.role !== "admin") return res.status(403).json({ ok: false, error: "Forbidden" });
-
-  req.admin = p;
-  next();
-}
-
-// --- App setup ---
 const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/barakuda_db';
 
-// --- Static ---
+// --- НАЛАШТУВАННЯ БАЗИ ДАНИХ (MongoDB) ---
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log("MongoDB Connected Successfully"))
+    .catch(err => console.error("MongoDB Connection Error:", err));
+
+// Визначення Схем
+const memberSchema = new mongoose.Schema({
+    id: { type: Number, required: true, unique: true },
+    name: { type: String, required: true },
+    role: { type: String, required: true },
+    owner: { type: String, required: true }, 
+    links: {
+        discord: String,
+        youtube: String,
+        tg: String
+    }
+});
+const newsSchema = new mongoose.Schema({
+    id: { type: Number, required: true, unique: true },
+    title: { type: String, required: true },
+    date: { type: String, required: true },
+    summary: { type: String, required: true }
+});
+const gallerySchema = new mongoose.Schema({
+    id: { type: Number, required: true, unique: true },
+    url: { type: String, required: true }
+});
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    email: { type: String, unique: true, sparse: true },
+    password: { type: String, required: true },
+    role: { type: String, default: 'member' },
+    regDate: { type: Date, default: Date.now }
+});
+
+const Member = mongoose.model('Member', memberSchema);
+const News = mongoose.model('News', newsSchema);
+const Gallery = mongoose.model('Gallery', gallerySchema);
+const User = mongoose.model('User', userSchema);
+
+// --- Middleware ---
+app.use(express.json()); // Для обробки JSON-тіла запитів
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public/index.html")));
 
-// --- AUTH ---
-app.post("/auth/login", (req, res) => {
-  const { user, pass } = req.body;
-  if (user === ADMIN_LOGIN && pass === ADMIN_PASS) {
-    const token = createToken({ role: "admin", user: "ADMIN" });
-    return res.json({ ok: true, token });
-  }
-  res.status(401).json({ ok: false, error: "Invalid credentials" });
+// --- ФІКСОВАНІ КОНСТАНТИ ---
+const ADMIN_LOGIN = 'famillybarracuda@gmail.com'; 
+const ADMIN_PASS = 'barracuda123';
+const MAX_USERS = 100; // Збільшено для продакшену
+const MAX_MEMBER_PER_USER = 1;
+
+
+// --- ДОПОМІЖНІ ФУНКЦІЇ ДЛЯ АВТЕНТИФІКАЦІЇ/АВТОРИЗАЦІЇ ---
+const authenticateAdmin = (req, res, next) => {
+    // В реальному проєкті тут має бути перевірка JWT-токену
+    if (req.headers['x-auth-user'] !== 'ADMIN 🦈' || req.headers['x-auth-role'] !== 'admin') {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+    }
+    next();
+};
+
+const authenticateUser = (req, res, next) => {
+    if (!req.headers['x-auth-user']) {
+        return res.status(401).json({ message: "Unauthorized: Login required" });
+    }
+    req.currentUser = { 
+        username: req.headers['x-auth-user'], 
+        role: req.headers['x-auth-role'] 
+    };
+    next();
+};
+
+
+// --- API ЕНДПОІНТИ (РОУТИ) ---
+
+// 1. АУТЕНТИФІКАЦІЯ
+app.post('/api/auth/login', async (req, res) => {
+    const { username, password } = req.body;
+    
+    // Спеціальний вхід для статичного Адміна
+    if (username === ADMIN_LOGIN && password === ADMIN_PASS) {
+        return res.json({ 
+            success: true, 
+            user: { username: 'ADMIN 🦈', role: 'admin' }, 
+            message: 'Ласкаво просимо, Адмін!' 
+        });
+    }
+
+    const user = await User.findOne({ username, password });
+    if (user) {
+        return res.json({ 
+            success: true, 
+            user: { username: user.username, role: user.role }, 
+            message: `Вітаємо, ${user.username}!` 
+        });
+    } else {
+        res.status(401).json({ success: false, message: 'Невірні дані (логін або пароль)' });
+    }
 });
 
-// --- READ ---
-app.get("/api/members", async (req, res) => {
-  try {
-    const r = await query("SELECT id, name, role, owner, discord, youtube, tg, created_at FROM members ORDER BY created_at ASC");
-    res.json({ ok: true, members: r.rows });
-  } catch (e) {
-    res.status(500).json({ ok: false });
-  }
+app.post('/api/auth/register', async (req, res) => {
+    const { username, email, password } = req.body;
+    
+    // Перевірка ліміту
+    const regularUsersCount = await User.countDocuments({ role: { $ne: 'admin' } });
+    if (regularUsersCount >= MAX_USERS) {
+        return res.status(400).json({ success: false, message: `Досягнуто ліміту користувачів (${MAX_USERS}).` });
+    }
+    
+    // Базова перевірка даних
+    if (!username || !password || username.length < 3 || password.length < 6) {
+        return res.status(400).json({ success: false, message: 'Некоректні дані' });
+    }
+
+    try {
+        const newUser = new User({ username, email, password, role: 'member', id: Date.now() });
+        await newUser.save();
+        res.json({ success: true, message: 'Реєстрація успішна. Тепер можете увійти.' });
+    } catch (error) {
+        if (error.code === 11000) { // Duplicate key error
+            return res.status(400).json({ success: false, message: 'Логін або Email вже використовуються' });
+        }
+        console.error("Registration error:", error);
+        res.status(500).json({ success: false, message: 'Помилка сервера при реєстрації' });
+    }
 });
 
-app.get("/api/news", async (req, res) => {
-  try {
-    const r = await query("SELECT * FROM news ORDER BY date DESC");
-    res.json({ ok: true, news: r.rows });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+app.get('/api/users/count', async (req, res) => {
+    const totalUsers = await User.countDocuments();
+    const totalAdmins = await User.countDocuments({ role: 'admin' });
+    res.json({ totalUsers, totalAdmins });
 });
 
-app.get("/api/gallery", async (req, res) => {
-  try {
-    const r = await query("SELECT * FROM gallery ORDER BY created_at DESC");
-    res.json({ ok: true, gallery: r.rows });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+app.get('/api/users', authenticateAdmin, async (req, res) => {
+    const users = await User.find({}, { password: 0 }); // Виключаємо паролі
+    res.json(users);
 });
 
-// --- REGISTER / LOGIN USERS ---
-app.post("/api/register", async (req, res) => {
-  const { username, email, password } = req.body;
-  if (!username || !password) return res.status(400).json({ ok: false, error: "Missing fields" });
+app.delete('/api/users/:username', authenticateAdmin, async (req, res) => {
+    const { username } = req.params;
+    
+    // Видалити користувача та його записи Member
+    await User.deleteOne({ username });
+    await Member.deleteMany({ owner: username });
 
-  try {
-    const exists = await query("SELECT 1 FROM users WHERE username=$1", [username]);
-    if (exists.rowCount > 0) return res.status(400).json({ ok: false, error: "Username exists" });
-
-    await query("INSERT INTO users (username, email, password, role) VALUES ($1,$2,$3,'member')", [username, email, password]);
-    res.json({ ok: true });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+    res.json({ success: true, message: `Користувача ${username} видалено.` });
 });
 
-app.post("/api/login", async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const r = await query("SELECT username, role FROM users WHERE username=$1 AND password=$2", [username, password]);
-    if (r.rowCount === 0) return res.status(401).json({ ok: false });
-    res.json({ ok: true, user: r.rows[0] });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+
+// 2. УЧАСНИКИ (Members)
+app.get('/api/members', async (req, res) => {
+    const members = await Member.find().sort({ name: 1 });
+    res.json(members);
 });
 
-// --- ADD MEMBER (ADMIN) ---
-app.post("/api/members", requireAdmin, async (req, res) => {
-  const { name, role, owner, discord, youtube, tg } = req.body;
-  if (!name || !role) return res.status(400).json({ ok: false });
-  try {
-    await query("INSERT INTO members (name, role, owner, discord, youtube, tg) VALUES ($1,$2,$3,$4,$5,$6)", [name, role, owner || "ADMIN", discord, youtube, tg]);
-    res.json({ ok: true });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+app.post('/api/members', authenticateUser, async (req, res) => {
+    const { name, role, discord, youtube, tg } = req.body;
+    const owner = req.currentUser.username;
+    
+    const isLimited = req.currentUser.role !== 'admin';
+    if (isLimited) {
+        const userMembersCount = await Member.countDocuments({ owner });
+        if (userMembersCount >= MAX_MEMBER_PER_USER) {
+            return res.status(400).json({ message: `Ви досягли ліміту (${MAX_MEMBER_PER_USER}) учасників.` });
+        }
+    }
+    
+    const newMember = new Member({
+        id: Date.now(),
+        name,
+        role,
+        owner,
+        links: { discord, youtube, tg }
+    });
+    
+    await newMember.save();
+    res.json({ success: true, member: newMember });
 });
 
-app.delete("/api/members/:id", requireAdmin, async (req, res) => {
-  try {
-    await query("DELETE FROM members WHERE id=$1", [req.params.id]);
-    res.json({ ok: true });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+app.put('/api/members/:id', authenticateUser, async (req, res) => {
+    const { id } = req.params;
+    const { name, role, discord, youtube, tg } = req.body;
+    
+    const member = await Member.findOne({ id });
+    if (!member) return res.status(404).json({ message: 'Учасника не знайдено' });
+
+    // Перевірка прав доступу
+    const isOwner = req.currentUser.username === member.owner;
+    const isAdmin = req.currentUser.role === 'admin';
+    if (!isAdmin && !isOwner) {
+        return res.status(403).json({ message: 'Недостатньо прав для редагування цього учасника.' });
+    }
+
+    // Оновлення даних
+    member.name = name;
+    member.role = role;
+    member.links = { discord, youtube, tg };
+    await member.save();
+
+    res.json({ success: true, member });
 });
 
-// --- NEWS ---
-app.post("/api/news", requireAdmin, async (req, res) => {
-  const { title, date, summary } = req.body;
-  if (!title || !date || !summary) return res.status(400).json({ ok: false });
-  try {
-    await query("INSERT INTO news (title, date, summary) VALUES ($1,$2,$3)", [title, date, summary]);
-    res.json({ ok: true });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+app.delete('/api/members/:id', authenticateUser, async (req, res) => {
+    const { id } = req.params;
+    const member = await Member.findOne({ id });
+    if (!member) return res.status(404).json({ message: 'Учасника не знайдено' });
+
+    // Перевірка прав доступу
+    const isOwner = req.currentUser.username === member.owner;
+    const isAdmin = req.currentUser.role === 'admin';
+    if (!isAdmin && !isOwner) {
+        return res.status(403).json({ message: 'Недостатньо прав для видалення цього учасника.' });
+    }
+    
+    await Member.deleteOne({ id });
+    res.json({ success: true, message: 'Учасника видалено.' });
 });
 
-app.delete("/api/news/:id", requireAdmin, async (req, res) => {
-  try {
-    await query("DELETE FROM news WHERE id=$1", [req.params.id]);
-    res.json({ ok: true });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+
+// 3. НОВИНИ (News)
+app.get('/api/news', async (req, res) => {
+    const news = await News.find().sort({ id: -1 }); // Новіші перші
+    res.json(news);
 });
 
-// --- GALLERY ---
-app.post("/api/gallery", requireAdmin, async (req, res) => {
-  const { url } = req.body;
-  if (!url) return res.status(400).json({ ok: false });
-  try {
-    await query("INSERT INTO gallery (url) VALUES ($1)", [url]);
-    res.json({ ok: true });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+app.post('/api/news', authenticateAdmin, async (req, res) => {
+    const { title, date, summary } = req.body;
+    if (!title || !date || !summary) {
+        return res.status(400).json({ message: 'Заповніть усі поля' });
+    }
+
+    const newNews = new News({ id: Date.now(), title, date, summary });
+    await newNews.save();
+    res.json({ success: true, news: newNews });
 });
 
-app.delete("/api/gallery/:id", requireAdmin, async (req, res) => {
-  try {
-    await query("DELETE FROM gallery WHERE id=$1", [req.params.id]);
-    res.json({ ok: true });
-  } catch {
-    res.status(500).json({ ok: false });
-  }
+app.delete('/api/news/:id', authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    await News.deleteOne({ id });
+    res.json({ success: true, message: 'Новину видалено.' });
 });
 
-// --- START SERVER ---
+
+// 4. ГАЛЕРЕЯ (Gallery)
+app.get('/api/gallery', async (req, res) => {
+    const gallery = await Gallery.find();
+    res.json(gallery);
+});
+
+app.post('/api/gallery', authenticateAdmin, async (req, res) => {
+    const { url } = req.body;
+    if (!url) {
+        return res.status(400).json({ message: 'Вкажіть коректне посилання на зображення' });
+    }
+    
+    const newGalleryItem = new Gallery({ id: Date.now(), url });
+    await newGalleryItem.save();
+    res.json({ success: true, item: newGalleryItem });
+});
+
+app.delete('/api/gallery/:id', authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    await Gallery.deleteOne({ id });
+    res.json({ success: true, message: 'Фото видалено.' });
+});
+
+
+// 5. ОСНОВНИЙ РОУТ (index.html)
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// --- СТАРТ СЕРВЕРА ---
 app.listen(PORT, () => {
-  console.log(`🚀 API running on port ${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
