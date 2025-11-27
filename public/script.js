@@ -1,4 +1,4 @@
-// script.js — LIMIT 1 USER UI
+// script.js — UNIQUE CHECK UI
 
 document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(counts){
           const tabReg = document.getElementById('tabRegister');
           if (tabReg) {
-            // Якщо користувачів >= ліміту (1), блокуємо кнопку
+            // Якщо користувачів >= ліміту, блокуємо кнопку
             if (counts.totalUsers >= counts.maxUsers) {
               tabReg.textContent = 'Реєстрація (Закрито)';
               tabReg.disabled = true;
@@ -222,6 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const body = { username: regUser.value, email: regEmail.value, password: regPass.value };
       if(regPass.value!==regPassConfirm.value) return customConfirm('Паролі різні');
+      
+      // Відправляємо запит. Якщо повернеться помилка (дублікат), apiFetch покаже її в customConfirm
       const res = await apiFetch('/api/auth/register', {method:'POST', body:JSON.stringify(body)});
       if(res) { customConfirm('Готово!'); location.reload(); }
   });
