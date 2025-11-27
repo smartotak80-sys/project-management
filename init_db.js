@@ -1,19 +1,17 @@
 // init_db.js
-const { Client } = require('pg');
-
-// Встав сюди свій Connection URL з Railway
-const connectionString = 'postgresql://postgres:ZhmhAaXxPUAUDccaHyKiDfpnvprwJdQl@metro.proxy.rlwy.net:44975/railway';
+import pkg from 'pg';
+const { Client } = pkg;
 
 const client = new Client({
-  connectionString,
+  connectionString: 'postgresql://postgres:ZhmhAaXxPUAUDccaHyKiDfpnvprwJdQl@metro.proxy.rlwy.net:44975/railway'
 });
 
-async function createTables() {
+async function init() {
   try {
+    console.log('🚀 Підключаємося до бази...');
     await client.connect();
-    console.log('✅ Підключено до бази!');
+    console.log('✅ Підключено!');
 
-    // Таблиця members
     await client.query(`
       CREATE TABLE IF NOT EXISTS members (
         id SERIAL PRIMARY KEY,
@@ -27,7 +25,6 @@ async function createTables() {
       );
     `);
 
-    // Таблиця users
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -39,7 +36,6 @@ async function createTables() {
       );
     `);
 
-    // Таблиця news
     await client.query(`
       CREATE TABLE IF NOT EXISTS news (
         id SERIAL PRIMARY KEY,
@@ -49,7 +45,6 @@ async function createTables() {
       );
     `);
 
-    // Таблиця gallery
     await client.query(`
       CREATE TABLE IF NOT EXISTS gallery (
         id SERIAL PRIMARY KEY,
@@ -58,13 +53,13 @@ async function createTables() {
       );
     `);
 
-    console.log('🎉 Усі таблиці створено успішно!');
+    console.log('🎉 Усі таблиці створено!');
   } catch (err) {
-    console.error('❌ Помилка:', err);
+    console.error(err);
   } finally {
     await client.end();
     console.log('🔒 Підключення закрито.');
   }
 }
 
-createTables();
+init();
