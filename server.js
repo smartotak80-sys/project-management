@@ -22,7 +22,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // --- СХЕМИ ---
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true }, // Унікальний email
+    email: { type: String, required: true, unique: true }, 
     password: { type: String, required: true }, 
     role: { type: String, default: 'member' },
     regDate: { type: Date, default: Date.now }
@@ -44,12 +44,11 @@ const Gallery = mongoose.model('Gallery', GallerySchema);
 
 // --- API ---
 
-// РЕЄСТРАЦІЯ (Перевірка на унікальність)
+// РЕЄСТРАЦІЯ
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
         
-        // Перевірка, чи існує юзер АБО пошта
         const existingUser = await User.findOne({ $or: [{ username }, { email }] });
         
         if (existingUser) {
@@ -75,13 +74,13 @@ app.post('/api/auth/login', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// ДОДАВАННЯ УЧАСНИКА (Ліміт 1)
+// ДОДАВАННЯ УЧАСНИКА (Ліміт 1 персонаж на користувача)
 app.post('/api/members', async (req, res) => {
     try {
         const ownerName = req.body.owner;
         const currentUser = await User.findOne({ username: ownerName });
         
-        // Перевірка ліміту: якщо не адмін - перевіряємо, чи вже є один персонаж
+        // Перевірка ліміту: якщо не адмін - дозволено лише 1 персонаж
         if (!currentUser || currentUser.role !== 'admin') {
             const count = await Member.countDocuments({ owner: ownerName });
             if (count >= 1) return res.status(403).json({ success: false, message: 'ЛІМІТ: Ви можете додати тільки 1 персонажа.' });
