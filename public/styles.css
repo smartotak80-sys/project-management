@@ -1,125 +1,471 @@
-require('dotenv').config(); 
-const express = require("express");
-const mongoose = require("mongoose");
-const path = require("path");
-const bodyParser = require("body-parser");
-const cors = require("cors");
+:root {
+  --bg-dark: #050505;
+  --bg-panel: #0f1012;
+  --accent: #ff2a2a;       
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --radius: 14px;
+  --font-main: 'Inter', system-ui, sans-serif;
+}
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/barracuda_db";
+* { box-sizing: border-box; }
+html, body { height: 100%; scroll-behavior: smooth; }
 
-mongoose.connect(MONGO_URI)
-    .then(async () => {
-        console.log("✅ БАЗА ДАНИХ ПІДКЛЮЧЕНА");
-    })
-    .catch(err => console.error("❌ ПОМИЛКА БД:", err.message));
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  background-color: var(--bg-dark);
+  background-image: 
+    radial-gradient(circle at 15% 25%, rgba(138, 0, 0, 0.2) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(30, 30, 40, 0.6) 0%, transparent 45%);
+  background-attachment: fixed;
+  color: var(--text-main);
+  line-height: 1.6;
+}
 
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "public")));
+/* --- АНІМАЦІЇ ПОЯВИ КОНТЕНТУ (Scroll Reveal) --- */
+.section, .hero, .card, .member, .u-row {
+    opacity: 0;
+    transform: translateY(25px);
+    transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.section.animate, .hero.animate, .card.animate, .member.animate, .u-row.animate {
+    opacity: 1;
+    transform: translateY(0);
+}
+/* ------------------------------------------------ */
 
-// --- СХЕМИ ---
-const UserSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true }, 
-    password: { type: String, required: true }, 
-    role: { type: String, default: 'member' },
-    regDate: { type: Date, default: Date.now }
-});
-const User = mongoose.model('User', UserSchema);
+/* --- СТИЛІ ПОЛІВ ВВЕДЕННЯ (УНІФІКАЦІЯ) --- */
+input, textarea, select {
+  width: 100%; 
+  background: #151619 !important; 
+  border: 1px solid #333 !important; 
+  padding: 18px 20px; 
+  border-radius: 12px; 
+  color: #fff !important;
+  font-family: inherit;
+  font-size: 16px; 
+  transition: all 0.3s ease-in-out;
+  margin-bottom: 15px; 
+}
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  background: #111 !important; 
+  box-shadow: 0 0 15px rgba(255, 42, 42, 0.3);
+}
+::placeholder { color: #666; opacity: 1; }
+/* ---------------------------------------------------- */
 
-const MemberSchema = new mongoose.Schema({
-    name: String, role: String, owner: String, 
-    links: { discord: String, youtube: String, tg: String },
-    createdAt: { type: Date, default: Date.now }
-});
-const Member = mongoose.model('Member', MemberSchema);
+/* HEADER FIXES */
+.site { display: flex; flex-direction: column; min-height: 100vh; }
+.container { width: 90%; max-width: 1200px; margin: 0 auto; }
+main { flex: 1; }
 
-const NewsSchema = new mongoose.Schema({ title: String, date: String, summary: String, createdAt: { type: Date, default: Date.now } });
-const News = mongoose.model('News', NewsSchema);
+.site-header { 
+  background: rgba(5, 5, 5, 0.9); 
+  border-bottom: 1px solid var(--glass-border); 
+  position: sticky; top: 0; z-index: 1000; 
+  backdrop-filter: blur(15px); 
+  transition: all 0.3s;
+}
+.header-inner { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  padding: 15px 0; 
+  height: 80px;
+}
+.brand { display: flex; align-items: center; gap: 15px; text-decoration: none; color: inherit; }
+.logo { 
+  width: 45px; height: 45px; 
+  border-radius: 10px; 
+  background-image: url('https://i.postimg.cc/hzCBQ980/B.png'); 
+  background-size: cover; background-position: center; 
+  border: 1px solid var(--glass-border);
+  transition: transform 0.3s;
+}
+.brand:hover .logo { transform: rotate(10deg) scale(1.1); }
+.brand-text .title { font-weight: 800; font-size: 20px; text-transform: uppercase; line-height: 1.1; }
+.brand-text .subtitle { font-size: 11px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
-const GallerySchema = new mongoose.Schema({ url: String, createdAt: { type: Date, default: Date.now } });
-const Gallery = mongoose.model('Gallery', GallerySchema);
+/* NAV */
+.site-nav ul { display: flex; gap: 5px; list-style: none; margin: 0; padding: 0; align-items: center; }
+.site-nav a { 
+  text-decoration: none; color: var(--text-muted); 
+  padding: 8px 16px; border-radius: 8px; font-weight: 600; 
+  font-size: 14px; transition: 0.3s; border: 1px solid transparent;
+}
+.site-nav a:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+.site-nav a.primary { border: 1px solid var(--accent); color: var(--accent); background: rgba(255, 42, 42, 0.05); }
+.site-nav a.primary:hover { background: var(--accent); color: #fff; }
 
-// --- API ---
+.nav-toggle { display: none; background: transparent; border: none; color: #fff; font-size: 24px; cursor: pointer; }
 
-// РЕЄСТРАЦІЯ
-app.post('/api/auth/register', async (req, res) => {
-    try {
-        const { username, email, password } = req.body;
-        
-        const existingUser = await User.findOne({ $or: [{ username }, { email }] });
-        
-        if (existingUser) {
-            if (existingUser.username === username) return res.status(400).json({ success: false, message: 'Цей логін вже зайнятий!' });
-            if (existingUser.email === email) return res.status(400).json({ success: false, message: 'Цей Email вже використовується!' });
-        }
+/* SECTIONS */
+.hero { padding: 120px 0; display: flex; align-items: center; }
+.hero h1 { 
+    font-size: 55px; line-height: 1.1; margin: 0 0 20px; font-weight: 900; 
+    text-transform: uppercase; color: #fff; 
+    text-shadow: 0 0 10px rgba(255, 42, 42, 0.1);
+}
+.lead { color: var(--text-muted); font-size: 18px; margin-bottom: 30px; max-width: 600px; } 
 
-        await new User({ username, email, password, role: 'member' }).save();
-        res.json({ success: true, message: 'Реєстрація успішна' });
-    } catch (err) { res.status(500).json({ success: false, message: 'Помилка сервера' }); }
-});
+.section { padding: 80px 0; }
+.section h2 { font-size: 32px; margin-bottom: 15px; color: #fff; text-transform: uppercase; font-weight: 900; }
+.section.alt { background: rgba(255,255,255,0.02); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); }
 
-app.post('/api/auth/login', async (req, res) => {
-    const { username, password } = req.body;
-    // Адмін хардкод
-    if(username === 'famillybarracuda@gmail.com' && password === 'barracuda123') {
-         return res.json({ success: true, user: { username: 'ADMIN 🦈', role: 'admin' } });
-    }
-    try {
-        const user = await User.findOne({ username, password });
-        if (user) res.json({ success: true, user: { username: user.username, role: user.role } });
-        else res.status(401).json({ success: false, message: 'Невірний логін або пароль' });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin-top: 40px; }
+.card { 
+    background: var(--bg-panel); padding: 30px; border-radius: 16px; 
+    border: 1px solid var(--glass-border); 
+    transition: all 0.3s;
+}
+.card:hover { 
+    transform: translateY(-8px); 
+    border-color: var(--accent); 
+    box-shadow: 0 10px 30px rgba(255, 42, 42, 0.15); 
+}
+.card h3 { color: var(--accent); margin: 0 0 10px; font-size: 20px; text-transform: uppercase; }
 
-// ДОДАВАННЯ УЧАСНИКА (Ліміт 1 персонаж на користувача)
-app.post('/api/members', async (req, res) => {
-    try {
-        const ownerName = req.body.owner;
-        const currentUser = await User.findOne({ username: ownerName });
-        
-        // --- ЛОГІКА ЛІМІТУ: МАКСИМУМ 1 ПЕРСОНАЖ, ЯКЩО НЕ АДМІН ---
-        if (!currentUser || currentUser.role !== 'admin') {
-            const count = await Member.countDocuments({ owner: ownerName });
-            if (count >= 1) return res.status(403).json({ success: false, message: 'ЛІМІТ: Ви можете додати тільки 1 персонажа.' });
-        }
-        
-        await new Member(req.body).save(); 
-        res.json({ success: true }); 
-    } catch(e) { res.status(500).json({ success: false, error: e.message }); }
-});
+/* CONTROLS (Admin/User Inputs) */
+.members-controls, .gallery-controls {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px;
+  background: rgba(0,0,0,0.3); 
+  padding: 15px; 
+  border-radius: 12px; 
+  border: 1px solid var(--glass-border);
+  align-items: center;
+}
+.members-controls input {
+    margin-bottom: 0;
+}
 
-app.get('/api/members', async (req, res) => {
-    const members = await Member.find().sort({ createdAt: -1 });
-    res.json(members.map(m => ({ ...m._doc, id: m._id })));
-});
-app.put('/api/members/:id', async (req, res) => { await Member.findByIdAndUpdate(req.params.id, req.body); res.json({ success: true }); });
-app.delete('/api/members/:id', async (req, res) => { await Member.findByIdAndDelete(req.params.id); res.json({ success: true }); });
+/* #EVENTS - Grid Layout для розміщення в один рядок (Адаптивність) */
+.events-controls {
+    margin-bottom: 30px;
+    background: rgba(0,0,0,0.3); 
+    padding: 15px; 
+    border-radius: 12px; 
+    border: 1px solid var(--glass-border);
+    
+    display: grid;
+    grid-template-columns: 2fr 1fr 3fr 1fr; 
+    align-items: stretch;
+    gap: 10px;
+}
+.events-controls input, 
+.events-controls textarea {
+    margin-bottom: 0; 
+    width: auto; 
+    padding: 12px 18px; 
+}
+.events-controls textarea { 
+    height: 54px; 
+    min-height: 54px; 
+    resize: none; 
+}
+.events-controls button {
+    grid-column: span 1;
+    height: 54px; 
+    padding: 0 25px;
+    font-size: 16px;
+    border-radius: 12px;
+}
+/* #GALLERY - Розміщення в один рядок */
+.gallery-controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+.gallery-controls input {
+    margin-bottom: 0;
+    flex-grow: 1;
+    height: 54px;
+    padding: 12px 18px;
+}
+.gallery-controls button {
+    height: 54px; 
+    padding: 0 25px;
+    font-size: 16px;
+    border-radius: 12px;
+}
 
-// Інші маршрути
-app.get('/api/news', async (req, res) => { const news = await News.find().sort({ createdAt: -1 }); res.json(news.map(n => ({ ...n._doc, id: n._id }))); });
-app.post('/api/news', async (req, res) => { await new News(req.body).save(); res.json({ success: true }); });
-app.delete('/api/news/:id', async (req, res) => { await News.findByIdAndDelete(req.params.id); res.json({ success: true }); });
+/* DASHBOARD MODAL (Unified Style) */
+.dashboard-modal { 
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+  background: rgba(0,0,0,0.95); z-index: 2000; backdrop-filter: blur(10px); 
+  align-items: center; justify-content: center; 
+}
+.dashboard-modal.show { 
+    display: flex; 
+    animation: fadeIn 0.3s; 
+}
 
-app.get('/api/gallery', async (req, res) => { const gallery = await Gallery.find().sort({ createdAt: -1 }); res.json(gallery.map(g => ({ ...g._doc, id: g._id }))); });
-app.post('/api/gallery', async (req, res) => { await new Gallery(req.body).save(); res.json({ success: true }); });
-app.delete('/api/gallery/:id', async (req, res) => { await Gallery.findByIdAndDelete(req.params.id); res.json({ success: true }); });
+.dashboard-window { 
+  width: 95%; max-width: 1100px; height: 85vh; 
+  background: #0b0c0e; border: 1px solid #333; border-radius: 20px; 
+  display: flex; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.8); 
+  transition: all 0.3s;
+}
+.dashboard-window:hover { box-shadow: 0 0 50px rgba(255,42,42,0.1); }
 
-app.get('/api/users', async (req, res) => { const users = await User.find().sort({ regDate: -1 }); res.json(users); });
-app.delete('/api/users/:username', async (req, res) => {
-    try {
-        await User.findOneAndDelete({ username: req.params.username });
-        await Member.deleteMany({ owner: req.params.username });
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
-});
-app.get('/api/users/count', async (req, res) => {
-    const total = await User.countDocuments();
-    const admins = await User.countDocuments({ role: 'admin' });
-    res.json({ totalUsers: total, totalAdmins: admins });
-});
+/* Sidebar */
+.dash-sidebar { 
+  width: 260px; background: #08080a; padding: 25px 15px; 
+  border-right: 1px solid #222; display: flex; flex-direction: column; 
+}
+.dash-brand { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; padding-left: 10px; }
+.dash-user-card { display: flex; align-items: center; gap: 12px; padding: 15px; background: #111; border-radius: 12px; border: 1px solid #222; margin-bottom: 20px; }
+.dash-avatar { width: 40px; height: 40px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #777; border: 1px solid #333; }
+body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); background: rgba(255,42,42,0.1); }
+#dashUsername { font-weight: 700; color: #fff; display: block; font-size: 14px; }
+#dashRole { font-size: 11px; color: #666; text-transform: uppercase; }
 
-app.get("*", (req, res) => { res.sendFile(path.join(__dirname, "public", "index.html")); });
-app.listen(PORT, () => { console.log(`🚀 Сервер на порту ${PORT}`); });
+.dash-nav button { 
+  width: 100%; text-align: left; background: transparent; border: none; 
+  padding: 12px 15px; color: #888; font-weight: 600; cursor: pointer; 
+  border-radius: 8px; display: flex; align-items: center; gap: 10px; 
+  transition: 0.2s; font-size: 13px; margin-bottom: 4px; 
+}
+.dash-nav button:hover { background: #151618; color: #fff; }
+.dash-nav button.active { background: #1a1a1c; color: #fff; border-left: 3px solid var(--accent); }
+.btn-logout { margin-top: auto; color: #bd3838 !important; }
+.btn-logout:hover { background: rgba(189,56,56,0.1) !important; }
+
+/* Dashboard Content */
+.dash-content { 
+    flex: 1; padding: 30px; overflow-y: auto; 
+    background: radial-gradient(circle at top right, rgba(255,42,42,0.03), transparent 50%); 
+}
+.dash-view { display: none; animation: fadeIn 0.4s; }
+.dash-view.active { display: block; }
+.dash-view h2 { 
+    margin-top: 0; margin-bottom: 25px; font-size: 24px; 
+    border-bottom: 1px solid #222; padding-bottom: 15px; 
+}
+
+/* Admin List Styles */
+.u-row { 
+  background: #121315; padding: 15px; border-radius: 10px; 
+  display: flex; justify-content: space-between; align-items: center; 
+  border: 1px solid #222; margin-bottom: 10px; transition: 0.2s;
+}
+.u-row:hover { border-color: #444; background: #18191c; }
+.u-info strong { color: #fff; display: block; font-size: 15px; }
+.u-info small { color: #666; font-size: 12px; }
+
+/* --- СТИЛІ КНОПОК З АНІМАЦІЄЮ --- */
+.btn { 
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; 
+  background: #222; color: #fff; padding: 10px 20px; border: 1px solid var(--glass-border); 
+  border-radius: 12px; 
+  cursor: pointer; transition: all 0.3s ease; text-decoration: none; 
+  font-size: 13px; font-weight: 600;
+  position: relative; overflow: hidden;
+}
+.btn:hover { 
+    background: #333; border-color: #fff; 
+    transform: translateY(-3px); 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
+}
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    transition: width 0.4s ease, height 0.4s ease, top 0.4s ease, left 0.4s ease;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+}
+.btn:hover::before {
+    width: 200%;
+    height: 200%;
+}
+.btn > * { position: relative; z-index: 1; } 
+
+
+.btn-large {
+    padding: 18px 35px; 
+    font-size: 18px; 
+    min-width: 240px; 
+    border-radius: 12px; 
+}
+
+.btn-primary { 
+    background: linear-gradient(135deg, var(--accent), #b30000); 
+    border: none; 
+}
+.btn-primary:hover { 
+    background: linear-gradient(135deg, #ff4d4d, var(--accent)); 
+    box-shadow: 0 4px 15px rgba(255,42,42,0.4); 
+    transform: translateY(-5px); 
+}
+.btn-primary::before { 
+    background: rgba(255,255,255,0.25); 
+} 
+
+.btn-outline { 
+    background: transparent; 
+    border: 1px solid #444; 
+    color: #aaa; 
+    transition: all 0.3s ease;
+}
+.btn-outline:hover { 
+    border-color: var(--accent); 
+    color: #fff; 
+}
+.full-width { width: 100%; }
+/* ---------------------------------------------------- */
+
+
+/* Gallery Grid */
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+.gallery-grid div { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
+.gallery-grid img { 
+    width: 100%; height: 150px; object-fit: cover; cursor: pointer; 
+    transition: transform 0.3s, box-shadow 0.3s; 
+}
+.gallery-grid img:hover { 
+    transform: scale(1.05); 
+    box-shadow: 0 0 15px rgba(255,42,42,0.2); 
+}
+
+/* Members Grid */
+.members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+.member { 
+    background: linear-gradient(145deg, #121418, #0a0b0e); 
+    padding: 20px; border-radius: 14px; border: 1px solid #222; 
+    position: relative;
+    transition: all 0.3s;
+}
+.member:hover { border-color: var(--accent); }
+
+/* --- МОДАЛЬНІ ВІКНА --- */
+.auth-modal, .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+.auth-modal.show, .custom-modal.show { display: flex; }
+.auth-content, .custom-modal-content { 
+    background: #000; 
+    padding: 35px; 
+    border-radius: 16px; 
+    width: 100%; 
+    max-width: 400px; 
+    border: 1px solid var(--accent); 
+    position: relative; 
+    box-shadow: 0 0 30px rgba(255,42,42,0.2); 
+    animation: scaleIn 0.3s forwards;
+}
+
+/* Auth Tabs */
+.auth-tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid #333; }
+.auth-tabs button { flex: 1; background: none; border: none; padding: 10px; color: #666; cursor: pointer; font-weight: bold; border-bottom: 2px solid transparent; font-size: 18px; }
+.auth-tabs button.active { color: #fff; border-color: var(--accent); }
+
+/* Close buttons */
+.close-auth, .close-modal, .btn-close-dash { 
+  position: absolute; top: 15px; right: 20px; font-size: 24px; 
+  cursor: pointer; color: #666; transition: 0.2s; font-family: sans-serif;
+  background: none !important; border: none !important;
+}
+.close-auth:hover, .close-modal:hover { color: #fff; transform: rotate(90deg); }
+.btn-close-dash { position: static; margin-top: 10px; width: 100%; text-align: center; font-size: 14px; background: #1a1a1a !important; padding: 10px; border-radius: 8px; display: block; }
+.btn-close-dash:hover { background: #222 !important; color: #fff; transform: none; }
+
+/* Confirm Modal Specifics */
+.custom-modal-content {
+    max-width: 300px;
+    background: #000;
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 15px rgba(255,42,42,0.2); 
+}
+.custom-modal-content #confirmMessage {
+    font-size: 16px;
+    color: #fff;
+    font-weight: 600;
+}
+.custom-modal-content .btn-large {
+    min-width: 120px;
+    padding: 12px 20px;
+    font-size: 16px;
+}
+/* ---------------------------------------------------- */
+
+
+/* Keyframes */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+.logged-in-only { display: none !important; }
+body.is-logged-in .logged-in-only { display: inline-block !important; }
+.admin-only { display: none !important; }
+body.is-admin .admin-only { display: flex !important; }
+body.is-admin .admin-only-nav { display: block !important; }
+
+/* --- ПОВНА АДАПТАЦІЯ (Mobile First) --- */
+@media (max-width: 900px) { 
+  /* Хедер та Навігація */
+  .site-nav { 
+      display: none; 
+      position: absolute; 
+      left: 0; right: 0; top: 80px; 
+      background: #050505; 
+      padding: 20px; 
+      border-bottom: 1px solid var(--accent); 
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      animation: fadeIn 0.3s;
+      flex-direction: column; 
+  } 
+  .nav-toggle { display: block; } 
+  .site-nav.open { display: flex; }
+  .site-nav ul { flex-direction: column; align-items: flex-start; width: 100%; }
+  .site-nav ul li { margin-bottom: 10px; width: 100%; }
+  .site-nav ul li button { width: 100%; }
+  .site-nav a { width: 100%; text-align: left; }
+  
+  /* Геро Секція */
+  .hero { padding: 80px 0; text-align: center; }
+  .hero h1 { font-size: 40px; }
+  .hero .lead { margin: 0 auto 20px; }
+  .hero div[style] { flex-direction: column; gap: 10px; }
+  .btn-large { min-width: 100%; padding: 15px 25px; font-size: 16px; }
+
+  /* Картки та Сітки */
+  .cards { grid-template-columns: 1fr; gap: 20px; }
+  .members-grid { grid-template-columns: 1fr; }
+  .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  
+  /* Адмін Контроли (Events) */
+  .events-controls {
+      grid-template-columns: 1fr; /* Всі елементи в одну колонку */
+  }
+
+  /* Дашборд */
+  .dashboard-window { flex-direction: column; height: 100%; border-radius: 0; } 
+  .dash-sidebar { 
+      width: 100%; height: auto; 
+      flex-direction: row; align-items: center; 
+      padding: 15px; overflow-x: auto; 
+      justify-content: space-between;
+  } 
+  .dash-user-card { display: none; } 
+  .dash-brand { margin-bottom: 0; margin-right: 20px; }
+  .dash-nav { display: none !important; }
+  .btn-close-dash { 
+      display: block !important; 
+      position: fixed; bottom: 0; left: 0; 
+      z-index: 10;
+      width: 100%; 
+      border-radius: 0;
+  }
+}
+
+@media (max-width: 480px) {
+    .hero h1 { font-size: 36px; }
+    .section { padding: 60px 0; }
+    .auth-content { padding: 25px; }
+}
