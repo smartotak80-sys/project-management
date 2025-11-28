@@ -27,7 +27,7 @@
             <li style="animation-delay: 1.2s;"><a href="#members">Учасники</a></li>
             <li style="animation-delay: 1.3s;"><a href="#events">Події</a></li>
             <li style="animation-delay: 1.4s;"><a href="#gallery">Галерея</a></li>
-            <li style="animation-delay: 1.5s;"><a href="#apply" class="primary">Заявка</a></li>
+            <li style="animation-delay: 1.5s;"><a href="#contact" class="primary">Підтримка</a></li>
             <li style="margin-left: 20px; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.1); animation-delay: 1.6s;">
               <button id="openAuthBtn" class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;">
                 <i class="fa-solid fa-user"></i> <span id="authBtnText">Вхід</span>
@@ -147,11 +147,98 @@
         </div>
       </section>
       
-      <section id="contact" class="section">
-         <div class="container">
-             <h2 class="animated-content">Контакти</h2>
-             <p class="muted animated-content">Email: famillybarracuda@gmail.com</p>
-         </div>
+      <section id="contact" class="section alt" style="padding-bottom: 100px;">
+        <div class="container">
+          <div class="events-header animated-content">
+              <div class="header-text">
+                  <h2>ПІДТРИМКА</h2>
+                  <p class="muted">Центр вирішення питань та зв'язку з адміністрацією.</p>
+              </div>
+          </div>
+
+          <div class="ticket-visual-panel animated-content" data-delay="0.2s">
+             <div class="tv-sidebar">
+                 <div class="tv-logo">
+                     <i class="fa-solid fa-shield-cat"></i> SUPPORT
+                 </div>
+                 
+                 <div class="tv-user-mini">
+                     <div class="tv-avatar"><i class="fa-solid fa-user"></i></div>
+                     <div class="tv-user-info">
+                         <div class="tv-u-name">Гість</div>
+                         <div class="tv-u-role">Не авторизований</div>
+                     </div>
+                 </div>
+
+                 <div class="tv-menu">
+                     <div class="tv-menu-item active">
+                         <div class="tv-menu-icon"><i class="fa-solid fa-inbox"></i></div>
+                         <span>Вхідні</span>
+                         <span class="tv-badge">2</span>
+                     </div>
+                     <div class="tv-menu-item">
+                         <div class="tv-menu-icon"><i class="fa-solid fa-paper-plane"></i></div>
+                         <span>Створити запит</span>
+                     </div>
+                     <div class="tv-menu-item">
+                         <div class="tv-menu-icon"><i class="fa-regular fa-circle-question"></i></div>
+                         <span>FAQ / Допомога</span>
+                     </div>
+                 </div>
+             </div>
+
+             <div class="tv-content">
+                 <div class="tv-top-bar">
+                     <h3>Мої звернення</h3>
+                     <a href="https://discord.gg/CxYnyKeb" target="_blank" class="tv-btn-new">
+                         <i class="fa-solid fa-plus"></i> НОВИЙ ТІКЕТ
+                     </a>
+                 </div>
+
+                 <div class="tv-scroll-area">
+                     <div class="tv-ticket-row active-row">
+                         <div class="tv-status-line status-wait"></div>
+                         <div class="tv-ticket-icon status-wait-bg">
+                             <i class="fa-solid fa-clock"></i>
+                         </div>
+                         <div class="tv-ticket-details">
+                             <div class="tv-ticket-header">
+                                 <span class="tv-id">#1102</span>
+                                 <span class="tv-subject">Заявка на підвищення рангу</span>
+                             </div>
+                             <p class="tv-preview">Виконав усі умови для підвищення на 3 ранг. Скріншоти...</p>
+                         </div>
+                         <div class="tv-ticket-meta">
+                             <span class="tv-date">2 год. тому</span>
+                             <div class="tv-tag tag-wait">ОЧІКУЄ</div>
+                         </div>
+                     </div>
+
+                     <div class="tv-ticket-row">
+                         <div class="tv-status-line status-new"></div>
+                         <div class="tv-ticket-icon status-new-bg">
+                             <i class="fa-solid fa-envelope"></i>
+                         </div>
+                         <div class="tv-ticket-details">
+                             <div class="tv-ticket-header">
+                                 <span class="tv-id">#1105</span>
+                                 <span class="tv-subject">Питання по івенту</span>
+                             </div>
+                             <p class="tv-preview">Коли планується наступний збір сім'ї?</p>
+                         </div>
+                         <div class="tv-ticket-meta">
+                             <span class="tv-date">Щойно</span>
+                             <div class="tv-tag tag-new">НОВЕ</div>
+                         </div>
+                     </div>
+                 </div>
+
+                 <div class="tv-footer-hint">
+                     <i class="fa-brands fa-discord"></i> Система повністю інтегрована з Discord. Відповідь надійде в особисті повідомлення.
+                 </div>
+             </div>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -174,7 +261,6 @@
               <nav class="dash-nav">
                   <div class="dash-nav-label">MAIN</div>
                   <button class="dash-nav-btn active" data-target="dash-home"><i class="fa-solid fa-house"></i> Головна</button>
-                  <button class="dash-nav-btn" data-target="dash-support"><i class="fa-solid fa-headset"></i> Підтримка</button>
                   
                   <div class="dash-nav-label admin-only-dash">ADMINISTRATION</div>
                   <button class="dash-nav-btn admin-only-dash" data-target="dash-users"><i class="fa-solid fa-users"></i> Користувачі</button>
@@ -187,7 +273,7 @@
                       <div class="dash-username" id="dashUsername">User</div>
                       <div class="dash-role" id="dashRole">Member</div>
                   </div>
-                  <button id="dashLogoutBtn" class="dash-logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+                  <button id="dashLogoutBtn" class="dash-logout" title="Вийти"><i class="fa-solid fa-right-from-bracket"></i></button>
               </div>
           </aside>
 
@@ -244,23 +330,7 @@
                   </div>
 
                   <div id="dash-content" class="dash-tab">
-                      <p class="muted">Керування новинами та галереєю доступне на головній сторінці сайту в режимі редагування.</p>
-                  </div>
-                  
-                  <div id="dash-support" class="dash-tab">
-                       <div class="dash-support-frame">
-                           <div class="ds-sidebar">
-                               <button class="ds-btn active">Мої тікети</button>
-                               <button class="ds-btn">Створити новий</button>
-                           </div>
-                           <div class="ds-content">
-                               <div class="ds-placeholder">
-                                   <i class="fa-solid fa-inbox"></i>
-                                   <p>У вас немає активних тікетів</p>
-                                   <a href="https://discord.gg/CxYnyKeb" target="_blank" class="btn btn-primary btn-sm">Перейти в Discord</a>
-                               </div>
-                           </div>
-                       </div>
+                      <p class="muted">Щоб додати новини або фото, поверніться на сайт. Кнопки "Додати" доступні там.</p>
                   </div>
               </div>
           </main>
