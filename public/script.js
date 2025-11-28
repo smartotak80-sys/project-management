@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
   
-  // Custom Confirm
   function customConfirm(message, callback) {
       const modal = document.getElementById('customConfirmModal');
       const msg = document.getElementById('confirmMessage');
@@ -36,60 +35,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   window.customConfirm = customConfirm;
 
-  // --- STATE ---
   let members = [];
   let currentUser = loadCurrentUser(); 
 
-  // --- API FETCH ---
+  // --- API ---
   async function apiFetch(url, options = {}) {
       try {
           const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
           const response = await fetch(url, { ...options, headers });
           const data = await response.json();
           if (!response.ok) { 
-              console.error("API Error:", data);
               customConfirm(data.message || "Помилка сервера.", true);
               return null; 
           }
           return data;
       } catch (error) {
-          console.error("Network Error:", error);
-          customConfirm("Помилка з'єднання.", true);
+          console.error(error);
           return null;
       }
   }
 
-  // --- LOAD DATA ---
+  // --- LOAD ---
   async function loadInitialData() {
-      // Members
       const m = await apiFetch('/api/members');
-      if (m) { members = m; renderMembers(); } else { members = []; renderMembers(); }
+      if (m) { members = m; renderMembers(); }
       
-      // News
       const n = await apiFetch('/api/news');
-      if (n) renderNews(n); else renderNews([]);
+      if (n) renderNews(n);
       
-      // Gallery
       const g = await apiFetch('/api/gallery');
-      if (g) renderGallery(g); else renderGallery([]);
+      if (g) renderGallery(g);
 
-      // Stats
       const counts = await apiFetch('/api/users/count');
-      if(counts){
-          const tabReg = document.getElementById('tabRegister');
-          if (tabReg) {
-            if (counts.totalUsers >= counts.maxUsers) {
-              tabReg.textContent = 'Реєстрація (Закрито)';
-              tabReg.disabled = true;
-            } else {
-              tabReg.textContent = 'Реєстрація';
-              tabReg.disabled = false;
-            }
-          }
-          if(document.getElementById('statTotalUsers')) document.getElementById('statTotalUsers').textContent = counts.totalUsers;
-          if(document.getElementById('statTotalAdmins')) document.getElementById('statTotalAdmins').textContent = counts.totalAdmins;
-          if(document.getElementById('statTotalNews')) document.getElementById('statTotalNews').textContent = n ? n.length : 0;
-          if(document.getElementById('statTotalGallery')) document.getElementById('statTotalGallery').textContent = g ? g.length : 0;
+      if(counts && document.getElementById('statTotalUsers')){
+          document.getElementById('statTotalUsers').textContent = counts.totalUsers;
+          document.getElementById('statTotalAdmins').textContent = counts.totalAdmins;
+          document.getElementById('statTotalNews').textContent = n ? n.length : 0;
+          document.getElementById('statTotalGallery').textContent = g ? g.length : 0;
       }
 
       if (currentUser && currentUser.role === 'admin') {
@@ -113,24 +95,20 @@ document.addEventListener('DOMContentLoaded', () => {
     grid.innerHTML = list.map(m => {
       const isOwner = currentUser && currentUser.username === m.owner;
       const isAdmin = currentUser?.role === 'admin';
-      
-      let socialLinksHtml = '<div class="social-links">';
-      if (m.links?.discord) socialLinksHtml += `<span class="social-link" title="Discord: ${m.links.discord}"><i class="fa-brands fa-discord"></i></span>`;
-      if (m.links?.youtube) socialLinksHtml += `<a href="${m.links.youtube}" target="_blank" class="social-link link-yt" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
-      if (m.links?.tg) socialLinksHtml += `<a href="${m.links.tg}" target="_blank" class="social-link link-tg" title="Telegram"><i class="fa-brands fa-telegram"></i></a>`;
-      socialLinksHtml += '</div>';
-
+      let links = '';
+      if(m.links?.discord) links += `<span class="social-link"><i class="fa-brands fa-discord"></i></span>`;
+      if(m.links?.youtube) links += `<a href="${m.links.youtube}" target="_blank" class="social-link"><i class="fa-brands fa-youtube"></i></a>`;
       return `
         <div class="member animated-content">
           <div class="member-top">
             <h3>${m.name}</h3>
             <div class="role-badge">${m.role}</div>
-            ${socialLinksHtml}
+            <div class="social-links">${links}</div>
           </div>
           ${(isOwner || isAdmin) ? 
-            `<div class="member-actions admin-only" style="display:flex; gap:10px; margin-top:15px;">
-              <button class="btn btn-edit" onclick="window.editMember('${m.id}')"><i class="fa-solid fa-pen"></i> РЕД.</button>
-              <button class="btn btn-delete" onclick="window.deleteMember('${m.id}')"><i class="fa-solid fa-trash"></i> ВИД.</button>
+            `<div class="member-actions admin-only" style="display:flex;">
+              <button class="btn btn-edit" onclick="window.editMember('${m.id}')"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-delete" onclick="window.deleteMember('${m.id}')"><i class="fa-solid fa-trash"></i></button>
             </div>` : ''}
         </div>
       `;
@@ -163,60 +141,70 @@ document.addEventListener('DOMContentLoaded', () => {
       checkAnimate();
   }
 
+  // --- ОНОВЛЕНИЙ СПИСОК КОРИСТУВАЧІВ (АДМІНКА) ---
   function renderAdminSidebar(users) {
       const el = document.getElementById('userDatabaseSidebar');
       if(!el) return;
+      
       el.innerHTML = users.map(u => {
           const isMe = currentUser && u.username === u.username;
+          const isAdmin = u.role === 'admin';
           const isOnline = isMe ? true : (Math.random() > 0.4); 
           const statusClass = isOnline ? 'online' : 'offline';
-          let dateStr = '---';
-          if (u.regDate) {
-              const d = new Date(u.regDate);
-              dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+          const statusText = isOnline ? 'Online' : 'Offline';
+          
+          // Вибір іконки аватара
+          let avatarIcon = `<i class="fa-solid fa-user"></i>`;
+          let avatarClass = 'u-avatar';
+          
+          if (isAdmin) {
+             avatarIcon = `<i class="fa-solid fa-user-shield"></i>`; // Щит для адміна
+             avatarClass += ' is-admin-avatar';
           }
+
           return `
             <div class="user-card-row">
-                <div class="u-status-indicator ${statusClass}"></div>
+                <div class="${avatarClass}">
+                   ${avatarIcon}
+                </div>
+                
                 <div class="u-details-grid">
-                    <div class="u-field u-login"><i class="fa-solid fa-user"></i> ${u.username}</div>
-                    <div class="u-field u-email"><i class="fa-solid fa-envelope"></i> ${u.email}</div>
-                    <div class="u-field u-pass"><i class="fa-solid fa-key"></i> ${u.password}</div>
-                    <div class="u-meta">
-                        <span class="u-role-tag ${u.role}">${u.role.toUpperCase()}</span>
-                        <span class="u-date-tag">Рег. ${dateStr}</span>
+                    <div class="u-name-row">
+                        <span class="u-login">${u.username}</span>
+                        <div class="u-status-badge ${statusClass}">
+                           <div class="status-dot"></div> ${statusText}
+                        </div>
+                    </div>
+                    <div class="u-sub-info">
+                       <i class="fa-solid fa-envelope"></i> ${u.email}
                     </div>
                 </div>
-                ${(!isMe && u.role!=='admin') ? 
-                    `<button class="btn-ban-row" onclick="window.banUser('${u.username}')" title="Видалити"><i class="fa-solid fa-trash"></i></button>` : ''}
+                
+                ${(!isMe && !isAdmin) ? 
+                    `<button class="btn-delete-user" onclick="window.banUser('${u.username}')" title="Видалити акаунт">
+                        <i class="fa-solid fa-trash-can"></i>
+                     </button>` 
+                    : ''}
             </div>
           `;
       }).join('');
   }
 
   // --- ACTIONS ---
-  
-  // ВІДКРИТТЯ МОДАЛКИ РЕДАГУВАННЯ (ЗАМІСТЬ PROMPT)
   window.editMember = (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
-      
-      // Заповнюємо форму даними
       document.getElementById('editMemberId').value = m.id;
       document.getElementById('editMemberName').value = m.name;
       document.getElementById('editMemberRole').value = m.role;
       document.getElementById('editMemberDiscord').value = m.links?.discord || '';
       document.getElementById('editMemberYoutube').value = m.links?.youtube || '';
       document.getElementById('editMemberTg').value = m.links?.tg || '';
-      
-      // Відкриваємо модалку
       document.getElementById('editMemberModal').classList.add('show');
   };
 
-  // ОБРОБКА ФОРМИ РЕДАГУВАННЯ
   document.getElementById('editMemberForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
       const id = document.getElementById('editMemberId').value;
       const body = {
           name: document.getElementById('editMemberName').value,
@@ -227,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
               tg: document.getElementById('editMemberTg').value
           }
       };
-      
       const res = await apiFetch(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify(body) });
       if(res && res.success) {
           customConfirm("Зміни збережено!", true);
@@ -239,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.deleteMember = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteNews = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteGallery = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); loadInitialData(); } });
-  window.banUser = async (u) => customConfirm(`Видалити користувача ${u}?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadInitialData(); } });
+  window.banUser = async (u) => customConfirm(`Видалити акаунт ${u}?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadInitialData(); } });
   
   window.openLightbox = (idx) => {
       const g = window.galleryData || [];
@@ -251,15 +238,25 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateAuthUI() {
       const btn = document.getElementById('openAuthBtn');
       const txt = document.getElementById('authBtnText');
+      
+      // Оновлення іконки в сайдбарі (головний профіль)
+      const adminAvatar = document.querySelector('.profile-glitch-avatar');
+      
       if(currentUser) {
           document.body.classList.add('is-logged-in');
-          if(currentUser.role === 'admin') document.body.classList.add('is-admin');
+          if(currentUser.role === 'admin') {
+              document.body.classList.add('is-admin');
+              if(adminAvatar) adminAvatar.innerHTML = '<i class="fa-solid fa-user-shield"></i>'; // Іконка в профілі
+          } else {
+               if(adminAvatar) adminAvatar.innerHTML = '<i class="fa-solid fa-user"></i>';
+          }
           txt.textContent = currentUser.role==='admin' ? 'PANEL' : currentUser.username;
           btn.classList.toggle('btn-primary', currentUser.role==='admin');
       } else {
           document.body.classList.remove('is-logged-in', 'is-admin');
           txt.textContent = 'Вхід';
       }
+      
       const addBtn = document.getElementById('addMemberBtn');
       if(addBtn && currentUser) {
           const myCount = members.filter(m => m.owner === currentUser.username).length;
@@ -285,8 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('closeAuth')?.addEventListener('click', ()=>document.getElementById('authModal').classList.remove('show'));
   document.getElementById('closeSidebar')?.addEventListener('click', ()=>document.getElementById('adminSidebar').classList.remove('open'));
   document.getElementById('adminLogoutBtn')?.addEventListener('click', ()=>{ removeCurrentUser(); location.reload(); });
-  
-  // Закриття модалки редагування
   document.getElementById('closeEditMemberModal')?.addEventListener('click', ()=>document.getElementById('editMemberModal').classList.remove('show'));
 
   document.getElementById('tabLogin')?.addEventListener('click', (e) => {
