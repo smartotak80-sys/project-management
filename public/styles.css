@@ -198,7 +198,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .auth-tabs button { flex: 1; background: none; border: none; padding: 10px; color: #666; cursor: pointer; font-weight: bold; border-bottom: 2px solid transparent; }
 .auth-tabs button.active { color: #fff; border-color: var(--accent); }
 
-/* --- CUSTOM STYLES FOR AUTH MODAL (to match images and reduce spacing) --- */
+/* --- CUSTOM STYLES FOR AUTH MODAL (to match images, equal width, reduced spacing) --- */
 
 .auth-content { 
     background: #000000; /* Чорне тло, як на фото */
@@ -209,23 +209,24 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
     top: 15px;
 }
 .auth-tabs {
-    margin-bottom: 25px; /* Більший відступ під вкладками */
+    margin-bottom: 25px; 
 }
 .auth-tabs button {
     font-size: 18px;
     font-weight: 800;
 }
 .auth-tabs button.active {
-    border-width: 3px; /* Потовщуємо червону лінію */
+    border-width: 3px; 
 }
 
-/* Стилізація полів вводу для вигляду "блоків" та зменшення відстані */
+/* Стилізація полів вводу: блоки, однакова ширина, зменшена відстань */
 .auth-content input[type="text"], 
 .auth-content input[type="email"], 
 .auth-content input[type="password"] {
+  /* Важливо: всі поля вже мають width: 100%, забезпечуючи однаковий розмір */
   padding: 18px 20px; /* Збільшений відступ для вигляду "блоку" */
   border-radius: 12px; 
-  margin-bottom: 10px; /* КЛЮЧОВЕ: Зменшуємо відстань між полями */
+  margin-bottom: 10px; /* Зменшуємо відстань між полями */
   
   background: #191919 !important; /* Темний фон полів */
   border: 1px solid #111 !important; /* Дуже темна рамка */
@@ -238,7 +239,8 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 
 /* Зміна розміру кнопки та відстані від неї */
 .auth-content .btn-primary {
-    margin-top: 20px; /* КЛЮЧОВЕ: Зменшуємо відстань від останнього поля до кнопки */
+    /* Кнопка також має width: 100%, забезпечуючи однаковий розмір */
+    margin-top: 20px; 
     padding: 18px 20px;
     font-size: 18px;
     font-weight: 700;
