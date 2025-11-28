@@ -53,8 +53,8 @@ app.post('/api/auth/register', async (req, res) => {
         const existingUser = await User.findOne({ $or: [{ username }, { email }] });
         
         if (existingUser) {
-            if (existingUser.username === username) return res.status(400).json({ success: false, message: 'Логін вже зайнятий!' });
-            if (existingUser.email === email) return res.status(400).json({ success: false, message: 'Email вже використовується!' });
+            if (existingUser.username === username) return res.status(400).json({ success: false, message: 'Цей логін вже зайнятий!' });
+            if (existingUser.email === email) return res.status(400).json({ success: false, message: 'Цей Email вже використовується!' });
         }
 
         await new User({ username, email, password, role: 'member' }).save();
@@ -64,7 +64,7 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
-    // Адмін хардкод (для безпеки краще в БД, але залишаю як було в прикладі)
+    // Адмін хардкод
     if(username === 'famillybarracuda@gmail.com' && password === 'barracuda123') {
          return res.json({ success: true, user: { username: 'ADMIN 🦈', role: 'admin' } });
     }
@@ -99,7 +99,7 @@ app.get('/api/members', async (req, res) => {
 app.put('/api/members/:id', async (req, res) => { await Member.findByIdAndUpdate(req.params.id, req.body); res.json({ success: true }); });
 app.delete('/api/members/:id', async (req, res) => { await Member.findByIdAndDelete(req.params.id); res.json({ success: true }); });
 
-// Інші маршрути (новини, галерея, юзери)
+// Інші маршрути
 app.get('/api/news', async (req, res) => { const news = await News.find().sort({ createdAt: -1 }); res.json(news.map(n => ({ ...n._doc, id: n._id }))); });
 app.post('/api/news', async (req, res) => { await new News(req.body).save(); res.json({ success: true }); });
 app.delete('/api/news/:id', async (req, res) => { await News.findByIdAndDelete(req.params.id); res.json({ success: true }); });
