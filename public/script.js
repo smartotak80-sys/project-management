@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.dash-nav button').forEach(e => e.classList.remove('active'));
       document.getElementById(`tab-${tab}`).classList.add('active');
       
-      // Highlight correct button
+      // Highlight correct button (UPDATED INDEXING)
       const btns = document.querySelectorAll('.dash-nav button');
       if(tab === 'profile') btns[0].classList.add('active');
       if(tab === 'my-member') btns[1].classList.add('active');
@@ -108,8 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           `;
       } else {
-          // Форма створення
-          // Updated form structure for two columns and better spacing (mirrors index.html fix)
+          // Форма створення (STYLED GRID FOR 2 COLUMNS)
           container.innerHTML = `
             <form id="dashAddMemberForm" style="max-width:400px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <p style="color:#aaa; font-size:13px; margin:0 0 10px; grid-column: 1 / -1;">У вас ще немає персонажа. Створіть його зараз.</p>
