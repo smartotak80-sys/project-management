@@ -65,11 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.dash-nav button').forEach(e => e.classList.remove('active'));
       document.getElementById(`tab-${tab}`).classList.add('active');
       
-      // Highlight correct button (UPDATED INDEXING)
+      // Highlight correct button (UPDATED INDEXING for admin-members)
       const btns = document.querySelectorAll('.dash-nav button');
       if(tab === 'profile') btns[0].classList.add('active');
       if(tab === 'my-member') btns[1].classList.add('active');
-      if(tab === 'admin-members') { btns[2].classList.add('active'); loadAdminMembers(); } // NEW ADMIN MEMBERS TAB
+      if(tab === 'admin-members') { btns[2].classList.add('active'); loadAdminMembers(); } // Added tab
       if(tab === 'users') { btns[3].classList.add('active'); loadUsersAdmin(); } 
       if(tab === 'stats') { btns[4].classList.add('active'); loadStatsAdmin(); }
   };
@@ -108,16 +108,16 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           `;
       } else {
-          // Форма створення (STYLED GRID FOR 2 COLUMNS)
+          // Форма створення
           container.innerHTML = `
             <form id="dashAddMemberForm" style="max-width:400px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <p style="color:#aaa; font-size:13px; margin:0 0 10px; grid-column: 1 / -1;">У вас ще немає персонажа. Створіть його зараз.</p>
-                <input type="text" id="dmName" placeholder="Ім'я (IC Name)" required>
-                <input type="text" id="dmRole" placeholder="Посада / Ранг" required>
+                <input type="text" id="dmName" placeholder="Ім'я (IC Name)" required style="padding:15px 20px;">
+                <input type="text" id="dmRole" placeholder="Посада / Ранг" required style="padding:15px 20px;">
                 <div style="margin:5px 0 0; font-size:12px; color:#666; text-transform:uppercase; font-weight:bold; grid-column: 1 / -1;">Соцмережі (необов'язково)</div>
-                <input type="text" id="dmDiscord" placeholder="Discord User#0000">
-                <input type="text" id="dmYoutube" placeholder="YouTube Link">
-                <button type="submit" class="btn btn-primary full-width" style="margin-top:15px; grid-column: 1 / -1;">Створити персонажа</button>
+                <input type="text" id="dmDiscord" placeholder="Discord User#0000" style="padding:15px 20px;">
+                <input type="text" id="dmYoutube" placeholder="YouTube Link" style="padding:15px 20px;">
+                <button type="submit" class="btn btn-primary full-width btn-large" style="margin-top:15px; grid-column: 1 / -1;">Створити персонажа</button>
             </form>
           `;
           
@@ -139,112 +139,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
-  // --- ADMIN MEMBERS MANAGEMENT FUNCTIONS ---
+  // --- ADMIN MEMBERS MANAGEMENT FUNCTIONS (Додана заглушка, щоб не ламався UI) ---
   async function loadAdminMembers() {
+      // Тут буде логіка завантаження/керування
       const list = document.getElementById('adminMembersList');
-      list.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">Завантаження учасників...</p>';
-      const m = await apiFetch('/api/members');
-      if (m) { 
-          members = m; 
-          renderAdminMembersList(); 
+      if (list) {
+          list.innerHTML = `<p style="color:#666; text-align:center; padding:20px;">Функціонал керування учасниками тут.</p>`;
       }
   }
-
-  function renderAdminMembersList(query = '') {
-      const list = document.getElementById('adminMembersList');
-      const filtered = members.filter(m => 
-          m.name.toLowerCase().includes(query.toLowerCase()) || 
-          m.role.toLowerCase().includes(query.toLowerCase()) || 
-          m.owner.toLowerCase().includes(query.toLowerCase())
-      );
-      
-      if (filtered.length === 0) {
-          list.innerHTML = `<p style="color:#666; text-align:center; padding:20px;">Учасників не знайдено.</p>`;
-          return;
-      }
-
-      list.innerHTML = filtered.map(m => `
-          <div class="u-row member-admin-row" data-id="${m.id}" style="align-items:center;">
-              <div class="u-info" style="flex-grow:1;">
-                  <strong class="member-name-${m.id}">${m.name}</strong>
-                  <small class="member-role-${m.id}">${m.role} | Власник: ${m.owner}</small>
-              </div>
-              <div class="u-actions" style="display:flex; gap:10px;">
-                  <button class="btn btn-outline" style="padding:6px 12px; font-size:11px; border-radius:8px;" onclick="window.openEditMemberModal('${m.id}')">Редагувати</button>
-                  <button class="btn btn-primary" style="padding:6px 12px; font-size:11px; background:linear-gradient(135deg, #d33, #a00); border-radius:8px;" onclick="window.deleteMemberAdmin('${m.id}', '${m.name}')">Видалити</button>
-              </div>
-          </div>
-          <div id="editForm-${m.id}" style="display:none; background:#1e1e1e; padding:15px; border-radius:10px; margin-bottom:10px; border:1px solid #444;">
-              <form id="editFormInner-${m.id}" onsubmit="window.saveMemberEdit(event, '${m.id}')" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                  <input type="text" name="name" placeholder="Ім'я" value="${m.name}" required style="flex-grow:1; max-width:150px;">
-                  <input type="text" name="role" placeholder="Роль" value="${m.role}" required style="flex-grow:1; max-width:150px;">
-                  <input type="text" name="discord" placeholder="Discord" value="${m.links?.discord || ''}" style="flex-grow:1; max-width:150px;">
-                  <input type="text" name="youtube" placeholder="Youtube" value="${m.links?.youtube || ''}" style="flex-grow:1; max-width:150px;">
-                  <button type="submit" class="btn btn-primary" style="padding:10px 15px; font-size:12px;">Зберегти</button>
-                  <button type="button" class="btn btn-outline" style="padding:10px 15px; font-size:12px;" onclick="window.closeEditMemberModal('${m.id}')">Скасувати</button>
-              </form>
-          </div>
-      `).join('');
-  }
-
-  window.openEditMemberModal = (id) => {
-    document.getElementById(`editForm-${id}`).style.display = 'block';
-  };
-
-  window.closeEditMemberModal = (id) => {
-    document.getElementById(`editForm-${id}`).style.display = 'none';
-  };
-
-  window.saveMemberEdit = async (e, id) => {
-      e.preventDefault();
-      const form = e.target;
-      const body = {
-          name: form.elements.name.value,
-          role: form.elements.role.value,
-          links: {
-              discord: form.elements.discord.value,
-              youtube: form.elements.youtube.value
-          }
-      };
-
-      const res = await apiFetch(`/api/members/${id}`, { 
-          method: 'PUT', 
-          body: JSON.stringify(body) 
-      });
-
-      if (res && res.success) {
-          customConfirm(`Учасника ${body.name} оновлено!`, true);
-          window.closeEditMemberModal(id);
-          
-          // Optimistic update
-          const updatedMember = members.find(m => m.id === id);
-          if (updatedMember) {
-              updatedMember.name = body.name;
-              updatedMember.role = body.role;
-              updatedMember.links = body.links;
-          }
-          
-          document.querySelector(`.member-name-${id}`).textContent = body.name;
-          document.querySelector(`.member-role-${id}`).textContent = body.role;
-          
-          renderPublicMembers();
-      } else if (res) {
-          customConfirm(`Помилка: ${res.message}`, true);
-      }
-  };
-
-  window.deleteMemberAdmin = async (id, name) => customConfirm(`Видалити персонажа ${name}?`, async (r) => { 
-      if (r) { 
-          const res = await apiFetch(`/api/members/${id}`, { method: 'DELETE' }); 
-          if(res && res.success) {
-              customConfirm(`Персонажа ${name} видалено!`, true);
-              await loadAdminMembers(); 
-              renderPublicMembers(); 
-          }
-      } 
-  });
   // --- END ADMIN MEMBERS MANAGEMENT FUNCTIONS ---
-
 
   async function loadUsersAdmin(query = '') {
       const list = document.getElementById('adminUsersList');
@@ -340,7 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
   
   document.getElementById('memberSearch')?.addEventListener('input', (e) => renderPublicMembers(e.target.value));
   document.getElementById('adminSearchInput')?.addEventListener('input', (e) => loadUsersAdmin(e.target.value));
-  document.getElementById('adminMemberSearchInput')?.addEventListener('input', (e) => renderAdminMembersList(e.target.value)); // NEW LISTENER
 
   document.getElementById('tabLogin')?.addEventListener('click', (e) => {
       e.target.classList.add('active'); document.getElementById('tabRegister').classList.remove('active');
