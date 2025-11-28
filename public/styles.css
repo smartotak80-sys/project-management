@@ -24,18 +24,18 @@ body {
   line-height: 1.6;
 }
 
-/* --- СТИЛІ ПОЛІВ ВВЕДЕННЯ (ПОВНА ШИРИНА, ТЕМНІШЕ, БІЛЬШЕ) --- */
+/* --- СТИЛІ ПОЛІВ ВВЕДЕННЯ (УНІФІКАЦІЯ) --- */
 input, textarea, select {
-  width: 100%; 
+  width: 100%; /* Займають повну ширину за замовчуванням */
   background: #151619 !important; /* Темний фон */
   border: 1px solid #333 !important; 
-  padding: 18px 20px; 
-  border-radius: 12px; 
+  padding: 18px 20px; /* Збільшений padding */
+  border-radius: 12px; /* Округлі кути */
   color: #fff !important;
   font-family: inherit;
   font-size: 16px; 
   transition: all 0.3s;
-  margin-bottom: 15px; /* Стандартний відступ */
+  margin-bottom: 15px; 
 }
 input:focus, textarea:focus {
   outline: none;
@@ -99,7 +99,7 @@ main { flex: 1; }
 
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin-top: 40px; }
 .card { background: var(--bg-panel); padding: 30px; border-radius: 16px; border: 1px solid var(--glass-border); transition: 0.3s; }
-.card:hover { transform: translateY(-8px); border-color: var(--accent); }
+.card:hover { border-color: var(--accent); } /* No translateY, per image_e08210.png */
 .card h3 { color: var(--accent); margin: 0 0 10px; font-size: 20px; text-transform: uppercase; }
 
 /* --- CONTROLS (Admin/User Inputs) --- */
@@ -110,6 +110,9 @@ main { flex: 1; }
   border-radius: 12px; 
   border: 1px solid var(--glass-border);
   align-items: center;
+}
+.members-controls input {
+    margin-bottom: 0;
 }
 
 /* #EVENTS - Розміщення в один рядок (Grid Layout) */
@@ -132,7 +135,7 @@ main { flex: 1; }
     padding: 12px 18px; 
 }
 .events-controls textarea { 
-    height: 54px; 
+    height: 54px; /* Фіксована висота */
     min-height: 54px; 
     resize: none; 
 }
@@ -143,14 +146,7 @@ main { flex: 1; }
     font-size: 16px;
     border-radius: 12px;
 }
-/* Адаптація для маленьких екранів */
-@media (max-width: 768px) {
-    .events-controls {
-        grid-template-columns: 1fr; 
-    }
-}
-
-/* #GALLERY - Розміщення в один рядок (Flexbox) */
+/* #GALLERY - Розміщення в один рядок */
 .gallery-controls {
     display: flex;
     justify-content: space-between;
@@ -168,8 +164,6 @@ main { flex: 1; }
     font-size: 16px;
     border-radius: 12px;
 }
-/* ---------------------------------------------------- */
-
 
 /* DASHBOARD MODAL (Unified Style) */
 .dashboard-modal { 
@@ -228,7 +222,8 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .btn { 
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; 
   background: #222; color: #fff; padding: 10px 20px; border: 1px solid var(--glass-border); 
-  border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; 
+  border-radius: 12px; /* Збільшено радіус */
+  cursor: pointer; transition: all 0.3s ease; text-decoration: none; 
   font-size: 13px; font-weight: 600;
   position: relative; overflow: hidden;
 }
@@ -302,16 +297,16 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .member { background: linear-gradient(145deg, #121418, #0a0b0e); padding: 20px; border-radius: 14px; border: 1px solid #222; position: relative; }
 .role-badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--accent); background: rgba(255, 42, 42, 0.1); padding: 4px 10px; border-radius: 4px; margin-top: 5px; }
 
-/* --- МОДАЛЬНІ ВІКНА (Auth/Confirm) --- */
+/* --- МОДАЛЬНІ ВІКНА --- */
 .auth-modal, .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
 .auth-modal.show, .custom-modal.show { display: flex; }
 .auth-content, .custom-modal-content { 
-    background: #000; 
+    background: #000; /* Чорний фон для модалок */
     padding: 35px; 
     border-radius: 16px; 
     width: 100%; 
     max-width: 400px; 
-    border: 1px solid var(--accent); 
+    border: 1px solid var(--accent); /* Червона рамка */
     position: relative; 
     box-shadow: 0 0 30px rgba(255,42,42,0.2); 
 }
@@ -331,29 +326,24 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .btn-close-dash { position: static; margin-top: 10px; width: 100%; text-align: center; font-size: 14px; background: #1a1a1a !important; padding: 10px; border-radius: 8px; display: block; }
 .btn-close-dash:hover { background: #222 !important; color: #fff; transform: none; }
 
-
 /* Confirm Modal Specifics */
-.custom-modal-content.confirm-modal {
+.custom-modal-content {
     max-width: 300px;
     background: #000;
-    border: 1px solid #333;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5); 
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 15px rgba(255,42,42,0.2); 
 }
-.custom-modal-content.confirm-modal h3 {
-    font-size: 20px;
-    margin-bottom: 15px;
-    color: #fff;
-}
-.custom-modal-content.confirm-modal #confirmMessage {
+.custom-modal-content #confirmMessage {
     font-size: 16px;
     color: #fff;
+    font-weight: 600;
 }
-.custom-modal-content.confirm-modal .btn {
+.custom-modal-content .btn-large {
+    min-width: 120px;
     padding: 12px 20px;
-    font-size: 14px;
+    font-size: 16px;
 }
 /* ---------------------------------------------------- */
-
 
 /* Animation */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -361,6 +351,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 body.is-logged-in .logged-in-only { display: inline-block !important; }
 .admin-only { display: none !important; }
 body.is-admin .admin-only { display: flex !important; }
+body.is-admin .admin-only-nav { display: block !important; }
 
 /* Mobile */
 @media (max-width: 900px) { 
@@ -372,4 +363,8 @@ body.is-admin .admin-only { display: flex !important; }
   .dash-sidebar { width: 100%; height: auto; flex-direction: row; align-items: center; padding: 15px; overflow-x: auto; } 
   .dash-user-card { display: none; } 
   .dash-brand { margin-bottom: 0; margin-right: 20px; }
+
+  .events-controls {
+    grid-template-columns: 1fr; /* Всі елементи в одну колонку на мобільних */
+  }
 }
