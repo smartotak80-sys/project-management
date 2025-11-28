@@ -24,18 +24,18 @@ body {
   line-height: 1.6;
 }
 
-/* --- СТИЛІ ПОЛІВ ВВЕДЕННЯ (ПОВНА ШИРИНА, БІЛЬШЕ, ТЕМНІШЕ) --- */
+/* --- СТИЛІ ПОЛІВ ВВЕДЕННЯ (ПОВНА ШИРИНА, ТЕМНІШЕ, БІЛЬШЕ) --- */
 input, textarea, select {
-  width: 100%; /* Займають повну ширину */
-  background: #151619 !important; 
+  width: 100%; 
+  background: #151619 !important; /* Темний фон */
   border: 1px solid #333 !important; 
-  padding: 18px 20px; /* Збільшений padding */
-  border-radius: 12px; /* Округлі кути */
+  padding: 18px 20px; 
+  border-radius: 12px; 
   color: #fff !important;
   font-family: inherit;
   font-size: 16px; 
   transition: all 0.3s;
-  margin-bottom: 15px; /* Більший відступ між полями */
+  margin-bottom: 15px; /* Стандартний відступ */
 }
 input:focus, textarea:focus {
   outline: none;
@@ -102,43 +102,74 @@ main { flex: 1; }
 .card:hover { transform: translateY(-8px); border-color: var(--accent); }
 .card h3 { color: var(--accent); margin: 0 0 10px; font-size: 20px; text-transform: uppercase; }
 
-/* CONTROLS (Admin/User Inputs) */
-.members-controls, .events-controls, .gallery-controls {
+/* --- CONTROLS (Admin/User Inputs) --- */
+.members-controls, .gallery-controls {
   display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px;
-  background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);
+  background: rgba(0,0,0,0.3); 
+  padding: 15px; 
+  border-radius: 12px; 
+  border: 1px solid var(--glass-border);
   align-items: center;
 }
-.members-controls input {
-    margin-bottom: 0;
+
+/* #EVENTS - Розміщення в один рядок (Grid Layout) */
+.events-controls {
+    margin-bottom: 30px;
+    background: rgba(0,0,0,0.3); 
+    padding: 15px; 
+    border-radius: 12px; 
+    border: 1px solid var(--glass-border);
+    
+    display: grid;
+    grid-template-columns: 2fr 1fr 3fr 1fr; /* Заголовок | Дата | Опис | Кнопка */
+    align-items: stretch;
+    gap: 10px;
 }
-/* Адаптація для розміщення input у рядку (Новини та події) */
-.events-controls input, .events-controls textarea {
-    margin-bottom: 0; /* Видаляємо margin, оскільки вони в flex контейнері */
-    flex-grow: 1;
-    min-width: 150px;
+.events-controls input, 
+.events-controls textarea {
+    margin-bottom: 0; 
+    width: auto; 
     padding: 12px 18px; 
 }
 .events-controls textarea { 
-    height: 48px; min-height: 48px; 
+    height: 54px; 
+    min-height: 54px; 
     resize: none; 
-    padding-top: 10px; 
 }
 .events-controls button {
-    height: 54px; /* Вирівнюємо по висоті з input */
+    grid-column: span 1;
+    height: 54px; 
     padding: 0 25px;
     font-size: 16px;
     border-radius: 12px;
+}
+/* Адаптація для маленьких екранів */
+@media (max-width: 768px) {
+    .events-controls {
+        grid-template-columns: 1fr; 
+    }
+}
+
+/* #GALLERY - Розміщення в один рядок (Flexbox) */
+.gallery-controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
 }
 .gallery-controls input {
     margin-bottom: 0;
     flex-grow: 1;
+    height: 54px;
+    padding: 12px 18px;
 }
 .gallery-controls button {
-    height: 54px;
+    height: 54px; 
     padding: 0 25px;
     font-size: 16px;
     border-radius: 12px;
 }
+/* ---------------------------------------------------- */
+
 
 /* DASHBOARD MODAL (Unified Style) */
 .dashboard-modal { 
