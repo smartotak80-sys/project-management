@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
       checkAnimate();
   }
 
+  // --- НОВИЙ ДИЗАЙН КАРТОК УЧАСНИКІВ ---
   function renderMembers(filter='') {
     const grid = document.getElementById('membersGrid');
     if(!grid) return;
@@ -92,21 +93,40 @@ document.addEventListener('DOMContentLoaded', () => {
     grid.innerHTML = list.map(m => {
       const isOwner = currentUser && currentUser.username === m.owner;
       const isAdmin = currentUser?.role === 'admin';
+      
       let links = '';
-      if(m.links?.discord) links += `<span class="social-link"><i class="fa-brands fa-discord"></i></span>`;
+      if(m.links?.discord) links += `<a href="#" class="social-link"><i class="fa-brands fa-discord"></i></a>`;
       if(m.links?.youtube) links += `<a href="${m.links.youtube}" target="_blank" class="social-link"><i class="fa-brands fa-youtube"></i></a>`;
+      if(m.links?.tg) links += `<a href="${m.links.tg}" target="_blank" class="social-link"><i class="fa-brands fa-telegram"></i></a>`;
+
+      const adminControls = (isOwner || isAdmin) ? `
+        <div class="member-admin-footer">
+            <div class="member-actions">
+              <button class="btn-edit" onclick="window.editMember('${m.id}')"><i class="fa-solid fa-pen"></i> Ред.</button>
+              <button class="btn-delete" onclick="window.deleteMember('${m.id}')"><i class="fa-solid fa-trash"></i> Вид.</button>
+            </div>
+        </div>
+      ` : '';
+
       return `
         <div class="member animated-content">
-          <div class="member-top">
-            <h3>${m.name}</h3>
-            <div class="role-badge">${m.role}</div>
-            <div class="social-links">${links}</div>
-          </div>
-          ${(isOwner || isAdmin) ? 
-            `<div class="member-actions admin-only" style="display:flex;">
-              <button class="btn btn-edit" onclick="window.editMember('${m.id}')"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn btn-delete" onclick="window.deleteMember('${m.id}')"><i class="fa-solid fa-trash"></i></button>
-            </div>` : ''}
+           <div class="member-header">
+               <span class="member-label">Учасник</span>
+               <h3 class="member-name">${m.name}</h3>
+           </div>
+           <div class="member-body">
+               <div class="member-role-row">
+                   <div>
+                       <span class="member-label">Роль</span>
+                       <div class="role-badge">${m.role}</div>
+                   </div>
+               </div>
+               <div style="margin-top: auto;">
+                   <span class="member-label" style="margin-bottom: 8px; display: block;">Зв'язок</span>
+                   <div class="social-links">${links || '<span class="muted" style="font-size:12px;">Немає зв\'язку</span>'}</div>
+               </div>
+           </div>
+           ${adminControls}
         </div>
       `;
     }).join('');
