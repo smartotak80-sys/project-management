@@ -53,8 +53,8 @@
             <h1 style="animation: textLoad 1s ease-out;">Barracuda Family</h1>
             <p class="lead" style="animation: textLoad 1s ease-out 0.2s backwards;">Ми — організована, дисциплінована родина в світі Stake RP. Рольова гра, операції, території та стиль — це про нас.</p>
             <div class="hero-cta" style="animation: textLoad 1s ease-out 0.4s backwards;">
-              <a href="#apply" class="btn btn-primary btn-large">Подати заявку</a>
-              <a href="#members" class="btn btn-outline btn-large">Дивитися учасників</a>
+              <a href="#apply" class="btn btn-primary">Подати заявку</a>
+              <a href="#members" class="btn btn-outline">Дивитися учасників</a>
             </div>
           </div>
           </div>
@@ -202,4 +202,86 @@
         </div>
         <div class="stat-box">
           <span id="totalAdminsSidebar">0</span>
-          <small>Адмі
+          <small>Адмінів</small>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h4><i class="fa-solid fa-database"></i> База Користувачів</h4>
+        
+        <input id="userSearchSidebar" placeholder="Пошук користувача..." style="margin-bottom: 15px; width: 100%;"> 
+
+        <div class="user-list-compact" id="userDatabaseSidebar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="authModal" class="auth-modal">
+    <div class="auth-content">
+      <span id="closeAuth" class="close-auth">&times;</span>
+      <div class="auth-tabs">
+        <button id="tabLogin" class="active">Вхід</button>
+        <button id="tabRegister">Реєстрація</button>
+      </div>
+      
+      <form id="loginForm" class="auth-form">
+        <h3>Вхід в систему</h3>
+        <input type="text" id="loginUser" placeholder="Логін" required>
+        <input type="password" id="loginPass" placeholder="Пароль" required>
+        <button type="submit" class="btn btn-primary full-width">Увійти</button>
+      </form>
+
+      <form id="registerForm" class="auth-form" style="display: none;">
+        <h3>Створити акаунт</h3>
+        <input type="text" id="regUser" placeholder="Логін" required>
+        <input type="email" id="regEmail" placeholder="Email" required>
+        <input type="password" id="regPass" placeholder="Пароль" required>
+        <input type="password" id="regPassConfirm" placeholder="Повторіть пароль" required>
+        <button type="submit" class="btn btn-primary full-width">Зареєструватися</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="addMemberModal" class="custom-modal">
+    <div class="custom-modal-content">
+      <span id="closeMemberModal" class="close-modal">&times;</span>
+      <h3><i class="fa-solid fa-user-plus"></i> Додати учасника</h3>
+      
+      <form id="addMemberForm" class="auth-form">
+        <div id="memberLimitWarning" class="limit-warning"></div>
+        <input type="text" id="memberNewName" placeholder="Ім'я учасника" required>
+        <input type="text" id="memberNewRole" placeholder="Роль" required>
+        <h4 class="social-header">Соцмережі (не обов'язково)</h4>
+        <input type="text" id="memberNewDiscord" placeholder="Discord юзернейм (user#0001)">
+        <input type="url" id="memberNewYoutube" placeholder="YouTube URL">
+        <input type="url" id="memberNewTg" placeholder="Telegram URL">
+
+        <button type="submit" class="btn btn-primary full-width">ДОДАТИ</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="customConfirmModal" class="custom-modal confirm-modal">
+    <div class="custom-modal-content">
+      <span id="closeConfirmModal" class="close-modal">&times;</span>
+      <h3 id="confirmTitle"><i class="fa-solid fa-circle-question"></i> Підтвердіть дію</h3>
+      <p id="confirmMessage">Ви впевнені, що хочете виконати цю дію?</p>
+      <div class="confirm-actions">
+        <button id="confirmOkBtn" class="btn btn-primary">Так, продовжити</button>
+        <button id="confirmCancelBtn" class="btn btn-outline">Відмінити</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="lightbox" class="lightbox-modal">
+      <span class="lightbox-close" id="lightboxCloseBtn">&times;</span>
+      <div class="lightbox-content">
+          <button class="lightbox-prev" id="lightboxPrevBtn"><i class="fa-solid fa-chevron-left"></i></button>
+          <img id="lightboxImage" src="" alt="Gallery Image">
+          <button class="lightbox-next" id="lightboxNextBtn"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
