@@ -146,7 +146,7 @@ main { flex: 1; }
   border-radius: 12px; 
   font-size: 15px;
   font-weight: 700;
-  white-space: nowrap; /* Запобігає переносу тексту кнопки */
+  white-space: nowrap; 
 }
 
 /* DASHBOARD MODAL (Unified Style) */
@@ -252,7 +252,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .auth-tabs button { flex: 1; background: none; border: none; padding: 10px; color: #666; cursor: pointer; font-weight: bold; border-bottom: 2px solid transparent; }
 .auth-tabs button.active { color: #fff; border-color: var(--accent); }
 
-/* --- CUSTOM STYLES FOR AUTH MODAL (ФІНАЛЬНИЙ, ПРАВИЛЬНИЙ ДИЗАЙН) --- */
+/* --- CUSTOM STYLES FOR AUTH MODAL (ФІНАЛЬНИЙ ДИЗАЙН) --- */
 
 .auth-content { 
     background: #000000; 
@@ -305,24 +305,26 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
     background: #000;
     border: 1px solid #333;
     padding: 30px;
-    border-radius: 20px; /* Сильніше округлення */
+    border-radius: 20px;
     max-width: 350px;
 }
 #confirmMessage {
     font-size: 18px;
     font-weight: 600;
+    margin-bottom: 25px; 
 }
 #confirmCancelBtn {
     flex-grow: 1;
-    padding: 12px 20px;
+    padding: 15px 20px; 
     border-radius: 12px;
     background: #191919;
     border-color: #333;
     color: #fff;
+    font-weight: 600;
 }
 #confirmOkBtn {
     flex-grow: 1;
-    padding: 12px 20px;
+    padding: 15px 20px; 
     border-radius: 12px;
     font-size: 16px;
     font-weight: 700;
