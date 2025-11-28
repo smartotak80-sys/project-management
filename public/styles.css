@@ -198,13 +198,13 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .auth-tabs button { flex: 1; background: none; border: none; padding: 10px; color: #666; cursor: pointer; font-weight: bold; border-bottom: 2px solid transparent; }
 .auth-tabs button.active { color: #fff; border-color: var(--accent); }
 
-/* --- CUSTOM STYLES FOR AUTH MODAL (З ПОМИЛКОЮ ВІДСТУПУ ТА КОЛЬОРУ) --- */
+/* --- CUSTOM STYLES FOR AUTH MODAL (ВИПРАВЛЕНО - ПОВЕРНУТО НОРМАЛЬНИЙ ДИЗАЙН) --- */
 
 .auth-content { 
-    background: #000000; 
+    background: #000000; /* Чорне тло, як на фото */
 }
 .close-auth {
-    color: #444; 
+    color: #444; /* Хрестик закриття менш помітний */
     right: 15px; 
     top: 15px;
 }
@@ -219,15 +219,15 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
     border-width: 3px; 
 }
 
-/* Стилізація полів вводу: блоки, однакова ширина, ЗБІЛЬШЕНА ВІДСТАНЬ (ПОМИЛКА) */
+/* Стилізація полів вводу: блоки, однакова ширина, відновлена компактна відстань */
 .auth-content input[type="text"], 
 .auth-content input[type="email"], 
 .auth-content input[type="password"] {
-  padding: 18px 20px; 
+  padding: 18px 20px; /* Збільшений відступ для вигляду "блоку" */
   border-radius: 12px; 
-  margin-bottom: 50px; /* СИЛЬНЕ ЗБІЛЬШЕННЯ ВІДСТУПУ (ПОМИЛКА) */
+  margin-bottom: 10px; /* ВИПРАВЛЕНО: Компактна відстань */
   
-  background: black !important; /* Навмисно неправильне/просте значення кольору (ПОМИЛКА) */
+  background: #191919 !important; /* Відновлено коректний темний фон */
   border: 1px solid #111 !important; 
   font-size: 16px;
 }
