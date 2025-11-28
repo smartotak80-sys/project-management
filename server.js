@@ -80,7 +80,7 @@ app.post('/api/members', async (req, res) => {
         const ownerName = req.body.owner;
         const currentUser = await User.findOne({ username: ownerName });
         
-        // Перевірка ліміту: якщо не адмін - дозволено лише 1 персонаж
+        // --- ЛОГІКА ЛІМІТУ: МАКСИМУМ 1 ПЕРСОНАЖ, ЯКЩО НЕ АДМІН ---
         if (!currentUser || currentUser.role !== 'admin') {
             const count = await Member.countDocuments({ owner: ownerName });
             if (count >= 1) return res.status(403).json({ success: false, message: 'ЛІМІТ: Ви можете додати тільки 1 персонажа.' });
