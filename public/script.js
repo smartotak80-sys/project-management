@@ -195,15 +195,47 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- ACTIONS ---
-  window.editMember = async (id) => {
+  
+  // ВІДКРИТТЯ МОДАЛКИ РЕДАГУВАННЯ (ЗАМІСТЬ PROMPT)
+  window.editMember = (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
-      const newName = prompt("Нове ім'я:", m.name);
-      if(newName) {
-          const res = await apiFetch(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
-          if(res && res.success) { customConfirm("Зміни збережено.", true); loadInitialData(); }
-      }
+      
+      // Заповнюємо форму даними
+      document.getElementById('editMemberId').value = m.id;
+      document.getElementById('editMemberName').value = m.name;
+      document.getElementById('editMemberRole').value = m.role;
+      document.getElementById('editMemberDiscord').value = m.links?.discord || '';
+      document.getElementById('editMemberYoutube').value = m.links?.youtube || '';
+      document.getElementById('editMemberTg').value = m.links?.tg || '';
+      
+      // Відкриваємо модалку
+      document.getElementById('editMemberModal').classList.add('show');
   };
+
+  // ОБРОБКА ФОРМИ РЕДАГУВАННЯ
+  document.getElementById('editMemberForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const id = document.getElementById('editMemberId').value;
+      const body = {
+          name: document.getElementById('editMemberName').value,
+          role: document.getElementById('editMemberRole').value,
+          links: {
+              discord: document.getElementById('editMemberDiscord').value,
+              youtube: document.getElementById('editMemberYoutube').value,
+              tg: document.getElementById('editMemberTg').value
+          }
+      };
+      
+      const res = await apiFetch(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+      if(res && res.success) {
+          customConfirm("Зміни збережено!", true);
+          document.getElementById('editMemberModal').classList.remove('show');
+          loadInitialData(); 
+      }
+  });
+
   window.deleteMember = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteNews = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteGallery = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); loadInitialData(); } });
@@ -253,6 +285,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('closeAuth')?.addEventListener('click', ()=>document.getElementById('authModal').classList.remove('show'));
   document.getElementById('closeSidebar')?.addEventListener('click', ()=>document.getElementById('adminSidebar').classList.remove('open'));
   document.getElementById('adminLogoutBtn')?.addEventListener('click', ()=>{ removeCurrentUser(); location.reload(); });
+  
+  // Закриття модалки редагування
+  document.getElementById('closeEditMemberModal')?.addEventListener('click', ()=>document.getElementById('editMemberModal').classList.remove('show'));
 
   document.getElementById('tabLogin')?.addEventListener('click', (e) => {
       document.getElementById('tabRegister')?.classList.remove('active'); e.target.classList.add('active');
