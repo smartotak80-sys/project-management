@@ -99,12 +99,62 @@ main { flex: 1; }
 .card:hover { transform: translateY(-8px); border-color: var(--accent); }
 .card h3 { color: var(--accent); margin: 0 0 10px; font-size: 20px; text-transform: uppercase; }
 
-/* CONTROLS (Admin/User Inputs) */
+/* --- CONTROLS (Admin/User Inputs) - КРУТИЙ ДИЗАЙН --- */
 .members-controls, .events-controls, .gallery-controls {
-  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px;
-  background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);
+  display: flex; 
+  gap: 15px; /* Збільшений проміжок між елементами */
+  flex-wrap: wrap; 
+  margin-bottom: 30px;
+  background: rgba(0,0,0,0.3); 
+  padding: 20px 25px; /* Збільшений padding для кращого вигляду */
+  border-radius: 18px; /* Більш округлі кути */
+  border: 1px solid rgba(255,255,255,0.1); /* М'якша рамка */
+  align-items: center; /* Вирівнювання по центру */
 }
-.events-controls textarea { height: 48px; min-height: 48px; resize: none; padding-top: 10px; }
+
+/* Спеціальні стилі для полів вводу всередині .controls */
+.members-controls input,
+.events-controls input,
+.events-controls textarea,
+.gallery-controls input {
+  flex-grow: 1; /* Поля займатимуть доступний простір */
+  background: #1e1e1e !important; /* Трохи світліший темний фон для полів */
+  border: 1px solid #333 !important; /* Чіткіша рамка */
+  padding: 15px 20px; /* Збільшений внутрішній відступ */
+  border-radius: 12px; /* Округлі кути */
+  font-size: 15px;
+  color: #eee !important;
+}
+
+.events-controls textarea { 
+  height: 50px; /* Трохи більша висота для textarea */
+  min-height: 50px; 
+  resize: vertical; /* Дозволити вертикальну зміну розміру */
+}
+
+/* Спеціальні стилі для кнопок всередині .controls */
+.members-controls .btn,
+.events-controls .btn,
+.gallery-controls .btn {
+  padding: 15px 25px; /* Більший padding для кнопок */
+  border-radius: 12px; /* Округлі кути кнопок */
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Заголовок "УЧАСНИКИ" */
+.dash-view h2 { 
+    margin-top: 0; 
+    margin-bottom: 25px; 
+    font-size: 28px; /* Збільшений розмір */
+    border-bottom: 1px solid #333; /* М'якша лінія */
+    padding-bottom: 15px; 
+    color: #fff; /* Білий колір */
+    text-transform: uppercase; /* Великі літери */
+    font-weight: 900; /* Жирний */
+    letter-spacing: 1px; /* Розширення літер */
+}
+
 
 /* DASHBOARD MODAL (Unified Style) */
 .dashboard-modal { 
@@ -147,7 +197,6 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .dash-content { flex: 1; padding: 30px; overflow-y: auto; background: radial-gradient(circle at top right, rgba(255,42,42,0.03), transparent 50%); }
 .dash-view { display: none; animation: fadeIn 0.4s; }
 .dash-view.active { display: block; }
-.dash-view h2 { margin-top: 0; margin-bottom: 25px; font-size: 24px; border-bottom: 1px solid #222; padding-bottom: 15px; }
 
 /* Admin List Styles */
 .u-row { 
@@ -201,10 +250,10 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 /* --- CUSTOM STYLES FOR AUTH MODAL (ФІНАЛЬНИЙ, ПРАВИЛЬНИЙ ДИЗАЙН) --- */
 
 .auth-content { 
-    background: #000000; /* Чорне тло, як на фото */
+    background: #000000; 
 }
 .close-auth {
-    color: #444; /* Хрестик закриття менш помітний */
+    color: #444; 
     right: 15px; 
     top: 15px;
 }
@@ -223,12 +272,12 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .auth-content input[type="text"], 
 .auth-content input[type="email"], 
 .auth-content input[type="password"] {
-  width: 100%; /* Забезпечує однакову довжину з кнопкою full-width */
-  padding: 18px 20px; /* Збільшений відступ для вигляду "блоку" */
+  width: 100%; 
+  padding: 18px 20px; 
   border-radius: 12px; 
-  margin-bottom: 10px; /* Відновлена компактна відстань */
+  margin-bottom: 10px; 
   
-  background: #191919 !important; /* Відновлено коректний темний фон */
+  background: #191919 !important; 
   border: 1px solid #111 !important; 
   font-size: 16px;
 }
@@ -239,7 +288,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 
 /* Зміна розміру кнопки та відстані від неї */
 .auth-content .btn-primary {
-    margin-top: 20px; /* Відновлено коректний невеликий відступ */
+    margin-top: 20px; 
     padding: 18px 20px;
     font-size: 18px;
     font-weight: 700;
