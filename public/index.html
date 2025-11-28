@@ -27,7 +27,7 @@
             <li style="animation-delay: 1.2s;"><a href="#members">Учасники</a></li>
             <li style="animation-delay: 1.3s;"><a href="#events">Події</a></li>
             <li style="animation-delay: 1.4s;"><a href="#gallery">Галерея</a></li>
-            <li style="animation-delay: 1.5s;"><a href="#apply" class="primary">Подати заявку</a></li>
+            <li style="animation-delay: 1.5s;"><a href="#contact" class="primary">Підтримка</a></li>
             <li style="margin-left: 20px; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.1); animation-delay: 1.6s;">
               <button id="openAuthBtn" class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;">
                 <i class="fa-solid fa-user"></i> <span id="authBtnText">Вхід</span>
@@ -45,7 +45,7 @@
             <h1 style="animation: textLoad 1s ease-out;">Barracuda Family</h1>
             <p class="lead" style="animation: textLoad 1s ease-out 0.2s backwards;">Ми — організована, дисциплінована родина в світі Stake RP. Рольова гра, операції, території та стиль — це про нас.</p>
             <div class="hero-cta" style="animation: textLoad 1s ease-out 0.4s backwards;">
-              <a href="#apply" class="btn btn-primary">Подати заявку</a>
+              <a href="https://discord.gg/CxYnyKeb" target="_blank" class="btn btn-primary">ВСТУПИТИ В СІМ'Ю</a>
               <a href="#members" class="btn btn-outline">Дивитися учасників</a>
             </div>
           </div>
@@ -55,7 +55,7 @@
       <section id="about" class="section">
         <div class="container">
           <h2 class="animated-content" data-delay="0s">Про Barracuda Family</h2>
-          <p class="muted animated-content" data-delay="0.1s">Barracuda Family — це згуртована команда гравців на сервері Stake RP. Ми створюємо глибокі сюжетні лінії, організовуємо операції, захоплюємо території та підтримуємо один одного.</p>
+          <p class="muted animated-content" data-delay="0.1s">Згуртована команда гравців на сервері Stake RP. Ми створюємо глибокі сюжетні лінії, організовуємо операції та підтримуємо один одного.</p>
           <div class="cards">
             <article class="card animated-content" data-delay="0.3s">
               <h3>Місія</h3>
@@ -85,17 +85,29 @@
         </div>
       </section>
 
-      <section id="events" class="section alt">
+      <section id="events" class="section news-section-alt">
         <div class="container">
-          <h2 class="animated-content" data-delay="0s">Новини та події</h2>
-          <p class="muted animated-content" data-delay="0.1s">Останні операції, рейди та великі події від Barracuda Family.</p>
-          <div class="events-controls admin-only animated-content" data-delay="0.2s">
+          <div class="events-header animated-content" data-delay="0s">
+             <div class="header-text">
+                 <h2>Новини та події</h2>
+                 <p class="muted">Останні операції, рейди та великі події.</p>
+             </div>
+             <div class="slider-nav-buttons">
+                 <button id="newsPrevBtn" class="nav-arrow-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                 <button id="newsNextBtn" class="nav-arrow-btn"><i class="fa-solid fa-chevron-right"></i></button>
+             </div>
+          </div>
+
+          <div class="events-controls admin-only animated-content" data-delay="0.2s" style="margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.1); background: rgba(20, 20, 25, 0.5);">
             <input id="newsTitle" placeholder="Заголовок події">
             <input id="newsDate" type="date">
             <textarea id="newsSummary" placeholder="Короткий опис"></textarea>
             <button id="addNewsBtn" class="btn btn-primary">ДОДАТИ ПОДІЮ</button>
           </div>
-          <div id="newsList" class="news-list"></div>
+
+          <div class="news-slider-container animated-content" data-delay="0.3s">
+              <div id="newsTrack" class="news-track"></div>
+          </div>
         </div>
       </section>
 
@@ -111,37 +123,87 @@
         </div>
       </section>
 
-      <section id="apply" class="section alt">
-        <div class="container" style="text-align: center;">
-          <h2 class="animated-content" data-delay="0s">Подати заявку</h2>
-          <p class="muted animated-content" data-delay="0.1s">Набір у Barakuda Family відбувається виключно через наш Discord сервер.</p>
-          <div class="discord-banner animated-content" data-delay="0.3s" style="max-width: 600px; margin: 30px auto;">
-            <div style="margin-bottom: 30px;">
-              <p style="font-size: 18px; margin-bottom: 10px;">Крок 1: Перейдіть у Discord</p>
-              <a href="https://discord.gg/CxYnyKeb" target="_blank" class="btn btn-discord">
-                <i class="fa-brands fa-discord"></i> Приєднатися до серверу
-              </a>
-            </div>
-            <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 0 20px;"></div>
-            <div style="margin-top: 30px;">
-              <p style="font-size: 18px; margin-bottom: 15px;">Крок 2: Відкрийте канал подачі заявок</p>
-              <div style="background: #2b2d31; padding: 12px 24px; border-radius: 8px; display: inline-flex; align-items: center; gap: 10px; font-weight: bold; color: #dbdee1; border: 1px solid #1e1f22; font-family: 'Inter', sans-serif;">
-                <span style="font-size: 20px; color: #949BA4;">#</span> 
-                <span>👀・Zayavki</span>
-              </div>
-              <p class="muted" style="margin-top: 15px; font-size: 14px;">Вся інформація та форма для заповнення знаходиться там.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="contact" class="section alt">
+      <section id="contact" class="section alt" style="padding-bottom: 100px;">
         <div class="container">
-          <h2 class="animated-content" data-delay="0s">Контакти</h2>
-          <p class="animated-content" data-delay="0.1s">
-            Discord: <a href="https://discord.gg/CxYnyKeb" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: bold;">https://discord.gg/CxYnyKeb</a><br>
-            Email: <a href="mailto:famillybarracuda@gmail.com" style="color: var(--accent); text-decoration: none; font-weight: bold;">famillybarracuda@gmail.com</a>
-          </p>
+          <div class="events-header animated-content">
+              <div class="header-text">
+                  <h2>ПІДТРИМКА</h2>
+                  <p class="muted">Центр вирішення питань та зв'язку з адміністрацією.</p>
+              </div>
+          </div>
+
+          <div class="ticket-visual-panel animated-content" data-delay="0.2s">
+             <div class="tv-sidebar">
+                 <div class="tv-logo">
+                     <i class="fa-solid fa-shield-cat"></i> SUPPORT
+                 </div>
+                 <div class="tv-user-mini">
+                     <div class="tv-avatar"><i class="fa-solid fa-user"></i></div>
+                     <div class="tv-user-info">
+                         <div class="tv-u-name">Гість</div>
+                         <div class="tv-u-role">Не авторизований</div>
+                     </div>
+                 </div>
+                 <div class="tv-menu">
+                     <div class="tv-menu-item active">
+                         <div class="tv-menu-icon"><i class="fa-solid fa-inbox"></i></div>
+                         <span>Вхідні</span>
+                         <span class="tv-badge">2</span>
+                     </div>
+                     <div class="tv-menu-item">
+                         <div class="tv-menu-icon"><i class="fa-solid fa-paper-plane"></i></div>
+                         <span>Створити запит</span>
+                     </div>
+                     <div class="tv-menu-item">
+                         <div class="tv-menu-icon"><i class="fa-regular fa-circle-question"></i></div>
+                         <span>FAQ / Допомога</span>
+                     </div>
+                     <div class="tv-menu-item">
+                         <div class="tv-menu-icon"><i class="fa-solid fa-gavel"></i></div>
+                         <span>Правила сім'ї</span>
+                     </div>
+                 </div>
+             </div>
+
+             <div class="tv-content">
+                 <div class="tv-top-bar">
+                     <h3>Мої звернення</h3>
+                     <a href="https://discord.gg/CxYnyKeb" target="_blank" class="tv-btn-new">
+                         <i class="fa-solid fa-plus"></i> НОВИЙ ТІКЕТ
+                     </a>
+                 </div>
+                 <div class="tv-scroll-area">
+                     <div class="tv-ticket-row">
+                         <div class="tv-status-line status-closed"></div>
+                         <div class="tv-ticket-icon status-closed-bg"><i class="fa-solid fa-check"></i></div>
+                         <div class="tv-ticket-details">
+                             <div class="tv-ticket-header"><span class="tv-id">#1094</span><span class="tv-subject">Проблема з доступом до складу</span></div>
+                             <p class="tv-preview">Доброго дня, я не можу відкрити меню складу зброї...</p>
+                         </div>
+                         <div class="tv-ticket-meta"><span class="tv-date">Вчора</span><div class="tv-tag tag-closed">ЗАКРИТО</div></div>
+                     </div>
+                     <div class="tv-ticket-row active-row">
+                         <div class="tv-status-line status-wait"></div>
+                         <div class="tv-ticket-icon status-wait-bg"><i class="fa-solid fa-clock"></i></div>
+                         <div class="tv-ticket-details">
+                             <div class="tv-ticket-header"><span class="tv-id">#1102</span><span class="tv-subject">Заявка на підвищення рангу</span></div>
+                             <p class="tv-preview">Виконав усі умови для підвищення на 3 ранг. Скріншоти...</p>
+                         </div>
+                         <div class="tv-ticket-meta"><span class="tv-date">2 год. тому</span><div class="tv-tag tag-wait">ОЧІКУЄ</div></div>
+                     </div>
+                     <div class="tv-ticket-row">
+                         <div class="tv-status-line status-new"></div>
+                         <div class="tv-ticket-icon status-new-bg"><i class="fa-solid fa-envelope"></i></div>
+                         <div class="tv-ticket-details">
+                             <div class="tv-ticket-header"><span class="tv-id">#1105</span><span class="tv-subject">Скарги на гравця ID 455</span></div>
+                             <p class="tv-preview">Порушення правил сервера, DM без причини на титулі...</p>
+                         </div>
+                         <div class="tv-ticket-meta"><span class="tv-date">Щойно</span><div class="tv-tag tag-new">НОВЕ</div></div>
+                     </div>
+                 </div>
+                 <div class="tv-footer-hint"><i class="fa-brands fa-discord"></i> Система повністю інтегрована з Discord. Відповідь надійде в особисті повідомлення.</div>
+             </div>
+          </div>
         </div>
       </section>
     </main>
@@ -155,110 +217,43 @@
 
   <div id="adminSidebar" class="admin-sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-title">
-        <i class="fa-solid fa-user-secret"></i>
-        <span>COMMAND CENTER</span>
-      </div>
+      <div class="sidebar-title"><i class="fa-solid fa-user-secret"></i> <span>COMMAND CENTER</span></div>
       <button id="closeSidebar" class="close-btn">&times;</button>
     </div>
-
     <div class="admin-profile-section">
       <div class="profile-glitch-avatar" data-text="ADM">ADM</div>
       <div class="profile-details">
-        <div class="p-header">
-           <span class="p-name">ADMINISTRATOR</span>
-           <span id="adminStatus" class="p-status online">ONLINE</span>
-        </div>
-        
+        <div class="p-header"><span class="p-name">ADMINISTRATOR</span><span id="adminStatus" class="p-status online">ONLINE</span></div>
         <div class="p-dashboard-row">
-           <div class="p-data-box">
-              <i class="fa-regular fa-calendar"></i>
-              <span id="adminDate">--.--.----</span>
-           </div>
-           <div class="p-data-box time-box">
-              <i class="fa-regular fa-clock"></i>
-              <span id="adminClock">00:00:00</span>
-           </div>
-        </div>
-
-        <div class="p-extra-info">
-           <div class="p-extra-item">
-             <small>SESSION</small>
-             <span id="adminSession">00:00:00</span>
-           </div>
-           <div class="p-extra-item">
-             <small>PING</small>
-             <span id="adminPing" style="color: #22c55e;">12ms</span>
-           </div>
+           <div class="p-data-box"><i class="fa-regular fa-calendar"></i><span id="adminDate">--.--.----</span></div>
+           <div class="p-data-box time-box"><i class="fa-regular fa-clock"></i><span id="adminClock">00:00:00</span></div>
         </div>
       </div>
       <button id="adminLogoutBtn" class="logout-mini-btn" title="Вийти"><i class="fa-solid fa-power-off"></i></button>
     </div>
-
     <div class="admin-tabs">
       <button class="tab-btn active" data-tab="tab-users"><i class="fa-solid fa-users"></i> Користувачі</button>
       <button class="tab-btn" data-tab="tab-stats"><i class="fa-solid fa-chart-pie"></i> Статистика</button>
       <button class="tab-btn" data-tab="tab-sys"><i class="fa-solid fa-server"></i> Система</button>
     </div>
-
     <div class="sidebar-content">
       <div id="tab-users" class="tab-pane active">
-        <div class="search-wrapper">
-          <i class="fa-solid fa-search"></i>
-          <input id="userSearchSidebar" placeholder="Пошук у базі даних..."> 
-        </div>
+        <div class="search-wrapper"><i class="fa-solid fa-search"></i><input id="userSearchSidebar" placeholder="Пошук у базі даних..."></div>
         <div class="user-list-container" id="userDatabaseSidebar"></div>
       </div>
-
       <div id="tab-stats" class="tab-pane">
         <div class="stats-grid">
-          <div class="stat-card">
-            <i class="fa-solid fa-users"></i>
-            <div class="stat-info"><span id="statTotalUsers">0</span><small>Всього гравців</small></div>
-          </div>
-          <div class="stat-card highlight">
-            <i class="fa-solid fa-shield-cat"></i>
-            <div class="stat-info"><span id="statTotalAdmins">0</span><small>Адміністраторів</small></div>
-          </div>
-          <div class="stat-card">
-            <i class="fa-solid fa-newspaper"></i>
-            <div class="stat-info"><span id="statTotalNews">0</span><small>Новин</small></div>
-          </div>
-          <div class="stat-card">
-            <i class="fa-solid fa-images"></i>
-            <div class="stat-info"><span id="statTotalGallery">0</span><small>Фото</small></div>
-          </div>
-        </div>
-        <div class="activity-log">
-          <h4>Остання активність</h4>
-          <ul class="fake-logs">
-            <li><span class="log-time">Зараз</span> Перевірка статусу системи</li>
-            <li><span class="log-time">10хв</span> Оновлення даних користувачів</li>
-            <li><span class="log-time">1год</span> Автоматичний бекап бази</li>
-          </ul>
+          <div class="stat-card"><i class="fa-solid fa-users"></i><div class="stat-info"><span id="statTotalUsers">0</span><small>Всього гравців</small></div></div>
+          <div class="stat-card highlight"><i class="fa-solid fa-shield-cat"></i><div class="stat-info"><span id="statTotalAdmins">0</span><small>Адміністраторів</small></div></div>
+          <div class="stat-card"><i class="fa-solid fa-newspaper"></i><div class="stat-info"><span id="statTotalNews">0</span><small>Новин</small></div></div>
+          <div class="stat-card"><i class="fa-solid fa-images"></i><div class="stat-info"><span id="statTotalGallery">0</span><small>Фото</small></div></div>
         </div>
       </div>
-
       <div id="tab-sys" class="tab-pane">
-        <div class="system-status-box">
-          <h4>Server Status <span class="badge-online">ONLINE</span></h4>
-          <div class="sys-meter">
-            <div class="meter-label"><span>CPU Load</span> <span id="cpuVal">12%</span></div>
-            <div class="meter-bar"><div class="meter-fill" id="cpuBar" style="width: 12%"></div></div>
-          </div>
-          <div class="sys-meter">
-            <div class="meter-label"><span>Memory</span> <span id="memVal">34%</span></div>
-            <div class="meter-bar"><div class="meter-fill" id="memBar" style="width: 34%"></div></div>
-          </div>
-          <div class="sys-meter">
-            <div class="meter-label"><span>Database</span> <span>Connected</span></div>
-            <div class="meter-bar"><div class="meter-fill" style="width: 100%; background: #22c55e;"></div></div>
-          </div>
-        </div>
-        <div class="sys-info-text">
-          <p>Version: v2.5.0 (Stable)</p>
-          <p>Region: Europe (UA)</p>
-          <p>Uptime: 24d 12h 30m</p>
+        <div class="system-status-box"><h4>Server Status <span class="badge-online">ONLINE</span></h4>
+          <div class="sys-meter"><div class="meter-label"><span>CPU Load</span> <span id="cpuVal">12%</span></div><div class="meter-bar"><div class="meter-fill" id="cpuBar" style="width: 12%"></div></div></div>
+          <div class="sys-meter"><div class="meter-label"><span>Memory</span> <span id="memVal">34%</span></div><div class="meter-bar"><div class="meter-fill" id="memBar" style="width: 34%"></div></div></div>
+          <div class="sys-meter"><div class="meter-label"><span>Database</span> <span>Connected</span></div><div class="meter-bar"><div class="meter-fill" style="width: 100%; background: #22c55e;"></div></div></div>
         </div>
       </div>
     </div>
@@ -267,23 +262,12 @@
   <div id="authModal" class="auth-modal">
     <div class="auth-content">
       <span id="closeAuth" class="close-auth">&times;</span>
-      <div class="auth-tabs">
-        <button id="tabLogin" class="active">Вхід</button>
-        <button id="tabRegister">Реєстрація</button>
-      </div>
+      <div class="auth-tabs"><button id="tabLogin" class="active">Вхід</button><button id="tabRegister">Реєстрація</button></div>
       <form id="loginForm" class="auth-form">
-        <h3>Вхід в систему</h3>
-        <input type="text" id="loginUser" placeholder="Логін" required>
-        <input type="password" id="loginPass" placeholder="Пароль" required>
-        <button type="submit" class="btn btn-primary full-width">Увійти</button>
+        <h3>Вхід в систему</h3><input type="text" id="loginUser" placeholder="Логін" required><input type="password" id="loginPass" placeholder="Пароль" required><button type="submit" class="btn btn-primary full-width">Увійти</button>
       </form>
       <form id="registerForm" class="auth-form" style="display: none;">
-        <h3>Створити акаунт</h3>
-        <input type="text" id="regUser" placeholder="Логін" required>
-        <input type="email" id="regEmail" placeholder="Email" required>
-        <input type="password" id="regPass" placeholder="Пароль" required>
-        <input type="password" id="regPassConfirm" placeholder="Повторіть пароль" required>
-        <button type="submit" class="btn btn-primary full-width">Зареєструватися</button>
+        <h3>Створити акаунт</h3><input type="text" id="regUser" placeholder="Логін" required><input type="email" id="regEmail" placeholder="Email" required><input type="password" id="regPass" placeholder="Пароль" required><input type="password" id="regPassConfirm" placeholder="Повторіть пароль" required><button type="submit" class="btn btn-primary full-width">Зареєструватися</button>
       </form>
     </div>
   </div>
@@ -294,13 +278,9 @@
       <h3><i class="fa-solid fa-user-plus"></i> Додати учасника</h3>
       <form id="addMemberForm" class="auth-form">
         <div id="memberLimitWarning" class="limit-warning"></div>
-        <input type="text" id="memberNewName" placeholder="Ім'я учасника" required>
-        <input type="text" id="memberNewRole" placeholder="Роль" required>
+        <input type="text" id="memberNewName" placeholder="Ім'я учасника" required><input type="text" id="memberNewRole" placeholder="Роль" required>
         <h4 class="social-header">Соцмережі</h4>
-        <input type="text" id="memberNewDiscord" placeholder="Discord юзернейм (user#0001)">
-        <input type="url" id="memberNewYoutube" placeholder="YouTube URL">
-        <input type="url" id="memberNewTg" placeholder="Telegram URL">
-        <button type="submit" class="btn btn-primary full-width">ДОДАТИ</button>
+        <input type="text" id="memberNewDiscord" placeholder="Discord юзернейм (user#0001)"><input type="url" id="memberNewYoutube" placeholder="YouTube URL"><input type="url" id="memberNewTg" placeholder="Telegram URL"><button type="submit" class="btn btn-primary full-width">ДОДАТИ</button>
       </form>
     </div>
   </div>
@@ -311,34 +291,23 @@
       <h3><i class="fa-solid fa-user-pen"></i> Редагувати учасника</h3>
       <form id="editMemberForm" class="auth-form">
         <input type="hidden" id="editMemberId">
-        <input type="text" id="editMemberName" placeholder="Ім'я учасника" required>
-        <input type="text" id="editMemberRole" placeholder="Роль" required>
+        <input type="text" id="editMemberName" placeholder="Ім'я учасника" required><input type="text" id="editMemberRole" placeholder="Роль" required>
         <h4 class="social-header">Соцмережі</h4>
-        <input type="text" id="editMemberDiscord" placeholder="Discord юзернейм">
-        <input type="url" id="editMemberYoutube" placeholder="YouTube URL">
-        <input type="url" id="editMemberTg" placeholder="Telegram URL">
-        <button type="submit" class="btn btn-primary full-width">ЗБЕРЕГТИ ЗМІНИ</button>
+        <input type="text" id="editMemberDiscord" placeholder="Discord юзернейм"><input type="url" id="editMemberYoutube" placeholder="YouTube URL"><input type="url" id="editMemberTg" placeholder="Telegram URL"><button type="submit" class="btn btn-primary full-width">ЗБЕРЕГТИ ЗМІНИ</button>
       </form>
     </div>
   </div>
   
   <div id="customConfirmModal" class="custom-modal confirm-modal">
     <div class="custom-modal-content">
-        <span id="closeConfirmModal" class="close-modal">&times;</span>
-        <i class="fa-solid fa-triangle-exclamation" style="color: var(--accent); font-size: 30px; margin-bottom: 15px;"></i>
-        <p id="confirmMessage" style="font-size: 16px; margin-bottom: 25px;"></p>
-        <div class="confirm-actions">
-            <button id="confirmCancelBtn" class="btn btn-outline" style="min-width: 120px;">Скасувати</button>
-            <button id="confirmOkBtn" class="btn btn-primary" style="min-width: 120px;">Так, продовжити</button>
-        </div>
+        <span id="closeConfirmModal" class="close-modal">&times;</span><i class="fa-solid fa-triangle-exclamation" style="color: var(--accent); font-size: 30px; margin-bottom: 15px;"></i><p id="confirmMessage" style="font-size: 16px; margin-bottom: 25px;"></p>
+        <div class="confirm-actions"><button id="confirmCancelBtn" class="btn btn-outline" style="min-width: 120px;">Скасувати</button><button id="confirmOkBtn" class="btn btn-primary" style="min-width: 120px;">Так, продовжити</button></div>
     </div>
   </div>
 
   <div id="lightbox" class="lightbox-modal">
     <span id="lightboxCloseBtn" class="lightbox-close">&times;</span>
-    <div class="lightbox-content">
-        <img id="lightboxImage" src="" alt="Gallery Image">
-    </div>
+    <div class="lightbox-content"><img id="lightboxImage" src="" alt="Gallery Image"></div>
   </div>
 
   <script src="script.js"></script>
