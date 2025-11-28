@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
   const MAX_MEMBER_PER_USER = 1; 
 
-  // --- HELPERS ---
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
@@ -38,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let members = [];
   let currentUser = loadCurrentUser(); 
 
-  // --- API ---
   async function apiFetch(url, options = {}) {
       try {
           const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
@@ -55,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
-  // --- LOAD ---
   async function loadInitialData() {
       const m = await apiFetch('/api/members');
       if (m) { members = m; renderMembers(); }
@@ -84,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
       checkAnimate();
   }
 
-  // --- RENDERERS ---
   function renderMembers(filter='') {
     const grid = document.getElementById('membersGrid');
     if(!grid) return;
@@ -141,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
       checkAnimate();
   }
 
-  // --- ОНОВЛЕНИЙ СПИСОК КОРИСТУВАЧІВ (АДМІНКА) ---
   function renderAdminSidebar(users) {
       const el = document.getElementById('userDatabaseSidebar');
       if(!el) return;
@@ -153,12 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
           const statusClass = isOnline ? 'online' : 'offline';
           const statusText = isOnline ? 'Online' : 'Offline';
           
-          // Вибір іконки аватара
           let avatarIcon = `<i class="fa-solid fa-user"></i>`;
           let avatarClass = 'u-avatar';
           
           if (isAdmin) {
-             avatarIcon = `<i class="fa-solid fa-user-shield"></i>`; // Щит для адміна
+             avatarIcon = `<i class="fa-solid fa-user-shield"></i>`; 
              avatarClass += ' is-admin-avatar';
           }
 
@@ -190,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
   }
 
-  // --- ACTIONS ---
+  // ACTIONS
   window.editMember = (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
@@ -238,15 +232,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateAuthUI() {
       const btn = document.getElementById('openAuthBtn');
       const txt = document.getElementById('authBtnText');
-      
-      // Оновлення іконки в сайдбарі (головний профіль)
       const adminAvatar = document.querySelector('.profile-glitch-avatar');
       
       if(currentUser) {
           document.body.classList.add('is-logged-in');
           if(currentUser.role === 'admin') {
               document.body.classList.add('is-admin');
-              if(adminAvatar) adminAvatar.innerHTML = '<i class="fa-solid fa-user-shield"></i>'; // Іконка в профілі
+              if(adminAvatar) adminAvatar.innerHTML = '<i class="fa-solid fa-user-shield"></i>';
           } else {
                if(adminAvatar) adminAvatar.innerHTML = '<i class="fa-solid fa-user"></i>';
           }
