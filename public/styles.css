@@ -26,7 +26,7 @@ body {
 
 /* --- СТИЛІ ПОЛІВ ВВЕДЕННЯ (УНІФІКАЦІЯ) --- */
 input, textarea, select {
-  width: 100%; /* Займають повну ширину за замовчуванням */
+  width: 100%; /* Займають повну ширину */
   background: #151619 !important; /* Темний фон */
   border: 1px solid #333 !important; 
   padding: 18px 20px; /* Збільшений padding */
@@ -99,10 +99,10 @@ main { flex: 1; }
 
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin-top: 40px; }
 .card { background: var(--bg-panel); padding: 30px; border-radius: 16px; border: 1px solid var(--glass-border); transition: 0.3s; }
-.card:hover { border-color: var(--accent); } /* No translateY, per image_e08210.png */
+.card:hover { border-color: var(--accent); } 
 .card h3 { color: var(--accent); margin: 0 0 10px; font-size: 20px; text-transform: uppercase; }
 
-/* --- CONTROLS (Admin/User Inputs) --- */
+/* CONTROLS (Admin/User Inputs) */
 .members-controls, .gallery-controls {
   display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px;
   background: rgba(0,0,0,0.3); 
@@ -115,7 +115,7 @@ main { flex: 1; }
     margin-bottom: 0;
 }
 
-/* #EVENTS - Розміщення в один рядок (Grid Layout) */
+/* #EVENTS - Grid Layout для розміщення в один рядок */
 .events-controls {
     margin-bottom: 30px;
     background: rgba(0,0,0,0.3); 
@@ -135,7 +135,7 @@ main { flex: 1; }
     padding: 12px 18px; 
 }
 .events-controls textarea { 
-    height: 54px; /* Фіксована висота */
+    height: 54px; 
     min-height: 54px; 
     resize: none; 
 }
@@ -222,7 +222,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .btn { 
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; 
   background: #222; color: #fff; padding: 10px 20px; border: 1px solid var(--glass-border); 
-  border-radius: 12px; /* Збільшено радіус */
+  border-radius: 12px; /* Уніфікований радіус */
   cursor: pointer; transition: all 0.3s ease; text-decoration: none; 
   font-size: 13px; font-weight: 600;
   position: relative; overflow: hidden;
@@ -345,13 +345,14 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 }
 /* ---------------------------------------------------- */
 
+
 /* Animation */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .logged-in-only { display: none !important; }
 body.is-logged-in .logged-in-only { display: inline-block !important; }
 .admin-only { display: none !important; }
 body.is-admin .admin-only { display: flex !important; }
-body.is-admin .admin-only-nav { display: block !important; }
+body.is-admin .admin-only-nav { display: block !important; } 
 
 /* Mobile */
 @media (max-width: 900px) { 
