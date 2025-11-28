@@ -1,118 +1,13 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Створити персонажа</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        body {
-            background: #0e0e0e;
-            color: white;
-            font-family: "Inter", sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
-
-        .container {
-            margin-top: 70px;
-            width: 420px;
-            padding: 20px;
-        }
-
-        h2 {
-            margin-bottom: 20px;
-            font-weight: 500;
-            opacity: 0.9;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        input {
-            width: 100%;
-            height: 45px;
-            background: #1a1a1a;
-            border: 1px solid #2a2a2a;
-            border-radius: 10px;
-            padding: 0 14px;
-            color: white;
-            font-size: 15px;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #e74c3c;
-        }
-
-        button {
-            width: 100%;
-            height: 48px;
-            background: linear-gradient(90deg, #ff2e2e, #d70000);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .label {
-            font-size: 13px;
-            opacity: 0.7;
-            margin-bottom: 6px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <title>Головна</title>
 </head>
 <body>
 
-<div class="container">
-    <h2>У вас ще немає персонажа. Створіть його зараз.</h2>
-
-    <form id="characterForm">
-        <div class="input-group">
-            <input type="text" name="name" placeholder="Ім'я (IC Name)" required>
-            <input type="text" name="rank" placeholder="Посада / Ранг" required>
-        </div>
-
-        <div class="label">СОЦМЕРЕЖІ (НЕОБОВ'ЯЗКОВО)</div>
-
-        <div class="input-group">
-            <input type="text" name="discord" placeholder="Discord User#0000">
-            <input type="text" name="youtube" placeholder="YouTube Link">
-        </div>
-
-        <button type="submit">Створити персонажа</button>
-    </form>
-</div>
-
-<script>
-document.getElementById("characterForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const formData = Object.fromEntries(new FormData(e.target).entries());
-
-    const res = await fetch("/api/create-character", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
-    });
-
-    const data = await res.json();
-    alert(data.message);
-});
-</script>
+<h1>Ласкаво просимо!</h1>
+<p>Ваш персонаж створено. Тепер ви на головному сайті.</p>
 
 </body>
 </html>
