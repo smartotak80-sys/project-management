@@ -64,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const g = await apiFetch('/api/gallery');
       if (g) renderGallery(g);
 
-      // Оновлення статистики на головній панелі (dashboard)
       const counts = await apiFetch('/api/users/count');
       if(counts && document.getElementById('statDashUsers')){
           document.getElementById('statDashUsers').textContent = counts.totalUsers;
@@ -81,7 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
       checkAnimate();
   }
 
-  // --- RENDER FUNCTIONS ---
   function renderMembers(filter='') {
     const grid = document.getElementById('membersGrid');
     if(!grid) return;
@@ -144,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
       checkAnimate();
   }
 
-  // --- DASHBOARD ADMIN FUNCTIONS ---
   function renderAdminUserList(users, filter = '') {
       const el = document.getElementById('adminUserList');
       if(!el) return;
@@ -171,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
   }
 
-  // --- ACTIONS ---
   window.editMember = (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
@@ -183,8 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('editMemberTg').value = m.links?.tg || '';
       document.getElementById('editMemberModal').classList.add('show');
   };
-  
-  // Submit handlers for Add/Edit Member, News, Gallery etc. (Same as before)
+
   document.getElementById('editMemberForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('editMemberId').value;
@@ -200,6 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await apiFetch('/api/members', { method:'POST', body: JSON.stringify(body) });
       if(res && res.success) { document.getElementById('addMemberModal').classList.remove('show'); loadInitialData(); }
   });
+  
+  document.getElementById('addNewsBtn')?.addEventListener('click', async ()=>{ const body = { title: document.getElementById('newsTitle').value, date: document.getElementById('newsDate').value, summary: document.getElementById('newsSummary').value }; const res = await apiFetch('/api/news', { method:'POST', body: JSON.stringify(body) }); if (res && res.success) { loadInitialData(); }});
+  document.getElementById('addGalleryBtn')?.addEventListener('click', async ()=>{ const url = document.getElementById('galleryUrl').value; const res = await apiFetch('/api/gallery', { method:'POST', body: JSON.stringify({ url }) }); if (res && res.success) { loadInitialData(); }});
+
+  document.getElementById('memberSearch')?.addEventListener('input', (e) => { renderMembers(e.target.value); });
+  document.getElementById('adminUserSearch')?.addEventListener('input', (e) => { renderAdminUserList(allUsersData, e.target.value); });
 
   window.deleteMember = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteNews = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); loadInitialData(); } });
@@ -207,25 +208,19 @@ document.addEventListener('DOMContentLoaded', () => {
   window.banUser = async (u) => customConfirm(`Видалити акаунт ${u}?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadInitialData(); } });
   window.openLightbox = (idx) => { const lb = document.getElementById('lightbox'); if(lb) { lb.classList.add('open'); document.getElementById('lightboxImage').src = window.galleryData[idx].url; } };
 
-  // --- AUTH & UI LOGIC ---
   function updateAuthUI() {
       const btn = document.getElementById('openAuthBtn');
       const txt = document.getElementById('authBtnText');
-      
       if(currentUser) {
           document.body.classList.add('is-logged-in');
           if(currentUser.role === 'admin') document.body.classList.add('is-admin');
-          txt.textContent = 'Кабінет'; // Change text to Dashboard/Cabinet
-          
-          // Update Dashboard Info
+          txt.textContent = 'Кабінет';
           document.getElementById('dashUsername').textContent = currentUser.username;
           document.getElementById('dashRole').textContent = currentUser.role;
       } else {
           document.body.classList.remove('is-logged-in', 'is-admin');
           txt.textContent = 'Вхід';
       }
-      
-      // Update Add Button Limit Logic
       const addBtn = document.getElementById('addMemberBtn');
       if(addBtn && currentUser) {
           const myCount = members.filter(m => m.owner === currentUser.username).length;
@@ -237,38 +232,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
-  // --- EVENT LISTENERS ---
   document.getElementById('navToggle')?.addEventListener('click', ()=>document.getElementById('mainNav').classList.toggle('open'));
   document.getElementById('lightboxCloseBtn')?.addEventListener('click', ()=>document.getElementById('lightbox').classList.remove('open'));
-  
-  // OPEN DASHBOARD OR LOGIN
-  document.getElementById('openAuthBtn')?.addEventListener('click', ()=>{
-      if(currentUser) {
-          // Open new Full Screen Dashboard
-          document.getElementById('dashboardOverlay').classList.add('active');
-          if(currentUser.role === 'admin') {
-             apiFetch('/api/users').then(data => { allUsersData = data; renderAdminUserList(allUsersData); });
-          }
-      } else { 
-          document.getElementById('authModal').classList.add('show'); 
-      }
-  });
-
-  // CLOSE DASHBOARD
-  document.getElementById('closeDashBtn')?.addEventListener('click', () => {
-      document.getElementById('dashboardOverlay').classList.remove('active');
-  });
-
-  // DASHBOARD LOGOUT
+  document.getElementById('openAuthBtn')?.addEventListener('click', ()=>{ if(currentUser) { document.getElementById('dashboardOverlay').classList.add('active'); if(currentUser.role === 'admin') { apiFetch('/api/users').then(data => { allUsersData = data; renderAdminUserList(allUsersData); }); } } else { document.getElementById('authModal').classList.add('show'); } });
+  document.getElementById('closeDashBtn')?.addEventListener('click', () => { document.getElementById('dashboardOverlay').classList.remove('active'); });
   document.getElementById('dashLogoutBtn')?.addEventListener('click', ()=>{ removeCurrentUser(); location.reload(); });
 
-  // DASHBOARD TABS NAVIGATION
   const dashTabs = document.querySelectorAll('.dash-nav-btn');
   dashTabs.forEach(btn => {
       btn.addEventListener('click', () => {
           dashTabs.forEach(b => b.classList.remove('active'));
           document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
-          
           btn.classList.add('active');
           const target = btn.getAttribute('data-target');
           document.getElementById(target).classList.add('active');
@@ -276,27 +250,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
   
-  // Auth Form Listeners
   document.getElementById('closeAuth')?.addEventListener('click', ()=>document.getElementById('authModal').classList.remove('show'));
   document.getElementById('tabLogin')?.addEventListener('click', (e) => { document.getElementById('tabRegister')?.classList.remove('active'); e.target.classList.add('active'); document.getElementById('loginForm').style.display = 'block'; document.getElementById('registerForm').style.display = 'none'; });
   document.getElementById('tabRegister')?.addEventListener('click', (e) => { document.getElementById('tabLogin')?.classList.remove('active'); e.target.classList.add('active'); document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; });
   document.getElementById('loginForm')?.addEventListener('submit', async (e)=>{ e.preventDefault(); const res = await apiFetch('/api/auth/login', { method:'POST', body: JSON.stringify({ username: document.getElementById('loginUser').value, password: document.getElementById('loginPass').value }) }); if(res && res.success) { saveCurrentUser(res.user); location.reload(); } });
   document.getElementById('registerForm')?.addEventListener('submit', async (e)=>{ e.preventDefault(); const pass = document.getElementById('regPass').value; if(pass !== document.getElementById('regPassConfirm').value) return customConfirm('Паролі різні'); const res = await apiFetch('/api/auth/register', { method:'POST', body: JSON.stringify({ username: document.getElementById('regUser').value, email: document.getElementById('regEmail').value, password: pass }) }); if(res && res.success) { customConfirm('Успіх! Увійдіть.'); location.reload(); } });
 
-  // Add Member Modal
   document.getElementById('addMemberBtn')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.add('show'));
   document.getElementById('closeMemberModal')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.remove('show'));
   document.getElementById('closeEditMemberModal')?.addEventListener('click', ()=>document.getElementById('editMemberModal').classList.remove('show'));
 
-  // Add News/Gallery Listeners
-  document.getElementById('addNewsBtn')?.addEventListener('click', async ()=>{ const body = { title: document.getElementById('newsTitle').value, date: document.getElementById('newsDate').value, summary: document.getElementById('newsSummary').value }; const res = await apiFetch('/api/news', { method:'POST', body: JSON.stringify(body) }); if (res && res.success) { loadInitialData(); }});
-  document.getElementById('addGalleryBtn')?.addEventListener('click', async ()=>{ const url = document.getElementById('galleryUrl').value; const res = await apiFetch('/api/gallery', { method:'POST', body: JSON.stringify({ url }) }); if (res && res.success) { loadInitialData(); }});
-
-  // Search Listeners
-  document.getElementById('memberSearch')?.addEventListener('input', (e) => { renderMembers(e.target.value); });
-  document.getElementById('adminUserSearch')?.addEventListener('input', (e) => { renderAdminUserList(allUsersData, e.target.value); });
-
-  // News Slider Logic
   const newsTrack = document.getElementById('newsTrack');
   const newsPrevBtn = document.getElementById('newsPrevBtn');
   const newsNextBtn = document.getElementById('newsNextBtn');
