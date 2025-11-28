@@ -311,7 +311,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 #confirmMessage {
     font-size: 18px;
     font-weight: 600;
-    margin-bottom: 25px; /* Виправлений відступ */
+    margin-bottom: 25px; 
 }
 #confirmCancelBtn {
     flex-grow: 1;
