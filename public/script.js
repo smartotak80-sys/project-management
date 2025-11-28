@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isAlert = callback === undefined; 
       
       cancelBtn.style.display = isAlert ? 'none' : 'inline-block';
-      okBtn.textContent = isAlert ? 'ОК' : 'Так';
+      okBtn.textContent = isAlert ? 'Зрозуміло' : 'Так';
       msg.textContent = message;
       modal.classList.add('show');
       
@@ -59,20 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- DASHBOARD LOGIC ---
   const dashModal = document.getElementById('dashboardModal');
+  
   window.switchDashTab = (tab) => {
       document.querySelectorAll('.dash-view').forEach(e => e.classList.remove('active'));
       document.querySelectorAll('.dash-nav button').forEach(e => e.classList.remove('active'));
       document.getElementById(`tab-${tab}`).classList.add('active');
       
-      // Highlight btn
-      const btnMap = { 'profile':0, 'my-member':1, 'users':2, 'stats':3 }; // approximate
-      const navBtns = document.querySelectorAll('.dash-nav button');
-      // Simple loop to find match text or icon could be better, but simple index for now:
-      // Just manually managing active class in HTML click handlers is often easier or querySelector
-      if(tab==='profile') navBtns[0].classList.add('active');
-      if(tab==='my-member') navBtns[1].classList.add('active');
-      if(tab==='users') { loadUsersAdmin(); }
-      if(tab==='stats') { loadStatsAdmin(); }
+      // Highlight correct button
+      const btns = document.querySelectorAll('.dash-nav button');
+      if(tab === 'profile') btns[0].classList.add('active');
+      if(tab === 'my-member') btns[1].classList.add('active');
+      if(tab === 'users') { btns[2].classList.add('active'); loadUsersAdmin(); } // index depends on html order
+      if(tab === 'stats') { btns[3].classList.add('active'); loadStatsAdmin(); }
   };
 
   function openDashboard() {
@@ -81,15 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('dashUsername').textContent = currentUser.username;
       document.getElementById('dashRole').textContent = currentUser.role;
       
-      // Fill Profile Tab
       document.getElementById('pLogin').textContent = currentUser.username;
       document.getElementById('pRole').textContent = currentUser.role === 'admin' ? 'Administrator' : 'Учасник';
-      document.getElementById('pDate').textContent = new Date().toLocaleDateString(); // Mock date if not saved locally
 
-      // Admin Nav Visibility
       document.querySelector('.admin-only-nav').style.display = currentUser.role === 'admin' ? 'block' : 'none';
-
-      // Load My Member Tab
       loadMyMemberTab();
   }
 
@@ -98,31 +91,32 @@ document.addEventListener('DOMContentLoaded', () => {
       const myMember = members.find(m => m.owner === currentUser.username);
       
       if(myMember) {
-          // SHOW MEMBER CARD (Cannot add more)
+          // Вже є персонаж
           container.innerHTML = `
-            <div class="dash-limit-msg" style="text-align:left; display:flex; gap:20px; align-items:center;">
-                <div style="font-size:40px; color:var(--accent);"><i class="fa-solid fa-user-check"></i></div>
+            <div style="background:#151619; padding:25px; border-radius:12px; border:1px solid #333; display:flex; gap:20px; align-items:center;">
+                <div style="width:60px; height:60px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff;">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
                 <div>
-                    <h3>${myMember.name}</h3>
-                    <p class="muted">Роль: ${myMember.role}</p>
-                    <div style="margin-top:10px;">
-                        <button class="btn btn-outline" onclick="window.deleteMember('${myMember.id}')">Видалити персонажа</button>
-                    </div>
+                    <h3 style="margin:0; font-size:22px; color:#fff;">${myMember.name}</h3>
+                    <p style="margin:5px 0 0; color:#888;">Роль: <span style="color:var(--accent); font-weight:bold;">${myMember.role}</span></p>
                 </div>
             </div>
-            <p style="margin-top:20px; color:#555; text-align:center;">У вас вже є 1 персонаж (Ліміт).</p>
+            <button class="btn btn-outline" style="margin-top:20px; border-color:#d33; color:#d33;" onclick="window.deleteMember('${myMember.id}')">
+                <i class="fa-solid fa-trash"></i> Видалити персонажа
+            </button>
           `;
       } else {
-          // SHOW ADD FORM
+          // Форма створення
           container.innerHTML = `
-            <form id="dashAddMemberForm" class="dash-form">
-                <h3>Створити персонажа</h3>
+            <form id="dashAddMemberForm" style="max-width:400px;">
+                <p style="color:#aaa; font-size:13px; margin-bottom:15px;">У вас ще немає персонажа. Створіть його зараз.</p>
                 <input type="text" id="dmName" placeholder="Ім'я (IC Name)" required>
                 <input type="text" id="dmRole" placeholder="Посада / Ранг" required>
-                <label style="font-size:12px; color:#666;">Соціальні мережі</label>
-                <input type="text" id="dmDiscord" placeholder="Discord">
-                <input type="text" id="dmYoutube" placeholder="YouTube">
-                <button type="submit" class="btn btn-primary full-width">Створити</button>
+                <div style="margin:15px 0 5px; font-size:12px; color:#666; text-transform:uppercase; font-weight:bold;">Соцмережі (необов'язково)</div>
+                <input type="text" id="dmDiscord" placeholder="Discord User#0000">
+                <input type="text" id="dmYoutube" placeholder="YouTube Link">
+                <button type="submit" class="btn btn-primary full-width">Створити персонажа</button>
             </form>
           `;
           
@@ -137,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
               const res = await apiFetch('/api/members', { method:'POST', body: JSON.stringify(body) });
               if(res && res.success) {
                   customConfirm('Персонажа створено!', true);
-                  // Reload members and refresh tab
                   const m = await apiFetch('/api/members');
                   if(m) { members = m; renderPublicMembers(); loadMyMemberTab(); }
               }
@@ -145,18 +138,23 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
-  async function loadUsersAdmin() {
+  async function loadUsersAdmin(query = '') {
       const list = document.getElementById('adminUsersList');
-      list.innerHTML = '<p class="muted">Завантаження...</p>';
+      list.innerHTML = '<p style="color:#666;">Завантаження...</p>';
       const users = await apiFetch('/api/users');
       if(!users) return;
-      list.innerHTML = users.map(u => `
+      
+      const filtered = users.filter(u => u.username.toLowerCase().includes(query.toLowerCase()) || u.email.toLowerCase().includes(query.toLowerCase()));
+      
+      list.innerHTML = filtered.map(u => `
         <div class="u-row">
-            <div>
-                <strong>${u.username}</strong> <span style="font-size:11px; color:#666;">(${u.email})</span>
-                <div style="font-size:10px; color:#444;">Role: ${u.role}</div>
+            <div class="u-info">
+                <strong>${u.username} ${u.role==='admin' ? '<i class="fa-solid fa-shield-cat" style="color:var(--accent); font-size:12px;"></i>' : ''}</strong>
+                <small>${u.email}</small>
             </div>
-            ${u.role!=='admin' ? `<button class="btn-outline" style="padding:5px 10px; font-size:11px; border-color:#d33; color:#d33;" onclick="window.banUser('${u.username}')">BAN</button>` : ''}
+            ${u.role!=='admin' ? 
+              `<button class="btn btn-outline" style="padding:6px 12px; font-size:11px; border-color:#d33; color:#d33;" onclick="window.banUser('${u.username}')">BAN</button>` 
+              : '<span style="font-size:10px; opacity:0.5;">ADM</span>'}
         </div>
       `).join('');
   }
@@ -171,23 +169,38 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- PUBLIC RENDER ---
-  function renderPublicMembers() {
+  function renderPublicMembers(filter = '') {
       const grid = document.getElementById('membersGrid');
-      grid.innerHTML = members.map(m => `
-        <div class="card">
-            <h3>${m.name}</h3>
-            <div style="color:var(--accent); font-size:12px; margin-bottom:10px;">${m.role}</div>
-            <div style="font-size:12px; color:#666;">
-                ${m.links?.discord ? `<i class="fa-brands fa-discord"></i> ${m.links.discord}` : ''}
+      const filtered = members.filter(m => m.name.toLowerCase().includes(filter.toLowerCase()) || m.role.toLowerCase().includes(filter.toLowerCase()));
+      
+      grid.innerHTML = filtered.map(m => `
+        <div class="member">
+            <h3 style="margin:0 0 5px; color:#fff;">${m.name}</h3>
+            <div class="role-badge">${m.role}</div>
+            <div style="margin-top:15px; font-size:12px; color:#666;">
+                ${m.links?.discord ? `<div><i class="fa-brands fa-discord"></i> ${m.links.discord}</div>` : ''}
             </div>
         </div>
       `).join('');
   }
   
-  function renderNews(list) { document.getElementById('newsList').innerHTML = list.map(n => `<div style="background:#151619; padding:15px; margin-bottom:10px; border-radius:8px;"><strong>${n.title}</strong><br><small>${n.date}</small><p>${n.summary}</p><button class="btn btn-outline admin-only" onclick="window.deleteNews('${n.id}')">Del</button></div>`).join(''); }
-  function renderGallery(list) { document.getElementById('galleryGrid').innerHTML = list.map(g => `<div><img src="${g.url}" style="width:100%; border-radius:8px;"><button class="btn btn-outline admin-only" onclick="window.deleteGallery('${g.id}')">Del</button></div>`).join(''); }
+  function renderNews(list) { document.getElementById('newsList').innerHTML = list.map(n => `
+    <div style="background:#121315; padding:20px; margin-bottom:15px; border-radius:12px; border:1px solid #222; position:relative;">
+        <div style="color:var(--accent); font-size:12px; font-weight:bold;">${n.date}</div>
+        <h3 style="margin:5px 0 10px; color:#fff;">${n.title}</h3>
+        <p style="color:#bbb; font-size:14px; margin:0;">${n.summary}</p>
+        <button class="btn btn-outline admin-only" style="position:absolute; top:15px; right:15px; padding:5px 10px; font-size:10px;" onclick="window.deleteNews('${n.id}')">DEL</button>
+    </div>`).join(''); 
+  }
 
-  // --- AUTH & INIT ---
+  function renderGallery(list) { document.getElementById('galleryGrid').innerHTML = list.map(g => `
+    <div>
+        <img src="${g.url}" onclick="document.getElementById('lightbox').classList.add('show'); document.getElementById('lightboxImage').src='${g.url}'">
+        <button class="btn btn-outline admin-only" style="position:absolute; bottom:5px; right:5px; padding:2px 8px; font-size:10px; background:rgba(0,0,0,0.7); border:none;" onclick="window.deleteGallery('${g.id}')">DEL</button>
+    </div>`).join(''); 
+  }
+
+  // --- UI HANDLERS ---
   function updateAuthUI() {
       const btn = document.getElementById('openAuthBtn');
       const txt = document.getElementById('authBtnText');
@@ -195,8 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if(currentUser) {
           document.body.classList.add('is-logged-in');
           if(currentUser.role === 'admin') document.body.classList.add('is-admin');
-          txt.textContent = 'Кабінет'; // Button now says "Cabinet"
-          btn.onclick = openDashboard; // Opens Dashboard instead of Modal
+          txt.textContent = 'Кабінет';
+          btn.onclick = openDashboard;
       } else {
           document.body.classList.remove('is-logged-in', 'is-admin');
           txt.textContent = 'Вхід';
@@ -206,15 +219,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // GLOBAL ACTIONS
   window.deleteMember = async (id) => customConfirm('Видалити персонажа?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); const m = await apiFetch('/api/members'); members=m; renderPublicMembers(); loadMyMemberTab(); } });
-  window.deleteNews = async (id) => customConfirm('Del?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); location.reload(); } });
-  window.deleteGallery = async (id) => customConfirm('Del?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); location.reload(); } });
-  window.banUser = async (u) => customConfirm(`BAN ${u}?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadUsersAdmin(); } });
+  window.deleteNews = async (id) => customConfirm('Видалити новину?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); loadInitialData(); } });
+  window.deleteGallery = async (id) => customConfirm('Видалити фото?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); loadInitialData(); } });
+  window.banUser = async (u) => customConfirm(`Заблокувати користувача ${u}? Це видалить його акаунт і персонажа.`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadUsersAdmin(); } });
 
   // EVENT LISTENERS
   document.getElementById('navToggle')?.addEventListener('click', ()=>document.getElementById('mainNav').classList.toggle('open'));
   document.getElementById('closeAuth')?.addEventListener('click', ()=>document.getElementById('authModal').classList.remove('show'));
   document.getElementById('closeDashBtn')?.addEventListener('click', ()=>dashModal.classList.remove('show'));
   document.getElementById('logoutBtn')?.addEventListener('click', ()=>{ removeCurrentUser(); location.reload(); });
+  document.getElementById('lightboxCloseBtn')?.addEventListener('click', ()=>document.getElementById('lightbox').classList.remove('show'));
+  
+  document.getElementById('memberSearch')?.addEventListener('input', (e) => renderPublicMembers(e.target.value));
+  document.getElementById('adminSearchInput')?.addEventListener('input', (e) => loadUsersAdmin(e.target.value));
 
   document.getElementById('tabLogin')?.addEventListener('click', (e) => {
       e.target.classList.add('active'); document.getElementById('tabRegister').classList.remove('active');
@@ -244,17 +261,16 @@ document.addEventListener('DOMContentLoaded', () => {
               password: pass 
           }) 
       });
-      if(res && res.success) { customConfirm('Успіх! Тепер увійдіть.', true); document.getElementById('tabLogin').click(); }
+      if(res && res.success) { customConfirm('Успіх! Увійдіть.', true); document.getElementById('tabLogin').click(); }
   });
 
-  // News/Gallery adds (Admin only, outside dash for now or hook later)
   document.getElementById('addNewsBtn')?.addEventListener('click', async ()=>{
      const body = { title: document.getElementById('newsTitle').value, date: document.getElementById('newsDate').value, summary: document.getElementById('newsSummary').value };
-     if(body.title) { await apiFetch('/api/news', {method:'POST', body:JSON.stringify(body)}); location.reload(); }
+     if(body.title) { await apiFetch('/api/news', {method:'POST', body:JSON.stringify(body)}); loadInitialData(); }
   });
   document.getElementById('addGalleryBtn')?.addEventListener('click', async ()=>{
      const url = document.getElementById('galleryUrl').value;
-     if(url) { await apiFetch('/api/gallery', {method:'POST', body:JSON.stringify({url})}); location.reload(); }
+     if(url) { await apiFetch('/api/gallery', {method:'POST', body:JSON.stringify({url})}); loadInitialData(); }
   });
 
   loadInitialData();
