@@ -85,9 +85,7 @@ async function authMiddleware(req, res, next) {
 }
 
 function adminOnly(req, res, next) {
-  // if token-based, check req.user
   if (req.user && req.user.role === 'admin') return next();
-  // fallback to env admin (rare)
   return res.status(403).json({ success: false, message: 'Admin only' });
 }
 
@@ -121,7 +119,6 @@ app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ success: false, message: 'Missing fields' });
 
-    // try DB
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -138,17 +135,14 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // --- Members ---
-// Get all members (public)
 app.get('/api/members', async (req, res) => {
   const items = await Member.find({}).sort({ createdAt: -1 }).lean();
   res.json(items.map(i => ({ id: i._id.toString(), ...i })));
 });
 
-// Create member (authenticated)
 app.post('/api/members', authMiddleware, async (req, res) => {
   try {
     const owner = req.user.username;
-    // user can have only 1 member
     const count = await Member.countDocuments({ owner });
     if (count >= 1) return res.status(400).json({ success: false, message: 'Only 1 character allowed per user' });
 
@@ -162,7 +156,6 @@ app.post('/api/members', authMiddleware, async (req, res) => {
   }
 });
 
-// Delete member (owner or admin)
 app.delete('/api/members/:id', authMiddleware, async (req, res) => {
   try {
     const id = req.params.id;
