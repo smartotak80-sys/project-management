@@ -69,9 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const btns = document.querySelectorAll('.dash-nav button');
       if(tab === 'profile') btns[0].classList.add('active');
       if(tab === 'my-member') btns[1].classList.add('active');
-      if(tab === 'admin-members') { btns[2].classList.add('active'); loadAdminMembers(); } // NEW ADMIN MEMBERS
-      if(tab === 'users') { btns[3].classList.add('active'); loadUsersAdmin(); } // Index Shifted
-      if(tab === 'stats') { btns[4].classList.add('active'); loadStatsAdmin(); } // Index Shifted
+      if(tab === 'admin-members') { btns[2].classList.add('active'); loadAdminMembers(); } // NEW ADMIN MEMBERS TAB
+      if(tab === 'users') { btns[3].classList.add('active'); loadUsersAdmin(); } 
+      if(tab === 'stats') { btns[4].classList.add('active'); loadStatsAdmin(); }
   };
 
   function openDashboard() {
@@ -109,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
           `;
       } else {
           // Форма створення
+          // Updated form structure for two columns and better spacing (mirrors index.html fix)
           container.innerHTML = `
             <form id="dashAddMemberForm" style="max-width:400px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <p style="color:#aaa; font-size:13px; margin:0 0 10px; grid-column: 1 / -1;">У вас ще немає персонажа. Створіть його зараз.</p>
