@@ -1,3 +1,4 @@
+require('dotenv').config(); 
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
@@ -6,14 +7,14 @@ const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://mongo:eObbUKaDoasbzeesJiSMDdeCegvUPTHW@mongodb.railway.internal:27017";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/barracuda_db";
 
 mongoose.connect(MONGO_URI)
     .then(async () => {
-        console.log("✅ MongoDB успішно підключено");
+        console.log("✅ БАЗА ДАНИХ ПІДКЛЮЧЕНА (MongoDB)");
         try { await mongoose.connection.db.collection('galleries').dropIndex('id_1'); } catch (e) {}
     })
-    .catch(err => console.error("❌ Помилка підключення до MongoDB:", err));
+    .catch(err => console.error("❌ ПОМИЛКА ПІДКЛЮЧЕННЯ ДО БД:", err.message));
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -48,7 +49,7 @@ app.post('/api/auth/register', async (req, res) => {
         if (existingUser) return res.status(400).json({ success: false, message: 'Вже існує' });
         await new User({ username, email, password, role: 'member' }).save();
         res.json({ success: true, message: 'Реєстрація успішна' });
-    } catch (err) { res.status(500).json({ success: false }); }
+    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
 app.post('/api/auth/login', async (req, res) => {
@@ -59,7 +60,7 @@ app.post('/api/auth/login', async (req, res) => {
     try {
         const user = await User.findOne({ username, password });
         if (user) res.json({ success: true, user: { username: user.username, role: user.role } });
-        else res.status(401).json({ success: false });
+        else res.status(401).json({ success: false, message: 'Невірний логін' });
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
@@ -78,7 +79,7 @@ app.post('/api/members', async (req, res) => {
         }
         await new Member(req.body).save(); 
         res.json({ success: true }); 
-    } catch(e) { res.status(500).json({error: e.message}); }
+    } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.put('/api/members/:id', async (req, res) => { await Member.findByIdAndUpdate(req.params.id, req.body); res.json({ success: true }); });
@@ -94,10 +95,13 @@ app.delete('/api/gallery/:id', async (req, res) => { await Gallery.findByIdAndDe
 
 app.get('/api/users', async (req, res) => { const users = await User.find().sort({ regDate: -1 }); res.json(users); });
 app.delete('/api/users/:username', async (req, res) => {
-    await User.findOneAndDelete({ username: req.params.username });
-    await Member.deleteMany({ owner: req.params.username });
-    res.json({ success: true });
+    try {
+        await User.findOneAndDelete({ username: req.params.username });
+        await Member.deleteMany({ owner: req.params.username });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
+
 app.get('/api/users/count', async (req, res) => {
     const total = await User.countDocuments();
     const admins = await User.countDocuments({ role: 'admin' });
@@ -105,4 +109,4 @@ app.get('/api/users/count', async (req, res) => {
 });
 
 app.get("*", (req, res) => { res.sendFile(path.join(__dirname, "public", "index.html")); });
-app.listen(PORT, () => { console.log(`🚀 Server running on port ${PORT}`); });
+app.listen(PORT, () => { console.log(`🚀 Сервер запущено на порту ${PORT}`); });
