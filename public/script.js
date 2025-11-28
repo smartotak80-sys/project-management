@@ -55,7 +55,28 @@ document.addEventListener('DOMContentLoaded', () => {
       
       updateAuthUI();
       document.getElementById('year').textContent = new Date().getFullYear();
+      
+      activateScrollAnimations();
   }
+  
+  // --- АКТИВАЦІЯ АНІМАЦІЙ ПРИ СКРОЛІ ---
+  function activateScrollAnimations() {
+      const elements = document.querySelectorAll('.hero, .section, .card, .member, .u-row');
+      const observer = new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                  entry.target.classList.add('animate');
+                  // Якщо елемент знаходиться всередині section/hero, не зупиняємо observer, бо він потрібен для всіх елементів
+                  if (!entry.target.classList.contains('section') && !entry.target.classList.contains('hero')) {
+                      observer.unobserve(entry.target);
+                  }
+              }
+          });
+      }, { threshold: 0.1 }); 
+      
+      elements.forEach(el => observer.observe(el));
+  }
+  // ------------------------------------
 
   // --- DASHBOARD LOGIC ---
   const dashModal = document.getElementById('dashboardModal');
@@ -67,18 +88,22 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Highlight correct button
       const btns = document.querySelectorAll('.dash-nav button');
-      if(tab === 'profile') btns[0].classList.add('active');
-      if(tab === 'my-member') btns[1].classList.add('active');
       
-      // Оновлено індекси та додано логіку для 'admin-members'
-      if(currentUser && currentUser.role === 'admin') {
-         if(tab === 'admin-members') { btns[2].classList.add('active'); loadAdminMembers(); }
-         if(tab === 'users') { btns[3].classList.add('active'); loadUsersAdmin(); } 
-         if(tab === 'stats') { btns[4].classList.add('active'); loadStatsAdmin(); }
-      } else {
-         if(tab === 'users') { btns[2].classList.add('active'); loadUsersAdmin(); } 
-         if(tab === 'stats') { btns[3].classList.add('active'); loadStatsAdmin(); }
+      let index = -1;
+      if (tab === 'profile') index = 0;
+      else if (tab === 'my-member') index = 1;
+      else if (tab === 'admin-members' && currentUser.role === 'admin') index = 2;
+      else if (tab === 'users') index = currentUser.role === 'admin' ? 3 : 2;
+      else if (tab === 'stats') index = currentUser.role === 'admin' ? 4 : 3;
+      
+      if (index !== -1 && index < btns.length) {
+          btns[index].classList.add('active');
       }
+
+      // Завантаження контенту
+      if(tab === 'admin-members') loadAdminMembers();
+      if(tab === 'users') loadUsersAdmin();
+      if(tab === 'stats') loadStatsAdmin();
 
       // Закриваємо форму створення учасника при перемиканні табів (якщо вона існує)
       const formContainer = document.getElementById('adminAddMemberContainer');
@@ -99,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelector('.admin-only-nav').style.display = currentUser.role === 'admin' ? 'block' : 'none';
       loadMyMemberTab();
 
-      // Закриваємо адмін-форму при відкритті дашборда (якщо вона існує)
       const formContainer = document.getElementById('adminAddMemberContainer');
       if (formContainer) {
           formContainer.style.display = 'none';
@@ -127,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           `;
       } else {
-          // Форма створення
+          // Форма створення. Тут користувач може створити 1 персонажа.
           container.innerHTML = `
             <form id="dashAddMemberForm" style="max-width:400px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <p style="color:#aaa; font-size:13px; margin:0 0 15px; grid-column: 1 / -1;">У вас ще немає персонажа. Створіть його зараз.</p>
@@ -165,10 +189,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const m = await apiFetch('/api/members');
       if (m) { members = m; }
       
+      const queryLower = query.toLowerCase();
       const filtered = members.filter(m => 
-          m.name.toLowerCase().includes(query.toLowerCase()) || 
-          m.role.toLowerCase().includes(query.toLowerCase()) || 
-          m.owner.toLowerCase().includes(query.toLowerCase())
+          m.name.toLowerCase().includes(queryLower) || 
+          m.role.toLowerCase().includes(queryLower) || 
+          m.owner.toLowerCase().includes(queryLower)
       );
 
       list.innerHTML = filtered.map(m => `
@@ -182,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         </div>
       `).join('');
+      activateScrollAnimations();
   }
 
   document.getElementById('openAdminAddMember')?.addEventListener('click', () => {
@@ -198,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
           links: { discord: document.getElementById('admDiscord').value, youtube: document.getElementById('admYoutube').value }
       };
       
-      // Перевірка на заповненість полів для Адміна
       if (!body.name || !body.role || !body.owner) {
           customConfirm('Будь ласка, заповніть Імя, Посаду та Логін власника.', true);
           return;
@@ -207,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await apiFetch('/api/members', { method:'POST', body: JSON.stringify(body) });
       if(res && res.success) {
           customConfirm(`Учасника ${body.name} (Власник: ${body.owner}) успішно створено!`, true);
-          // Оновлюємо дані
           document.getElementById('adminAddMemberForm').reset();
           const m = await apiFetch('/api/members');
           if(m) { members = m; loadAdminMembers(); }
@@ -223,7 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const users = await apiFetch('/api/users');
       if(!users) return;
       
-      const filtered = users.filter(u => u.username.toLowerCase().includes(query.toLowerCase()) || u.email.toLowerCase().includes(query.toLowerCase()));
+      const queryLower = query.toLowerCase();
+      const filtered = users.filter(u => u.username.toLowerCase().includes(queryLower) || u.email.toLowerCase().includes(queryLower));
       
       list.innerHTML = filtered.map(u => `
         <div class="u-row">
@@ -236,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
               : '<span style="font-size:10px; opacity:0.5;">ADM</span>'}
         </div>
       `).join('');
+      activateScrollAnimations();
   }
 
   async function loadStatsAdmin() {
@@ -250,7 +276,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- PUBLIC RENDER ---
   function renderPublicMembers(filter = '') {
       const grid = document.getElementById('membersGrid');
-      const filtered = members.filter(m => m.name.toLowerCase().includes(filter.toLowerCase()) || m.role.toLowerCase().includes(filter.toLowerCase()));
+      const queryLower = filter.toLowerCase();
+      const filtered = members.filter(m => m.name.toLowerCase().includes(queryLower) || m.role.toLowerCase().includes(queryLower));
       
       grid.innerHTML = filtered.map(m => `
         <div class="member">
@@ -261,6 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         </div>
       `).join('');
+      
+      activateScrollAnimations();
   }
   
   function renderNews(list) { document.getElementById('newsList').innerHTML = list.map(n => `
@@ -303,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const m = await apiFetch('/api/members'); 
           members=m; 
           renderPublicMembers(); 
-          if (document.getElementById('tab-my-member').classList.contains('active')) {
+          if (document.getElementById('tab-my-member')?.classList.contains('active')) {
              loadMyMemberTab(); 
           } else if (document.getElementById('tab-admin-members') && document.getElementById('tab-admin-members').classList.contains('active')) {
              loadAdminMembers();
