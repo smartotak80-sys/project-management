@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let members = [];
   let currentUser = loadCurrentUser(); 
+  let allUsersData = [];
 
   async function apiFetch(url, options = {}) {
       try {
@@ -72,8 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (currentUser && currentUser.role === 'admin') {
-          const users = await apiFetch('/api/users');
-          if (users) renderAdminSidebar(users);
+          allUsersData = await apiFetch('/api/users'); 
+          if (allUsersData) renderAdminSidebar(allUsersData);
       }
       
       updateAuthUI();
@@ -137,31 +138,39 @@ document.addEventListener('DOMContentLoaded', () => {
       checkAnimate();
   }
 
-  function renderAdminSidebar(users) {
+  function renderAdminSidebar(users, filter = '') {
       const el = document.getElementById('userDatabaseSidebar');
       if(!el) return;
       
-      el.innerHTML = users.map(u => {
+      const filteredUsers = users.filter(u => u.username.toLowerCase().includes(filter.toLowerCase()));
+      
+      if(filteredUsers.length === 0) {
+          el.innerHTML = '<p class="muted" style="text-align:center;">Нікого не знайдено</p>';
+          return;
+      }
+
+      el.innerHTML = filteredUsers.map(u => {
           const isMe = currentUser && u.username === u.username;
           const isAdmin = u.role === 'admin';
           const isOnline = isMe ? true : (Math.random() > 0.4); 
           const statusClass = isOnline ? 'online' : 'offline';
           const statusText = isOnline ? 'Online' : 'Offline';
           
+          const regDate = new Date(u.regDate);
+          const dateStr = regDate.toLocaleDateString('uk-UA');
+          const timeStr = regDate.toLocaleTimeString('uk-UA');
+          const fullRegStr = `${dateStr}, ${timeStr}`;
+
           let avatarIcon = `<i class="fa-solid fa-user"></i>`;
           let avatarClass = 'u-avatar';
-          
           if (isAdmin) {
              avatarIcon = `<i class="fa-solid fa-user-shield"></i>`; 
              avatarClass += ' is-admin-avatar';
           }
 
           return `
-            <div class="user-card-row">
-                <div class="${avatarClass}">
-                   ${avatarIcon}
-                </div>
-                
+            <div class="user-card-row animate-in">
+                <div class="${avatarClass}">${avatarIcon}</div>
                 <div class="u-details-grid">
                     <div class="u-name-row">
                         <span class="u-login">${u.username}</span>
@@ -170,21 +179,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     <div class="u-sub-info">
-                       <i class="fa-solid fa-envelope"></i> ${u.email}
+                       <span><i class="fa-solid fa-envelope"></i> ${u.email}</span>
+                    </div>
+                    <div class="u-reg-date">
+                       <i class="fa-regular fa-calendar-days"></i> Рег: ${fullRegStr}
                     </div>
                 </div>
-                
                 ${(!isMe && !isAdmin) ? 
                     `<button class="btn-delete-user" onclick="window.banUser('${u.username}')" title="Видалити акаунт">
                         <i class="fa-solid fa-trash-can"></i>
-                     </button>` 
-                    : ''}
+                     </button>` : ''}
             </div>
           `;
       }).join('');
   }
 
-  // ACTIONS
   window.editMember = (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
@@ -220,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.deleteMember = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteNews = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteGallery = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); loadInitialData(); } });
-  window.banUser = async (u) => customConfirm(`Видалити акаунт ${u}?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadInitialData(); } });
+  window.banUser = async (u) => customConfirm(`Видалити акаунт ${u} та всіх його учасників?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadInitialData(); } });
   
   window.openLightbox = (idx) => {
       const g = window.galleryData || [];
@@ -255,19 +264,20 @@ document.addEventListener('DOMContentLoaded', () => {
           if(currentUser.role !== 'admin' && myCount >= MAX_MEMBER_PER_USER) {
               addBtn.disabled = true; 
               addBtn.innerHTML = '<i class="fa-solid fa-lock"></i> ЛІМІТ';
+              addBtn.classList.add('btn-disabled-limit');
           } else {
               addBtn.disabled = false;
               addBtn.innerHTML = 'Додати учасника';
+              addBtn.classList.remove('btn-disabled-limit');
           }
       }
   }
 
-  // LISTENERS
   document.getElementById('navToggle')?.addEventListener('click', ()=>document.getElementById('mainNav').classList.toggle('open'));
   document.getElementById('lightboxCloseBtn')?.addEventListener('click', ()=>document.getElementById('lightbox').classList.remove('open'));
   document.getElementById('openAuthBtn')?.addEventListener('click', ()=>{
       if(currentUser) {
-          if(currentUser.role==='admin') { document.getElementById('adminSidebar').classList.add('open'); apiFetch('/api/users').then(renderAdminSidebar); } 
+          if(currentUser.role==='admin') { document.getElementById('adminSidebar').classList.add('open'); apiFetch('/api/users').then(data => { allUsersData = data; renderAdminSidebar(allUsersData); }); } 
           else { customConfirm('Вийти?', (r)=>{ if(r) { removeCurrentUser(); location.reload(); } }); }
       } else { document.getElementById('authModal').classList.add('show'); }
   });
@@ -327,6 +337,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('memberSearch')?.addEventListener('input', (e) => { renderMembers(e.target.value); });
+  document.getElementById('userSearchSidebar')?.addEventListener('input', (e) => { renderAdminSidebar(allUsersData, e.target.value); });
+
   document.getElementById('addMemberBtn')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.add('show'));
   document.getElementById('closeMemberModal')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.remove('show'));
   
