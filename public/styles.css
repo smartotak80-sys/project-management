@@ -26,6 +26,8 @@ body {
 
 /* --- СТИЛІ ПОЛІВ ВВЕДЕННЯ (ВІДПОВІДАЮТЬ МАКЕТАМ) --- */
 input, textarea, select {
+  /* Загальні стилі для полів */
+  width: 100%; /* Займають повну ширину за замовчуванням */
   background: #151619 !important; /* Дуже темний фон */
   border: 1px solid #333 !important; /* Чітка рамка */
   padding: 18px 20px; /* Більший внутрішній відступ */
@@ -34,6 +36,7 @@ input, textarea, select {
   font-family: inherit;
   font-size: 16px; /* Більший шрифт */
   transition: all 0.3s;
+  margin-bottom: 10px; /* Відступ між полями */
 }
 input:focus, textarea:focus {
   outline: none;
@@ -104,10 +107,25 @@ main { flex: 1; }
 .members-controls, .events-controls, .gallery-controls {
   display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px;
   background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);
+  align-items: center;
 }
-.events-controls textarea { height: 48px; min-height: 48px; resize: none; padding-top: 10px; }
-.events-controls input { padding: 12px 18px; }
-
+.events-controls input, .events-controls textarea {
+    margin-bottom: 0;
+    flex-grow: 1;
+    min-width: 150px;
+    padding: 12px 18px; /* Менший padding для компактності в рядку */
+}
+.events-controls textarea { 
+    height: 48px; min-height: 48px; 
+    resize: none; 
+    padding-top: 10px; 
+}
+.events-controls button {
+    height: 48px; /* Вирівнюємо по висоті з input */
+    padding: 0 25px;
+    font-size: 16px;
+    border-radius: 12px;
+}
 
 /* DASHBOARD MODAL (Unified Style) */
 .dashboard-modal { 
@@ -197,7 +215,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 
 .btn-large {
     padding: 18px 35px; /* Збільшений padding */
-    font-size: 16px; 
+    font-size: 18px; /* Збільшений шрифт */
     min-width: 240px; 
     border-radius: 12px; 
 }
@@ -219,6 +237,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
     background: transparent; 
     border: 1px solid #444; 
     color: #aaa; 
+    transition: all 0.3s ease;
 }
 .btn-outline:hover { 
     border-color: var(--accent); 
@@ -248,7 +267,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
     border-radius: 16px; 
     width: 100%; 
     max-width: 400px; 
-    border: 1px solid var(--accent); /* Чіткий червоний контур */
+    border: 1px solid var(--accent); 
     position: relative; 
     box-shadow: 0 0 30px rgba(255,42,42,0.2); 
 }
@@ -269,7 +288,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .btn-close-dash:hover { background: #222 !important; color: #fff; transform: none; }
 
 
-/* Confirm Modal Specifics (for image_e097dc.png) */
+/* Confirm Modal Specifics */
 .custom-modal-content.confirm-modal {
     max-width: 300px;
     background: #000;
