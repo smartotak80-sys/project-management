@@ -1,213 +1,415 @@
-// public/script.js
-document.addEventListener('DOMContentLoaded', () => {
-  const TOKEN_KEY = 'barracuda_token';
-  const USER_KEY = 'barracuda_user';
+/* ------------------------------
+   GLOBAL THEME
+------------------------------ */
+:root {
+  --bg-dark: #050505;
+  --bg-panel: #0f1012;
+  --bg-alt: #111214;
+  --accent: #ff2a2a;
+  --accent-hover: #ff4545;
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --radius: 14px;
+  --font-main: "Inter", system-ui, sans-serif;
+}
 
-  function getToken(){ return localStorage.getItem(TOKEN_KEY); }
-  function saveToken(t){ localStorage.setItem(TOKEN_KEY, t); }
-  function removeToken(){ localStorage.removeItem(TOKEN_KEY); }
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-  function getUser(){ try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch { return null; } }
-  function saveUser(u){ localStorage.setItem(USER_KEY, JSON.stringify(u)); }
-  function removeUser(){ localStorage.removeItem(USER_KEY); }
+html, body {
+  background: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-main);
+  scroll-behavior: smooth;
+}
 
-  function authHeaders() {
-    const token = getToken();
-    return token ? { Authorization: 'Bearer ' + token } : {};
+img {
+  max-width: 100%;
+  border-radius: var(--radius);
+}
+
+ul { list-style: none; }
+
+/* ------------------------------
+   LAYOUT
+------------------------------ */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.section {
+  padding: 80px 0;
+}
+
+.section.alt {
+  background: var(--bg-panel);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* ------------------------------
+   HEADER
+------------------------------ */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(5, 5, 5, 0.8);
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 70px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-text .title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.brand-text .subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* NAV */
+.site-nav ul {
+  display: flex;
+  gap: 20px;
+}
+
+.site-nav a {
+  color: var(--text-main);
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.site-nav a:hover {
+  color: var(--accent);
+}
+
+.nav-toggle {
+  display: none;
+  color: #fff;
+  background: none;
+  border: none;
+  font-size: 28px;
+}
+
+/* MOBILE NAV */
+@media (max-width: 768px) {
+  .site-nav {
+    display: none;
+    position: absolute;
+    top: 70px;
+    right: 0;
+    background: var(--bg-panel);
+    padding: 25px;
+    width: 220px;
+    border-left: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border);
+    border-radius: 0 0 0 var(--radius);
   }
 
-  async function apiFetch(url, options = {}) {
-    options.headers = { ...(options.headers||{}), 'Content-Type': 'application/json', ...authHeaders() };
-    try {
-      const res = await fetch(url, options);
-      const data = await res.json().catch(()=>null);
-      if (!res.ok) {
-        const msg = data?.message || 'Server error';
-        showAlert(msg);
-        return null;
-      }
-      return data;
-    } catch (err) {
-      showAlert('Network error');
-      return null;
-    }
+  .site-nav.open {
+    display: block;
   }
 
-  function showAlert(msg) {
-    // small custom alert using customConfirm as alert
-    customConfirm(msg, undefined);
+  .site-nav ul {
+    flex-direction: column;
+    gap: 15px;
   }
 
-  function customConfirm(message, callback) {
-      const modal = document.getElementById('customConfirmModal');
-      const msg = document.getElementById('confirmMessage');
-      const okBtn = document.getElementById('confirmOkBtn');
-      const cancelBtn = document.getElementById('confirmCancelBtn');
-      const isAlert = callback === undefined;
-
-      cancelBtn.style.display = isAlert ? 'none' : 'inline-block';
-      okBtn.textContent = isAlert ? 'Зрозуміло' : 'Так';
-      msg.textContent = message;
-      modal.classList.add('show');
-
-      const cleanup = (res) => {
-          modal.classList.remove('show');
-          okBtn.onclick = null; cancelBtn.onclick = null;
-          if (!isAlert && callback) callback(res);
-      };
-      okBtn.onclick = () => cleanup(true);
-      if(cancelBtn) cancelBtn.onclick = () => cleanup(false);
-      document.getElementById('closeConfirmModal').onclick = () => cleanup(false);
+  .nav-toggle {
+    display: block;
   }
+}
 
-  // UI
-  const authBtn = document.getElementById('openAuthBtn');
-  const authText = document.getElementById('authBtnText');
-  const dashModal = document.getElementById('dashboardModal');
+/* ------------------------------
+   HERO
+------------------------------ */
+.hero {
+  display: flex;
+  align-items: center;
+  padding: 140px 0;
+  background: linear-gradient(to bottom right, #0f0f0f, #181818);
+}
 
-  function updateAuthUI() {
-    const user = getUser();
-    if (user) {
-      document.body.classList.add('is-logged-in');
-      if (user.role === 'admin') document.body.classList.add('is-admin');
-      authText.textContent = 'Кабінет';
-      authBtn.onclick = openDashboard;
-    } else {
-      document.body.classList.remove('is-logged-in', 'is-admin');
-      authText.textContent = 'Вхід';
-      authBtn.onclick = () => document.getElementById('authModal').classList.add('show');
-    }
-  }
+.hero h1 {
+  font-size: 48px;
+  font-weight: 900;
+  margin-bottom: 15px;
+}
 
-  // Load data
-  let members = [];
+.lead {
+  margin-bottom: 25px;
+  color: var(--text-muted);
+}
 
-  async function loadInitialData() {
-    const m = await apiFetch('/api/members');
-    if (m) { members = m; renderMembers(); }
-    const n = await apiFetch('/api/news');
-    if (n) renderNews(n);
-    const g = await apiFetch('/api/gallery');
-    if (g) renderGallery(g);
-    document.getElementById('year').textContent = new Date().getFullYear();
-    updateAuthUI();
-  }
+/* ------------------------------
+   BUTTONS
+------------------------------ */
+.btn {
+  padding: 12px 22px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  transition: 0.25s;
+}
 
-  // Renders
-  function renderMembers(filter='') {
-    const grid = document.getElementById('membersGrid');
-    const filtered = members.filter(m => (m.name||'').toLowerCase().includes(filter.toLowerCase()) || (m.role||'').toLowerCase().includes(filter.toLowerCase()));
-    grid.innerHTML = filtered.map(m => `
-      <div class="member">
-        <h3 style="margin:0 0 5px; color:#fff;">${m.name}</h3>
-        <div class="role-badge">${m.role}</div>
-        <div style="margin-top:15px; font-size:12px; color:#666;">
-          ${m.links?.discord ? `<div><i class="fa-brands fa-discord"></i> ${m.links.discord}</div>` : ''}
-        </div>
-      </div>
-    `).join('') || '<p style="color:#888;">Немає учасників.</p>';
-  }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
 
-  function renderNews(list) {
-    const out = document.getElementById('newsList');
-    out.innerHTML = list.map(n => `
-      <div style="background:#121315; padding:20px; margin-bottom:15px; border-radius:12px; border:1px solid #222; position:relative;">
-          <div style="color:var(--accent); font-size:12px; font-weight:bold;">${n.date || ''}</div>
-          <h3 style="margin:5px 0 10px; color:#fff;">${n.title}</h3>
-          <p style="color:#bbb; font-size:14px; margin:0;">${n.summary}</p>
-          ${ (getUser() && getUser().role === 'admin') ? `<button class="btn btn-outline admin-only" style="position:absolute; top:15px; right:15px; padding:5px 10px; font-size:10px;" data-del="${n.id}">DEL</button>` : '' }
-      </div>
-    `).join('');
-    // attach deletes
-    document.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', (e) => {
-      const id = e.currentTarget.getAttribute('data-del');
-      customConfirm('Видалити новину?', async (r) => { if (r) { await apiFetch('/api/news/' + id, { method: 'DELETE' }); loadInitialData(); } });
-    }));
-  }
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+}
+.btn-outline:hover {
+  background: var(--accent);
+  color: #fff;
+}
 
-  function renderGallery(list) {
-    const out = document.getElementById('galleryGrid');
-    out.innerHTML = list.map(g => `
-      <div>
-        <img src="${g.url}" onclick="document.getElementById('lightbox').classList.add('show'); document.getElementById('lightboxImage').src='${g.url}'">
-        ${ (getUser() && getUser().role === 'admin') ? `<button class="btn btn-outline admin-only" style="position:absolute; bottom:5px; right:5px; padding:2px 8px; font-size:10px;" data-gdel="${g.id}">DEL</button>` : '' }
-      </div>
-    `).join('');
-    document.querySelectorAll('[data-gdel]').forEach(b => b.addEventListener('click', (e)=>{
-      const id = e.currentTarget.getAttribute('data-gdel');
-      customConfirm('Видалити фото?', async (r)=>{ if(r){ await apiFetch('/api/gallery/' + id, { method: 'DELETE' }); loadInitialData(); } });
-    }));
-  }
+.full-width {
+  width: 100%;
+  display: block;
+}
 
-  // Auth forms
-  document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = document.getElementById('loginUser').value.trim();
-    const password = document.getElementById('loginPass').value;
-    const res = await apiFetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
-    if (res && res.success) {
-      saveToken(res.token);
-      saveUser(res.user);
-      document.getElementById('authModal').classList.remove('show');
-      updateAuthUI();
-      loadInitialData();
-    }
-  });
+/* ------------------------------
+   CARDS
+------------------------------ */
+.cards {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
 
-  document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const user = document.getElementById('regUser').value.trim();
-    const email = document.getElementById('regEmail').value.trim();
-    const pass = document.getElementById('regPass').value;
-    const pass2 = document.getElementById('regPassConfirm').value;
-    if (pass !== pass2) return customConfirm('Паролі не співпадають', undefined);
-    const res = await apiFetch('/api/auth/register', { method: 'POST', body: JSON.stringify({ username: user, email, password: pass }) });
-    if (res && res.success) {
-      customConfirm('Зареєстровано. Увійдіть.', undefined);
-      document.getElementById('tabLogin').click();
-    }
-  });
+.card {
+  background: var(--bg-alt);
+  border: 1px solid var(--glass-border);
+  padding: 20px;
+  border-radius: var(--radius);
+  transition: 0.2s;
+}
+.card:hover {
+  border-color: var(--accent);
+}
 
-  // Dashboard open / close (simple)
-  window.openDashboard = function() {
-    const u = getUser();
-    if (!u) return document.getElementById('authModal').classList.add('show');
-    // show dashboard (you should fill dashboard content)
-    if (!document.getElementById('dashboardModal')) return alert('Dashboard not found in DOM (add HTML)');
-    document.getElementById('dashboardModal').classList.add('show');
-    // fill profile info if you have elements
-    const nameEl = document.getElementById('dashUsername');
-    if (nameEl) nameEl.textContent = u.username;
-  };
+/* ------------------------------
+   MEMBERS
+------------------------------ */
+.members-controls {
+  margin-bottom: 20px;
+}
 
-  // Logout
-  document.getElementById('logoutBtn')?.addEventListener('click', () => {
-    removeToken(); removeUser(); location.reload();
-  });
-  document.getElementById('closeAuth')?.addEventListener('click', ()=>document.getElementById('authModal').classList.remove('show'));
-  document.getElementById('lightboxCloseBtn')?.addEventListener('click', ()=>document.getElementById('lightbox').classList.remove('show'));
-  document.getElementById('navToggle')?.addEventListener('click', ()=>document.getElementById('mainNav').classList.toggle('open'));
+#memberSearch {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+  border: 1px solid var(--glass-border);
+  color: #fff;
+}
 
-  // Admin actions
-  document.getElementById('addNewsBtn')?.addEventListener('click', async ()=>{
-    const title = document.getElementById('newsTitle').value.trim();
-    const date = document.getElementById('newsDate').value;
-    const summary = document.getElementById('newsSummary').value.trim();
-    if (!title) return;
-    await apiFetch('/api/news', { method: 'POST', body: JSON.stringify({ title, date, summary }) });
-    loadInitialData();
-  });
+.members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 25px;
+}
 
-  document.getElementById('addGalleryBtn')?.addEventListener('click', async ()=>{
-    const url = document.getElementById('galleryUrl').value.trim();
-    if (!url) return;
-    await apiFetch('/api/gallery', { method: 'POST', body: JSON.stringify({ url }) });
-    loadInitialData();
-  });
+.member-card {
+  background: var(--bg-alt);
+  padding: 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  transition: 0.2s;
+}
+.member-card:hover {
+  border-color: var(--accent);
+}
 
-  // Search
-  document.getElementById('memberSearch')?.addEventListener('input', (e)=>renderMembers(e.target.value));
+.member-card h3 {
+  margin-bottom: 5px;
+}
 
-  loadInitialData();
-  updateAuthUI();
-});
+/* ------------------------------
+   NEWS LIST
+------------------------------ */
+.events-controls {
+  background: var(--bg-alt);
+  padding: 15px;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 25px;
+  border: 1px solid var(--glass-border);
+}
+
+#newsList .news-item {
+  background: var(--bg-alt);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 15px;
+}
+
+/* ------------------------------
+   GALLERY
+------------------------------ */
+.gallery-controls input {
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+  border: 1px solid var(--glass-border);
+  color: #fff;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.gallery-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.gallery-item img {
+  transition: 0.3s;
+}
+.gallery-item:hover img {
+  transform: scale(1.05);
+}
+
+/* ------------------------------
+   FOOTER
+------------------------------ */
+footer {
+  color: var(--text-muted);
+}
+
+/* ------------------------------
+   MODALS (AUTH, DASHBOARD, CONFIRM)
+------------------------------ */
+.auth-modal,
+.dashboard-modal,
+.custom-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+}
+
+.auth-modal.active,
+.dashboard-modal.active,
+.custom-modal.active {
+  display: flex;
+}
+
+.auth-content {
+  background: var(--bg-alt);
+  padding: 30px;
+  border-radius: var(--radius);
+  width: 350px;
+  border: 1px solid var(--glass-border);
+}
+
+.close-auth,
+.close-modal {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.auth-content input {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  border: 1px solid var(--glass-border);
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.auth-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.auth-tabs button {
+  padding: 8px 14px;
+  border: none;
+  background: var(--bg-panel);
+  color: #fff;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.auth-tabs button.active {
+  background: var(--accent);
+}
+
+/* ------------------------------
+   LIGHTBOX
+------------------------------ */
+#lightbox {
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+#lightbox.active {
+  display: flex;
+}
+
+#lightbox img {
+  border-radius: var(--radius);
+  max-height: 85vh;
+}
+
+#lightboxCloseBtn {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  cursor: pointer;
+}
