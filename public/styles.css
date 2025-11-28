@@ -198,6 +198,53 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 .auth-tabs button { flex: 1; background: none; border: none; padding: 10px; color: #666; cursor: pointer; font-weight: bold; border-bottom: 2px solid transparent; }
 .auth-tabs button.active { color: #fff; border-color: var(--accent); }
 
+/* --- CUSTOM STYLES FOR AUTH MODAL (to match images and reduce spacing) --- */
+
+.auth-content { 
+    background: #000000; /* Чорне тло, як на фото */
+}
+.close-auth {
+    color: #444; /* Хрестик закриття менш помітний */
+    right: 15px; 
+    top: 15px;
+}
+.auth-tabs {
+    margin-bottom: 25px; /* Більший відступ під вкладками */
+}
+.auth-tabs button {
+    font-size: 18px;
+    font-weight: 800;
+}
+.auth-tabs button.active {
+    border-width: 3px; /* Потовщуємо червону лінію */
+}
+
+/* Стилізація полів вводу для вигляду "блоків" та зменшення відстані */
+.auth-content input[type="text"], 
+.auth-content input[type="email"], 
+.auth-content input[type="password"] {
+  padding: 18px 20px; /* Збільшений відступ для вигляду "блоку" */
+  border-radius: 12px; 
+  margin-bottom: 10px; /* КЛЮЧОВЕ: Зменшуємо відстань між полями */
+  
+  background: #191919 !important; /* Темний фон полів */
+  border: 1px solid #111 !important; /* Дуже темна рамка */
+  font-size: 16px;
+}
+.auth-content input:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 5px rgba(255, 42, 42, 0.5);
+}
+
+/* Зміна розміру кнопки та відстані від неї */
+.auth-content .btn-primary {
+    margin-top: 20px; /* КЛЮЧОВЕ: Зменшуємо відстань від останнього поля до кнопки */
+    padding: 18px 20px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 12px;
+}
+
 /* Animation */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .logged-in-only { display: none !important; }
