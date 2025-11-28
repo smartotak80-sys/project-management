@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Barracuda Family — Stake RP</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Courier+New&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Courier+New&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
@@ -111,26 +111,19 @@
         </div>
       </section>
 
-      <section id="apply" class="section alt">
-        <div class="container" style="text-align: center;">
-          <h2 class="animated-content" data-delay="0s">Подати заявку</h2>
-          <p class="muted animated-content" data-delay="0.1s">Набір у Barakuda Family відбувається виключно через наш Discord сервер.</p>
-          <div class="discord-banner animated-content" data-delay="0.3s" style="max-width: 600px; margin: 30px auto;">
-            <div style="margin-bottom: 30px;">
-              <p style="font-size: 18px; margin-bottom: 10px;">Крок 1: Перейдіть у Discord</p>
-              <a href="https://discord.gg/CxYnyKeb" target="_blank" class="btn btn-discord">
-                <i class="fa-brands fa-discord"></i> Приєднатися до серверу
-              </a>
-            </div>
-            <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 0 20px;"></div>
-            <div style="margin-top: 30px;">
-              <p style="font-size: 18px; margin-bottom: 15px;">Крок 2: Відкрийте канал подачі заявок</p>
-              <div style="background: #2b2d31; padding: 12px 24px; border-radius: 8px; display: inline-flex; align-items: center; gap: 10px; font-weight: bold; color: #dbdee1; border: 1px solid #1e1f22; font-family: 'Inter', sans-serif;">
-                <span style="font-size: 20px; color: #949BA4;">#</span> 
-                <span>👀・Zayavki</span>
-              </div>
-              <p class="muted" style="margin-top: 15px; font-size: 14px;">Вся інформація та форма для заповнення знаходиться там.</p>
-            </div>
+      <section id="apply" class="section alt" style="padding: 100px 0;">
+        <div class="container">
+          <div class="apply-card animated-content">
+             <div class="apply-bg-glow"></div>
+             <div class="apply-content">
+                <h2 class="apply-title">ПОДАТИ ЗАЯВКУ</h2>
+                <p class="apply-desc">Хочеш стати частиною нашої родини? Переходь у Discord та заповнюй анкету в каналі <span style="color:var(--color-discord); font-weight:bold;">#zayavki</span>.</p>
+                <div class="apply-actions">
+                   <a href="https://discord.gg/CxYnyKeb" target="_blank" class="btn btn-discord-large">
+                      <i class="fa-brands fa-discord"></i> ПЕРЕЙТИ В DISCORD
+                   </a>
+                </div>
+             </div>
           </div>
         </div>
       </section>
@@ -147,7 +140,7 @@
     </main>
     
     <footer class="site-footer">
-      <div class="container animated-content" data-delay="0s">
+      <div class="container">
         <p>© <span id="year"></span> Barracuda Family — Stake RP. Всі права захищені.</p>
       </div>
     </footer>
@@ -202,7 +195,6 @@
     </div>
 
     <div class="sidebar-content">
-      
       <div id="tab-users" class="tab-pane active">
         <div class="search-wrapper">
           <i class="fa-solid fa-search"></i>
@@ -215,34 +207,21 @@
         <div class="stats-grid">
           <div class="stat-card">
             <i class="fa-solid fa-users"></i>
-            <div class="stat-info">
-              <span id="statTotalUsers">0</span>
-              <small>Всього гравців</small>
-            </div>
+            <div class="stat-info"><span id="statTotalUsers">0</span><small>Всього гравців</small></div>
           </div>
           <div class="stat-card highlight">
             <i class="fa-solid fa-shield-cat"></i>
-            <div class="stat-info">
-              <span id="statTotalAdmins">0</span>
-              <small>Адміністраторів</small>
-            </div>
+            <div class="stat-info"><span id="statTotalAdmins">0</span><small>Адміністраторів</small></div>
           </div>
           <div class="stat-card">
             <i class="fa-solid fa-newspaper"></i>
-            <div class="stat-info">
-              <span id="statTotalNews">0</span>
-              <small>Новин</small>
-            </div>
+            <div class="stat-info"><span id="statTotalNews">0</span><small>Новин</small></div>
           </div>
           <div class="stat-card">
             <i class="fa-solid fa-images"></i>
-            <div class="stat-info">
-              <span id="statTotalGallery">0</span>
-              <small>Фото</small>
-            </div>
+            <div class="stat-info"><span id="statTotalGallery">0</span><small>Фото</small></div>
           </div>
         </div>
-        
         <div class="activity-log">
           <h4>Остання активність</h4>
           <ul class="fake-logs">
@@ -275,7 +254,6 @@
           <p>Uptime: 24d 12h 30m</p>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -311,7 +289,7 @@
         <div id="memberLimitWarning" class="limit-warning"></div>
         <input type="text" id="memberNewName" placeholder="Ім'я учасника" required>
         <input type="text" id="memberNewRole" placeholder="Роль" required>
-        <h4 class="social-header">Соцмережі (не обов'язково)</h4>
+        <h4 class="social-header">Соцмережі</h4>
         <input type="text" id="memberNewDiscord" placeholder="Discord юзернейм (user#0001)">
         <input type="url" id="memberNewYoutube" placeholder="YouTube URL">
         <input type="url" id="memberNewTg" placeholder="Telegram URL">
