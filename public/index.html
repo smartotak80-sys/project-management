@@ -15,8 +15,8 @@
         <a class="brand" href="#home">
           <div class="logo"></div>
           <div class="brand-text">
-            <div class="title">Barracuda Family</div>
-            <div class="subtitle">Stake RP — GTA V Roleplay</div>
+            <div class="title">Barracuda</div>
+            <div class="subtitle">Family</div>
           </div>
         </a>
         <button id="navToggle" class="nav-toggle">☰</button>
@@ -55,11 +55,11 @@
       <section id="about" class="section">
         <div class="container">
           <h2>Про Barracuda Family</h2>
-          <p class="muted">Barracuda Family — це згуртована команда гравців на сервері Stake RP. Ми створюємо глибокі сюжетні лінії, організовуємо операції, захоплюємо території та підтримуємо один одного.</p>
+          <p class="muted">Згуртована команда гравців на сервері Stake RP.</p>
           <div class="cards">
-            <article class="card"><h3>Місія</h3><p>Розвивати цікаві та драматичні історії всередині сервера, створювати контент та заходи для гравців.</p></article>
-            <article class="card"><h3>Методи</h3><p>Координація дій, планування операцій, дотримання внутрішніх правил та взаємна допомога.</p></article>
-            <article class="card"><h3>Розвиток</h3><p>Підтримку нових гравців, навчання ролеплею, регулярні заходи та можливість кар'єрного росту в сім'ї.</p></article>
+            <article class="card"><h3>Місія</h3><p>Розвивати цікаві історії та створювати контент.</p></article>
+            <article class="card"><h3>Методи</h3><p>Координація дій та взаємна допомога.</p></article>
+            <article class="card"><h3>Розвиток</h3><p>Підтримка новачків та кар'єрний ріст.</p></article>
           </div>
         </div>
       </section>
@@ -79,7 +79,7 @@
           <h2>Новини та події</h2>
           <div class="events-controls admin-only">
             <input id="newsTitle" placeholder="Заголовок">
-            <input id="newsDate" type="date">
+            <input id="newsDate" type="date" placeholder="дд.мм.рррр">
             <textarea id="newsSummary" placeholder="Опис події..."></textarea>
             <button id="addNewsBtn" class="btn btn-primary">Додати</button>
           </div>
@@ -120,8 +120,8 @@
               Крок 2: Відкрийте канал подачі заявок
             </p>
             
-            <div style="display:inline-block; background:#36393f; padding:12px 25px; border-radius:10px; font-size:20px; font-weight:700; color:#fff;">
-              <i class="fa-solid fa-file-invoice-check" style="margin-right: 8px;"></i> Заявки
+            <div style="display:inline-flex; align-items: center; background:#36393f; padding:12px 25px; border-radius:10px; font-size:20px; font-weight:700; color:#fff;">
+              <span style="font-size: 20px; margin-right: 8px;">#</span><span style="font-family: Arial, sans-serif; font-size: 24px; margin-right: 8px;">👀</span><span style="font-size: 20px;">Zayavki</span>
             </div>
             
             <p style="color:#888; font-size:14px; margin-top:20px;">
@@ -133,7 +133,7 @@
     </main>
     
     <footer style="padding:40px 0; text-align:center; border-top:1px solid #222; margin-top:50px;">
-      <div class="container"><p style="color:#555;">© <span id="year"></span>Barakuda Family — Stake RP. Всі права захищені.</p></div>
+      <div class="container"><p style="color:#555;">© <span id="year"></span> Barracuda Family.</p></div>
     </footer>
   </div>
 
@@ -156,7 +156,7 @@
                 
                 <div class="admin-only-nav" style="display:none; margin-top:15px; border-top:1px solid #222; padding-top:10px;">
                     <small style="padding-left:10px; color:#555; text-transform:uppercase; font-size:10px;">Admin Zone</small>
-                    <button onclick="switchDashTab('admin-members')"><i class="fa-solid fa-users-gear"></i> Учасники</button>
+                    <button onclick="switchDashTab('admin-members')"><i class="fa-solid fa-users-gear"></i> Учасники</button> 
                     <button onclick="switchDashTab('users')"><i class="fa-solid fa-users"></i> Користувачі</button>
                     <button onclick="switchDashTab('stats')"><i class="fa-solid fa-chart-line"></i> Статистика</button>
                 </div>
@@ -192,11 +192,30 @@
             <div id="tab-admin-members" class="dash-view">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2 style="border:none; margin:0;">Керування учасниками</h2>
-                    <input id="adminMemberSearchInput" placeholder="Пошук за іменем/роллю..." style="max-width:250px;">
+                    <button id="openAdminAddMember" class="btn btn-primary">
+                        <i class="fa-solid fa-plus"></i> Створити учасника
+                    </button>
                 </div>
+                <div id="adminAddMemberContainer" style="background:#151619; padding:20px; border-radius:12px; border:1px solid #333; margin-bottom:20px; display:none;">
+                    <h3 style="margin-top:0;">Створення нового учасника</h3>
+                    <form id="adminAddMemberForm" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <input type="text" id="admName" placeholder="Ім'я (IC Name)" required>
+                        <input type="text" id="admRole" placeholder="Посада / Ранг" required>
+                        <input type="text" id="admOwner" placeholder="Логін власника (Username)" required>
+                        <div style="grid-column: 1 / -1; margin:0;">
+                           <label style="font-size:12px; color:#666; text-transform:uppercase; font-weight:bold;">Соцмережі (необов'язково)</label>
+                        </div>
+                        <input type="text" id="admDiscord" placeholder="Discord User#0000">
+                        <input type="text" id="admYoutube" placeholder="YouTube Link">
+                        <button type="submit" class="btn btn-primary full-width" style="grid-column: 1 / -1; margin-top:10px; padding: 12px 20px;">
+                            <i class="fa-solid fa-check"></i> Зберегти
+                        </button>
+                    </form>
+                </div>
+
+                <input id="adminMemberSearchInput" placeholder="Пошук за іменем/роллю..." style="max-width:100%; margin-bottom: 15px;">
                 <div id="adminMembersList" style="display:flex; flex-direction:column; gap:8px;"></div>
             </div>
-
             <div id="tab-users" class="dash-view">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2 style="border:none; margin:0;">База користувачів</h2>
