@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
-  const MAX_MEMBER_PER_USER = 1; 
-
+  
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
@@ -13,13 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const cancelBtn = document.getElementById('confirmCancelBtn');
       const isAlert = callback === undefined; 
       
-      if (isAlert) {
-          if(cancelBtn) cancelBtn.style.display = 'none';
-          if(okBtn) okBtn.textContent = 'Зрозуміло';
-      } else {
-          if(cancelBtn) cancelBtn.style.display = 'inline-block';
-          if(okBtn) okBtn.textContent = 'Так, продовжити';
-      }
+      cancelBtn.style.display = isAlert ? 'none' : 'inline-block';
+      okBtn.textContent = isAlert ? 'ОК' : 'Так';
       msg.textContent = message;
       modal.classList.add('show');
       
@@ -32,12 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if(cancelBtn) cancelBtn.onclick = () => cleanup(false);
       document.getElementById('closeConfirmModal').onclick = () => cleanup(false);
   }
-  window.customConfirm = customConfirm;
 
   let members = [];
   let currentUser = loadCurrentUser(); 
-  let allUsersData = [];
-
+  
   async function apiFetch(url, options = {}) {
       try {
           const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
@@ -48,250 +40,188 @@ document.addEventListener('DOMContentLoaded', () => {
               return null; 
           }
           return data;
-      } catch (error) {
-          console.error(error);
-          return null;
-      }
+      } catch (error) { return null; }
   }
 
   async function loadInitialData() {
       const m = await apiFetch('/api/members');
-      if (m) { members = m; renderMembers(); }
+      if (m) { members = m; renderPublicMembers(); }
       
       const n = await apiFetch('/api/news');
       if (n) renderNews(n);
       
       const g = await apiFetch('/api/gallery');
       if (g) renderGallery(g);
-
-      const counts = await apiFetch('/api/users/count');
-      if(counts && document.getElementById('statTotalUsers')){
-          document.getElementById('statTotalUsers').textContent = counts.totalUsers;
-          document.getElementById('statTotalAdmins').textContent = counts.totalAdmins;
-          document.getElementById('statTotalNews').textContent = n ? n.length : 0;
-          document.getElementById('statTotalGallery').textContent = g ? g.length : 0;
-      }
-
-      if (currentUser && currentUser.role === 'admin') {
-          allUsersData = await apiFetch('/api/users'); 
-          if (allUsersData) renderAdminSidebar(allUsersData);
-      }
       
       updateAuthUI();
       document.getElementById('year').textContent = new Date().getFullYear();
-      checkAnimate();
   }
 
-  function renderMembers(filter='') {
-    const grid = document.getElementById('membersGrid');
-    if(!grid) return;
-    const list = members.filter(m => (m.name + ' ' + m.role).toLowerCase().includes(filter.toLowerCase()));
-    
-    if(list.length===0) { grid.innerHTML = '<p class="muted">Немає учасників</p>'; return; }
-    
-    grid.innerHTML = list.map(m => {
-      const isOwner = currentUser && currentUser.username === m.owner;
-      const isAdmin = currentUser?.role === 'admin';
-      let links = '';
-      if(m.links?.discord) links += `<span class="social-link"><i class="fa-brands fa-discord"></i></span>`;
-      if(m.links?.youtube) links += `<a href="${m.links.youtube}" target="_blank" class="social-link"><i class="fa-brands fa-youtube"></i></a>`;
-      return `
-        <div class="member animated-content">
-          <div class="member-top">
-            <h3>${m.name}</h3>
-            <div class="role-badge">${m.role}</div>
-            <div class="social-links">${links}</div>
-          </div>
-          ${(isOwner || isAdmin) ? 
-            `<div class="member-actions admin-only" style="display:flex;">
-              <button class="btn btn-edit" onclick="window.editMember('${m.id}')"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn btn-delete" onclick="window.deleteMember('${m.id}')"><i class="fa-solid fa-trash"></i></button>
-            </div>` : ''}
-        </div>
-      `;
-    }).join('');
-    checkAnimate();
-  }
-
-  function renderNews(list) {
-      const el = document.getElementById('newsList');
-      if(!el) return;
-      el.innerHTML = list.length ? list.map(n => `
-        <div class="news-item animated-content">
-           <div style="font-size:12px; color:var(--accent);">${n.date}</div>
-           <strong>${n.title}</strong>
-           <p>${n.summary}</p>
-           <div class="admin-only"><button class="btn btn-delete" onclick="window.deleteNews('${n.id}')">Видалити</button></div>
-        </div>`).join('') : '<p class="muted">Немає подій</p>';
-      checkAnimate();
-  }
-  
-  function renderGallery(list) {
-      const el = document.getElementById('galleryGrid');
-      if(!el) return;
-      el.innerHTML = list.length ? list.map((g, idx) => `
-        <div class="animated-content">
-           <img src="${g.url}" onclick="window.openLightbox(${idx})">
-           <div class="admin-only"><button class="btn btn-delete" style="width:100%" onclick="window.deleteGallery('${g.id}')">Видалити</button></div>
-        </div>`).join('') : '<p class="muted">Пусто</p>';
-      window.galleryData = list;
-      checkAnimate();
-  }
-
-  function renderAdminSidebar(users, filter = '') {
-      const el = document.getElementById('userDatabaseSidebar');
-      if(!el) return;
+  // --- DASHBOARD LOGIC ---
+  const dashModal = document.getElementById('dashboardModal');
+  window.switchDashTab = (tab) => {
+      document.querySelectorAll('.dash-view').forEach(e => e.classList.remove('active'));
+      document.querySelectorAll('.dash-nav button').forEach(e => e.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
       
-      const filteredUsers = users.filter(u => u.username.toLowerCase().includes(filter.toLowerCase()));
+      // Highlight btn
+      const btnMap = { 'profile':0, 'my-member':1, 'users':2, 'stats':3 }; // approximate
+      const navBtns = document.querySelectorAll('.dash-nav button');
+      // Simple loop to find match text or icon could be better, but simple index for now:
+      // Just manually managing active class in HTML click handlers is often easier or querySelector
+      if(tab==='profile') navBtns[0].classList.add('active');
+      if(tab==='my-member') navBtns[1].classList.add('active');
+      if(tab==='users') { loadUsersAdmin(); }
+      if(tab==='stats') { loadStatsAdmin(); }
+  };
+
+  function openDashboard() {
+      if(!currentUser) return;
+      dashModal.classList.add('show');
+      document.getElementById('dashUsername').textContent = currentUser.username;
+      document.getElementById('dashRole').textContent = currentUser.role;
       
-      if(filteredUsers.length === 0) {
-          el.innerHTML = '<p class="muted" style="text-align:center;">Нікого не знайдено</p>';
-          return;
-      }
+      // Fill Profile Tab
+      document.getElementById('pLogin').textContent = currentUser.username;
+      document.getElementById('pRole').textContent = currentUser.role === 'admin' ? 'Administrator' : 'Учасник';
+      document.getElementById('pDate').textContent = new Date().toLocaleDateString(); // Mock date if not saved locally
 
-      el.innerHTML = filteredUsers.map(u => {
-          const isMe = currentUser && u.username === u.username;
-          const isAdmin = u.role === 'admin';
-          const isOnline = isMe ? true : (Math.random() > 0.4); 
-          const statusClass = isOnline ? 'online' : 'offline';
-          const statusText = isOnline ? 'Online' : 'Offline';
-          
-          const regDate = new Date(u.regDate);
-          const dateStr = regDate.toLocaleDateString('uk-UA');
-          const timeStr = regDate.toLocaleTimeString('uk-UA');
-          const fullRegStr = `${dateStr}, ${timeStr}`;
+      // Admin Nav Visibility
+      document.querySelector('.admin-only-nav').style.display = currentUser.role === 'admin' ? 'block' : 'none';
 
-          let avatarIcon = `<i class="fa-solid fa-user"></i>`;
-          let avatarClass = 'u-avatar';
-          if (isAdmin) {
-             avatarIcon = `<i class="fa-solid fa-user-shield"></i>`; 
-             avatarClass += ' is-admin-avatar';
-          }
+      // Load My Member Tab
+      loadMyMemberTab();
+  }
 
-          return `
-            <div class="user-card-row animate-in">
-                <div class="${avatarClass}">${avatarIcon}</div>
-                <div class="u-details-grid">
-                    <div class="u-name-row">
-                        <span class="u-login">${u.username}</span>
-                        <div class="u-status-badge ${statusClass}">
-                           <div class="status-dot"></div> ${statusText}
-                        </div>
-                    </div>
-                    <div class="u-sub-info">
-                       <span><i class="fa-solid fa-envelope"></i> ${u.email}</span>
-                    </div>
-                    <div class="u-reg-date">
-                       <i class="fa-regular fa-calendar-days"></i> Рег: ${fullRegStr}
+  function loadMyMemberTab() {
+      const container = document.getElementById('myMemberContainer');
+      const myMember = members.find(m => m.owner === currentUser.username);
+      
+      if(myMember) {
+          // SHOW MEMBER CARD (Cannot add more)
+          container.innerHTML = `
+            <div class="dash-limit-msg" style="text-align:left; display:flex; gap:20px; align-items:center;">
+                <div style="font-size:40px; color:var(--accent);"><i class="fa-solid fa-user-check"></i></div>
+                <div>
+                    <h3>${myMember.name}</h3>
+                    <p class="muted">Роль: ${myMember.role}</p>
+                    <div style="margin-top:10px;">
+                        <button class="btn btn-outline" onclick="window.deleteMember('${myMember.id}')">Видалити персонажа</button>
                     </div>
                 </div>
-                ${(!isMe && !isAdmin) ? 
-                    `<button class="btn-delete-user" onclick="window.banUser('${u.username}')" title="Видалити акаунт">
-                        <i class="fa-solid fa-trash-can"></i>
-                     </button>` : ''}
             </div>
+            <p style="margin-top:20px; color:#555; text-align:center;">У вас вже є 1 персонаж (Ліміт).</p>
           `;
-      }).join('');
+      } else {
+          // SHOW ADD FORM
+          container.innerHTML = `
+            <form id="dashAddMemberForm" class="dash-form">
+                <h3>Створити персонажа</h3>
+                <input type="text" id="dmName" placeholder="Ім'я (IC Name)" required>
+                <input type="text" id="dmRole" placeholder="Посада / Ранг" required>
+                <label style="font-size:12px; color:#666;">Соціальні мережі</label>
+                <input type="text" id="dmDiscord" placeholder="Discord">
+                <input type="text" id="dmYoutube" placeholder="YouTube">
+                <button type="submit" class="btn btn-primary full-width">Створити</button>
+            </form>
+          `;
+          
+          document.getElementById('dashAddMemberForm').onsubmit = async (e) => {
+              e.preventDefault();
+              const body = {
+                  name: document.getElementById('dmName').value,
+                  role: document.getElementById('dmRole').value,
+                  owner: currentUser.username,
+                  links: { discord: document.getElementById('dmDiscord').value, youtube: document.getElementById('dmYoutube').value }
+              };
+              const res = await apiFetch('/api/members', { method:'POST', body: JSON.stringify(body) });
+              if(res && res.success) {
+                  customConfirm('Персонажа створено!', true);
+                  // Reload members and refresh tab
+                  const m = await apiFetch('/api/members');
+                  if(m) { members = m; renderPublicMembers(); loadMyMemberTab(); }
+              }
+          };
+      }
   }
 
-  window.editMember = (id) => {
-      const m = members.find(x => x.id === id);
-      if(!m) return;
-      document.getElementById('editMemberId').value = m.id;
-      document.getElementById('editMemberName').value = m.name;
-      document.getElementById('editMemberRole').value = m.role;
-      document.getElementById('editMemberDiscord').value = m.links?.discord || '';
-      document.getElementById('editMemberYoutube').value = m.links?.youtube || '';
-      document.getElementById('editMemberTg').value = m.links?.tg || '';
-      document.getElementById('editMemberModal').classList.add('show');
-  };
+  async function loadUsersAdmin() {
+      const list = document.getElementById('adminUsersList');
+      list.innerHTML = '<p class="muted">Завантаження...</p>';
+      const users = await apiFetch('/api/users');
+      if(!users) return;
+      list.innerHTML = users.map(u => `
+        <div class="u-row">
+            <div>
+                <strong>${u.username}</strong> <span style="font-size:11px; color:#666;">(${u.email})</span>
+                <div style="font-size:10px; color:#444;">Role: ${u.role}</div>
+            </div>
+            ${u.role!=='admin' ? `<button class="btn-outline" style="padding:5px 10px; font-size:11px; border-color:#d33; color:#d33;" onclick="window.banUser('${u.username}')">BAN</button>` : ''}
+        </div>
+      `).join('');
+  }
 
-  document.getElementById('editMemberForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const id = document.getElementById('editMemberId').value;
-      const body = {
-          name: document.getElementById('editMemberName').value,
-          role: document.getElementById('editMemberRole').value,
-          links: {
-              discord: document.getElementById('editMemberDiscord').value,
-              youtube: document.getElementById('editMemberYoutube').value,
-              tg: document.getElementById('editMemberTg').value
-          }
-      };
-      const res = await apiFetch(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify(body) });
-      if(res && res.success) {
-          customConfirm("Зміни збережено!", true);
-          document.getElementById('editMemberModal').classList.remove('show');
-          loadInitialData(); 
+  async function loadStatsAdmin() {
+      const s = await apiFetch('/api/users/count');
+      if(s) {
+          document.getElementById('stUsers').textContent = s.totalUsers;
+          document.getElementById('stAdmins').textContent = s.totalAdmins;
+          document.getElementById('stMembers').textContent = members.length;
       }
-  });
+  }
 
-  window.deleteMember = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); loadInitialData(); } });
-  window.deleteNews = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); loadInitialData(); } });
-  window.deleteGallery = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); loadInitialData(); } });
-  window.banUser = async (u) => customConfirm(`Видалити акаунт ${u} та всіх його учасників?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadInitialData(); } });
+  // --- PUBLIC RENDER ---
+  function renderPublicMembers() {
+      const grid = document.getElementById('membersGrid');
+      grid.innerHTML = members.map(m => `
+        <div class="card">
+            <h3>${m.name}</h3>
+            <div style="color:var(--accent); font-size:12px; margin-bottom:10px;">${m.role}</div>
+            <div style="font-size:12px; color:#666;">
+                ${m.links?.discord ? `<i class="fa-brands fa-discord"></i> ${m.links.discord}` : ''}
+            </div>
+        </div>
+      `).join('');
+  }
   
-  window.openLightbox = (idx) => {
-      const g = window.galleryData || [];
-      if(!g[idx]) return;
-      const lb = document.getElementById('lightbox');
-      if(lb) { lb.classList.add('open'); document.getElementById('lightboxImage').src = g[idx].url; }
-  };
+  function renderNews(list) { document.getElementById('newsList').innerHTML = list.map(n => `<div style="background:#151619; padding:15px; margin-bottom:10px; border-radius:8px;"><strong>${n.title}</strong><br><small>${n.date}</small><p>${n.summary}</p><button class="btn btn-outline admin-only" onclick="window.deleteNews('${n.id}')">Del</button></div>`).join(''); }
+  function renderGallery(list) { document.getElementById('galleryGrid').innerHTML = list.map(g => `<div><img src="${g.url}" style="width:100%; border-radius:8px;"><button class="btn btn-outline admin-only" onclick="window.deleteGallery('${g.id}')">Del</button></div>`).join(''); }
 
+  // --- AUTH & INIT ---
   function updateAuthUI() {
       const btn = document.getElementById('openAuthBtn');
       const txt = document.getElementById('authBtnText');
-      const adminAvatar = document.querySelector('.profile-glitch-avatar');
       
       if(currentUser) {
           document.body.classList.add('is-logged-in');
-          if(currentUser.role === 'admin') {
-              document.body.classList.add('is-admin');
-              if(adminAvatar) adminAvatar.innerHTML = '<i class="fa-solid fa-user-shield"></i>';
-          } else {
-               if(adminAvatar) adminAvatar.innerHTML = '<i class="fa-solid fa-user"></i>';
-          }
-          txt.textContent = currentUser.role==='admin' ? 'PANEL' : currentUser.username;
-          btn.classList.toggle('btn-primary', currentUser.role==='admin');
+          if(currentUser.role === 'admin') document.body.classList.add('is-admin');
+          txt.textContent = 'Кабінет'; // Button now says "Cabinet"
+          btn.onclick = openDashboard; // Opens Dashboard instead of Modal
       } else {
           document.body.classList.remove('is-logged-in', 'is-admin');
           txt.textContent = 'Вхід';
-      }
-      
-      const addBtn = document.getElementById('addMemberBtn');
-      if(addBtn && currentUser) {
-          const myCount = members.filter(m => m.owner === currentUser.username).length;
-          if(currentUser.role !== 'admin' && myCount >= MAX_MEMBER_PER_USER) {
-              addBtn.disabled = true; 
-              addBtn.innerHTML = '<i class="fa-solid fa-lock"></i> ЛІМІТ';
-              addBtn.classList.add('btn-disabled-limit');
-          } else {
-              addBtn.disabled = false;
-              addBtn.innerHTML = 'Додати учасника';
-              addBtn.classList.remove('btn-disabled-limit');
-          }
+          btn.onclick = () => document.getElementById('authModal').classList.add('show');
       }
   }
 
+  // GLOBAL ACTIONS
+  window.deleteMember = async (id) => customConfirm('Видалити персонажа?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); const m = await apiFetch('/api/members'); members=m; renderPublicMembers(); loadMyMemberTab(); } });
+  window.deleteNews = async (id) => customConfirm('Del?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); location.reload(); } });
+  window.deleteGallery = async (id) => customConfirm('Del?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); location.reload(); } });
+  window.banUser = async (u) => customConfirm(`BAN ${u}?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadUsersAdmin(); } });
+
+  // EVENT LISTENERS
   document.getElementById('navToggle')?.addEventListener('click', ()=>document.getElementById('mainNav').classList.toggle('open'));
-  document.getElementById('lightboxCloseBtn')?.addEventListener('click', ()=>document.getElementById('lightbox').classList.remove('open'));
-  document.getElementById('openAuthBtn')?.addEventListener('click', ()=>{
-      if(currentUser) {
-          if(currentUser.role==='admin') { document.getElementById('adminSidebar').classList.add('open'); apiFetch('/api/users').then(data => { allUsersData = data; renderAdminSidebar(allUsersData); }); } 
-          else { customConfirm('Вийти?', (r)=>{ if(r) { removeCurrentUser(); location.reload(); } }); }
-      } else { document.getElementById('authModal').classList.add('show'); }
-  });
   document.getElementById('closeAuth')?.addEventListener('click', ()=>document.getElementById('authModal').classList.remove('show'));
-  document.getElementById('closeSidebar')?.addEventListener('click', ()=>document.getElementById('adminSidebar').classList.remove('open'));
-  document.getElementById('adminLogoutBtn')?.addEventListener('click', ()=>{ removeCurrentUser(); location.reload(); });
-  document.getElementById('closeEditMemberModal')?.addEventListener('click', ()=>document.getElementById('editMemberModal').classList.remove('show'));
+  document.getElementById('closeDashBtn')?.addEventListener('click', ()=>dashModal.classList.remove('show'));
+  document.getElementById('logoutBtn')?.addEventListener('click', ()=>{ removeCurrentUser(); location.reload(); });
 
   document.getElementById('tabLogin')?.addEventListener('click', (e) => {
-      document.getElementById('tabRegister')?.classList.remove('active'); e.target.classList.add('active');
+      e.target.classList.add('active'); document.getElementById('tabRegister').classList.remove('active');
       document.getElementById('loginForm').style.display = 'block'; document.getElementById('registerForm').style.display = 'none';
   });
   document.getElementById('tabRegister')?.addEventListener('click', (e) => {
-      document.getElementById('tabLogin')?.classList.remove('active'); e.target.classList.add('active');
+      e.target.classList.add('active'); document.getElementById('tabLogin').classList.remove('active');
       document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block';
   });
 
@@ -304,62 +234,28 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('registerForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const pass = document.getElementById('regPass').value;
-      if(pass !== document.getElementById('regPassConfirm').value) return customConfirm('Паролі різні');
-      const res = await apiFetch('/api/auth/register', { method:'POST', body: JSON.stringify({ username: document.getElementById('regUser').value, email: document.getElementById('regEmail').value, password: pass }) });
-      if(res && res.success) { customConfirm('Успіх! Увійдіть.'); location.reload(); }
-  });
-
-  document.getElementById('addMemberForm')?.addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      if(!currentUser) return;
-      const body = {
-          name: document.getElementById('memberNewName').value,
-          role: document.getElementById('memberNewRole').value,
-          owner: currentUser.username,
-          links: { discord: document.getElementById('memberNewDiscord').value, youtube: document.getElementById('memberNewYoutube').value, tg: document.getElementById('memberNewTg').value }
-      };
-      const res = await apiFetch('/api/members', { method:'POST', body: JSON.stringify(body) });
-      if(res && res.success) { customConfirm('Учасника додано!', true); document.getElementById('addMemberModal').classList.remove('show'); loadInitialData(); }
-  });
-  
-  document.getElementById('addNewsBtn')?.addEventListener('click', async ()=>{
-      const body = { title: document.getElementById('newsTitle').value, date: document.getElementById('newsDate').value, summary: document.getElementById('newsSummary').value };
-      if (!body.title) return customConfirm('Заповніть!', true);
-      const res = await apiFetch('/api/news', { method:'POST', body: JSON.stringify(body) }); 
-      if (res && res.success) { customConfirm('Новину додано!', true); loadInitialData(); }
-  });
-  
-  document.getElementById('addGalleryBtn')?.addEventListener('click', async ()=>{
-      const url = document.getElementById('galleryUrl').value;
-      if (!url) return customConfirm('Введіть URL!', true);
-      const res = await apiFetch('/api/gallery', { method:'POST', body: JSON.stringify({ url }) }); 
-      if (res && res.success) { customConfirm('Фото додано!', true); loadInitialData(); }
-  });
-
-  document.getElementById('memberSearch')?.addEventListener('input', (e) => { renderMembers(e.target.value); });
-  document.getElementById('userSearchSidebar')?.addEventListener('input', (e) => { renderAdminSidebar(allUsersData, e.target.value); });
-
-  document.getElementById('addMemberBtn')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.add('show'));
-  document.getElementById('closeMemberModal')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.remove('show'));
-  
-  document.querySelectorAll('.admin-tabs .tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-          document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-          document.querySelectorAll('.sidebar-content .tab-pane').forEach(p => p.classList.remove('active'));
-          btn.classList.add('active'); document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+      if(pass !== document.getElementById('regPassConfirm').value) return customConfirm('Паролі не співпадають', true);
+      
+      const res = await apiFetch('/api/auth/register', { 
+          method:'POST', 
+          body: JSON.stringify({ 
+              username: document.getElementById('regUser').value, 
+              email: document.getElementById('regEmail').value, 
+              password: pass 
+          }) 
       });
+      if(res && res.success) { customConfirm('Успіх! Тепер увійдіть.', true); document.getElementById('tabLogin').click(); }
   });
 
-  let sessionTime = 0;
-  setInterval(() => {
-    sessionTime++;
-    const now = new Date();
-    if(document.getElementById('adminClock')) document.getElementById('adminClock').textContent = now.toLocaleTimeString('uk-UA', {hour12:false});
-    if(document.getElementById('adminDate')) document.getElementById('adminDate').textContent = now.toLocaleDateString('uk-UA');
-    if(document.getElementById('adminSession')) document.getElementById('adminSession').textContent = new Date(sessionTime * 1000).toISOString().substr(11, 8);
-  }, 1000);
+  // News/Gallery adds (Admin only, outside dash for now or hook later)
+  document.getElementById('addNewsBtn')?.addEventListener('click', async ()=>{
+     const body = { title: document.getElementById('newsTitle').value, date: document.getElementById('newsDate').value, summary: document.getElementById('newsSummary').value };
+     if(body.title) { await apiFetch('/api/news', {method:'POST', body:JSON.stringify(body)}); location.reload(); }
+  });
+  document.getElementById('addGalleryBtn')?.addEventListener('click', async ()=>{
+     const url = document.getElementById('galleryUrl').value;
+     if(url) { await apiFetch('/api/gallery', {method:'POST', body:JSON.stringify({url})}); location.reload(); }
+  });
 
-  function checkAnimate() { document.querySelectorAll('.animated-content').forEach(el => { if(el.getBoundingClientRect().top < window.innerHeight - 50) el.classList.add('animate-in'); }); }
-  window.addEventListener('scroll', checkAnimate);
   loadInitialData();
 });
