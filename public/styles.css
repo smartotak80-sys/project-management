@@ -1,4 +1,4 @@
-/* styles.css — ФІНАЛЬНА ОПТИМІЗОВАНА ВЕРСІЯ (БЕЗ ПОМИЛОК) */
+/* styles.css — ФІНАЛЬНА ОПТИМІЗОВАНА ВЕРСІЯ */
 
 :root {
   --bg-dark: #050505;
@@ -14,7 +14,6 @@
   --font-main: 'Inter', system-ui, sans-serif;
   --font-mono: 'Courier New', monospace;
   
-  /* Кольори для соцмереж */
   --color-discord: #5865F2;
   --color-youtube: #FF0000;
   --color-telegram: #0088CC;
@@ -105,7 +104,6 @@ body {
 
 .full-width { width: 100%; }
 
-/* Scroll Animation Helper */
 .animated-content { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
 .animated-content.animate-in { opacity: 1; transform: translateY(0); }
 
@@ -236,16 +234,11 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 .auth-form {
     display: flex;
     flex-direction: column;
-    gap: 15px; /* Проміжок між інпутами і кнопкою */
+    gap: 15px;
 }
-.auth-form input {
-    margin: 0; /* Прибираємо дефолтні марджини, якщо були */
-}
-/* Забезпечення, що інпути і кнопка займають повну ширину */
-.auth-form input, 
-.auth-form button {
-    width: 100%;
-}
+.auth-form input { margin: 0; width: 100%; }
+.auth-form button { width: 100%; }
+
 .social-header {
     margin-top: 10px;
     margin-bottom: 5px;
@@ -303,13 +296,13 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 .tab-pane { display: none; animation: fadeIn 0.3s ease; }
 .tab-pane.active { display: block; }
 
-/* --- ADMIN USER LIST (NEW DESIGN) --- */
+/* --- ADMIN USER LIST --- */
 .user-list-compact { display: flex; flex-direction: column; gap: 10px; }
 
 .user-card-row {
     background: rgba(20, 20, 25, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    border-left: 4px solid var(--accent); /* Товстий акцент */
+    border-left: 4px solid var(--accent);
     padding: 12px;
     border-radius: 6px;
     display: flex;
@@ -320,7 +313,6 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 }
 .user-card-row:hover { background: rgba(255, 255, 255, 0.05); transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
 
-/* Індикатор статусу (точка) */
 .u-status-indicator {
     width: 8px; height: 8px;
     border-radius: 50%;
@@ -331,7 +323,6 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 .u-status-indicator.online { background-color: #22c55e; color: #22c55e; }
 .u-status-indicator.offline { background-color: #64748b; color: transparent; box-shadow: none; opacity: 0.5; }
 
-/* Сітка даних користувача */
 .u-details-grid { flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
 
 .u-field {
@@ -344,14 +335,8 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 
 .u-login { font-weight: 700; color: #fff; font-size: 13px; }
 .u-email { color: var(--text-muted); font-size: 11px; }
-.u-pass { 
-    color: #ef4444; 
-    letter-spacing: 0.5px; 
-    font-size: 11px; 
-    text-shadow: 0 0 5px rgba(239, 68, 68, 0.5); 
-}
+.u-pass { color: #ef4444; letter-spacing: 0.5px; font-size: 11px; text-shadow: 0 0 5px rgba(239, 68, 68, 0.5); }
 
-/* Нижня мета-інформація */
 .u-meta {
     margin-top: 6px; padding-top: 6px;
     border-top: 1px dashed rgba(255,255,255,0.1);
@@ -360,15 +345,10 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 .u-role-tag {
     font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
 }
-.u-role-tag.admin { 
-    background: #eab308; 
-    color: var(--bg-dark); 
-    font-weight: 900; 
-}
+.u-role-tag.admin { background: #eab308; color: var(--bg-dark); font-weight: 900; }
 .u-role-tag.member { background: rgba(255, 255, 255, 0.05); color: #94a3b8; }
 .u-date-tag { font-size: 9px; color: #666; }
 
-/* Кнопка видалення */
 .btn-ban-row {
     background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; opacity: 0.5; transition: 0.2s; padding: 5px;
 }
@@ -388,7 +368,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 .lightbox-prev, .lightbox-next { background: rgba(255, 255, 255, 0.1); border: none; color: #fff; padding: 20px 15px; font-size: 24px; cursor: pointer; transition: background 0.2s; margin: 0 10px; border-radius: 8px; }
 .lightbox-prev:hover, .lightbox-next:hover { background: rgba(255, 42, 42, 0.2); color: var(--accent); }
 
-/* --- SYSTEM TAB (Візуалізація прогресу) --- */
+/* --- SYSTEM TAB --- */
 .system-status-box { margin-bottom: 20px; }
 .sys-meter { margin-bottom: 15px; }
 .meter-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
@@ -405,7 +385,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 
 /* --- RESPONSIVE OPTIMIZATION --- */
 
-/* Extra Large Desktops (Above 1400px) - Optimization */
+/* Extra Large Desktops */
 @media (min-width: 1400px) {
     .container { max-width: 1400px; }
     .hero h1 { font-size: 72px; }
@@ -413,12 +393,11 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
     .members-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 }
 
-/* Medium devices (Tablets, up to 900px) */
+/* Medium devices (Tablets) */
 @media (max-width: 900px) {
   .hero-inner { flex-direction: column-reverse; text-align: center; }
   .hero h1 { font-size: 48px; }
   
-  /* Mobile Menu Toggle */
   .site-nav { display: none; }
   .nav-toggle { display: block; }
   .site-nav.open { 
@@ -439,10 +418,8 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
   .events-controls { position: static; }
   .admin-sidebar { width: 100%; left: -100%; }
 
-  /* Ensure member cards scale well */
   .members-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 
-  /* Admin panel details stacking */
   .admin-profile-section { flex-direction: column; align-items: center; text-align: center; }
   .admin-profile-section .p-header { justify-content: center; gap: 10px; }
   .admin-profile-section .logout-mini-btn { top: 20px; right: 20px; }
@@ -450,7 +427,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
 }
 
 
-/* Small devices (Phones, up to 600px) - ІДЕАЛЬНА АДАПТАЦІЯ */
+/* Small devices (Phones) */
 @media (max-width: 600px) {
   .site-header .header-inner { padding: 10px 0; }
   .brand { gap: 10px; }
@@ -467,7 +444,12 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
   .section { padding: 40px 0; }
   .section h2 { font-size: 24px; }
   
-  /* Адаптація модальних вікон (займають майже весь екран) */
+  .members-controls, .gallery-controls, .events-controls { flex-direction: column; }
+  .members-controls input, .members-controls button,
+  .gallery-controls input, .gallery-controls button,
+  .events-controls input, .events-controls textarea, .events-controls button { width: 100%; min-width: 100%; }
+  
+  /* Modal Adaptation */
   .auth-content, .custom-modal-content {
       width: 95%;
       padding: 20px;
@@ -475,7 +457,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
       margin: 0;
   }
   
-  /* Адмін панель на весь екран */
+  /* Admin Panel Adaptation */
   .admin-sidebar { 
     width: 100%; 
     left: -100%; 
@@ -485,16 +467,13 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
   }
   .admin-sidebar.open { left: 0; }
   
-  /* Перехід табів у стовпчик на мобільному */
   .admin-tabs { flex-wrap: wrap; padding: 10px; }
   .tab-btn { flex-basis: calc(50% - 5px); margin-bottom: 5px; }
   
-  /* Сітка статистики в один стовпець */
   .stats-grid { grid-template-columns: 1fr; } 
   .stat-card { padding: 12px; }
   .stat-info span { font-size: 20px; }
 
-  /* Згортання картки користувача в адмінці */
   .user-card-row {
     flex-direction: column;
     align-items: flex-start;
@@ -507,13 +486,11 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); backgr
   .u-field { margin-left: 15px; }
 }
 
-
-/* --- ACCESS HELPERS (Очищено від синтаксичних помилок) --- */
+/* --- ACCESS HELPERS --- */
 .logged-in-only { display: none !important; }
 body.is-logged-in .logged-in-only { display: inline-block !important; animation: fadeIn 0.5s ease; }
 .admin-only { display: none !important; }
 
-/* Виправляємо попереднє використання nesting & */
 body.is-admin .admin-only { display: flex !important; }
 body.is-admin .admin-only.news-item > div { display: block !important; } 
 body.is-admin .admin-only.gallery-controls, 
