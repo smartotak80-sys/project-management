@@ -65,13 +65,26 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.dash-nav button').forEach(e => e.classList.remove('active'));
       document.getElementById(`tab-${tab}`).classList.add('active');
       
-      // Highlight correct button (UPDATED INDEXING)
+      // Highlight correct button
       const btns = document.querySelectorAll('.dash-nav button');
       if(tab === 'profile') btns[0].classList.add('active');
       if(tab === 'my-member') btns[1].classList.add('active');
-      if(tab === 'admin-members') { btns[2].classList.add('active'); loadAdminMembers(); } // NEW
-      if(tab === 'users') { btns[3].classList.add('active'); loadUsersAdmin(); } 
-      if(tab === 'stats') { btns[4].classList.add('active'); loadStatsAdmin(); }
+      
+      // Оновлено індекси та додано логіку для 'admin-members'
+      if(currentUser && currentUser.role === 'admin') {
+         if(tab === 'admin-members') { btns[2].classList.add('active'); loadAdminMembers(); }
+         if(tab === 'users') { btns[3].classList.add('active'); loadUsersAdmin(); } 
+         if(tab === 'stats') { btns[4].classList.add('active'); loadStatsAdmin(); }
+      } else {
+         if(tab === 'users') { btns[2].classList.add('active'); loadUsersAdmin(); } 
+         if(tab === 'stats') { btns[3].classList.add('active'); loadStatsAdmin(); }
+      }
+
+      // Закриваємо форму створення учасника при перемиканні табів (якщо вона існує)
+      const formContainer = document.getElementById('adminAddMemberContainer');
+      if (formContainer) {
+          formContainer.style.display = 'none';
+      }
   };
 
   function openDashboard() {
@@ -85,16 +98,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       document.querySelector('.admin-only-nav').style.display = currentUser.role === 'admin' ? 'block' : 'none';
       loadMyMemberTab();
-      // Закриваємо адмін-форму при відкритті дашборда
-      document.getElementById('adminAddMemberContainer').style.display = 'none';
+
+      // Закриваємо адмін-форму при відкритті дашборда (якщо вона існує)
+      const formContainer = document.getElementById('adminAddMemberContainer');
+      if (formContainer) {
+          formContainer.style.display = 'none';
+      }
   }
 
   function loadMyMemberTab() {
       const container = document.getElementById('myMemberContainer');
-      // В цьому місці код для звичайного користувача, без змін логіки
       const myMember = members.find(m => m.owner === currentUser.username);
       
       if(myMember) {
+          // Вже є персонаж
           container.innerHTML = `
             <div style="background:#151619; padding:25px; border-radius:12px; border:1px solid #333; display:flex; gap:20px; align-items:center;">
                 <div style="width:60px; height:60px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff;">
@@ -110,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           `;
       } else {
-          // Форма створення для звичайного користувача
+          // Форма створення
           container.innerHTML = `
             <form id="dashAddMemberForm" style="max-width:400px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <p style="color:#aaa; font-size:13px; margin:0 0 15px; grid-column: 1 / -1;">У вас ще немає персонажа. Створіть його зараз.</p>
@@ -142,10 +159,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- ADMIN MEMBERS MANAGEMENT FUNCTIONS ---
-  async function loadAdminMembers() {
-      // Логіка завантаження списку учасників для адмін-панелі
+  async function loadAdminMembers(query = '') {
       const list = document.getElementById('adminMembersList');
-      list.innerHTML = members.map(m => `
+      
+      const m = await apiFetch('/api/members');
+      if (m) { members = m; }
+      
+      const filtered = members.filter(m => 
+          m.name.toLowerCase().includes(query.toLowerCase()) || 
+          m.role.toLowerCase().includes(query.toLowerCase()) || 
+          m.owner.toLowerCase().includes(query.toLowerCase())
+      );
+
+      list.innerHTML = filtered.map(m => `
         <div class="u-row">
             <div class="u-info">
                 <strong>${m.name}</strong>
@@ -171,11 +197,18 @@ document.addEventListener('DOMContentLoaded', () => {
           owner: document.getElementById('admOwner').value,
           links: { discord: document.getElementById('admDiscord').value, youtube: document.getElementById('admYoutube').value }
       };
-      // Адмін може створювати персонажів для будь-якого 'owner'
+      
+      // Перевірка на заповненість полів для Адміна
+      if (!body.name || !body.role || !body.owner) {
+          customConfirm('Будь ласка, заповніть Імя, Посаду та Логін власника.', true);
+          return;
+      }
+      
       const res = await apiFetch('/api/members', { method:'POST', body: JSON.stringify(body) });
       if(res && res.success) {
           customConfirm(`Учасника ${body.name} (Власник: ${body.owner}) успішно створено!`, true);
           // Оновлюємо дані
+          document.getElementById('adminAddMemberForm').reset();
           const m = await apiFetch('/api/members');
           if(m) { members = m; loadAdminMembers(); }
           document.getElementById('adminAddMemberContainer').style.display = 'none';
@@ -190,7 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const users = await apiFetch('/api/users');
       if(!users) return;
       
-      // ... (логіка фільтрації та відображення)
       const filtered = users.filter(u => u.username.toLowerCase().includes(query.toLowerCase()) || u.email.toLowerCase().includes(query.toLowerCase()));
       
       list.innerHTML = filtered.map(u => `
@@ -207,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadStatsAdmin() {
-      // ... (логіка завантаження статистики)
       const s = await apiFetch('/api/users/count');
       if(s) {
           document.getElementById('stUsers').textContent = s.totalUsers;
@@ -218,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- PUBLIC RENDER ---
   function renderPublicMembers(filter = '') {
-      // ... (логіка відображення публічних учасників)
       const grid = document.getElementById('membersGrid');
       const filtered = members.filter(m => m.name.toLowerCase().includes(filter.toLowerCase()) || m.role.toLowerCase().includes(filter.toLowerCase()));
       
@@ -233,9 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `).join('');
   }
   
-  function renderNews(list) { 
-    // ... (логіка відображення новин)
-    document.getElementById('newsList').innerHTML = list.map(n => `
+  function renderNews(list) { document.getElementById('newsList').innerHTML = list.map(n => `
     <div style="background:#121315; padding:20px; margin-bottom:15px; border-radius:12px; border:1px solid #222; position:relative;">
         <div style="color:var(--accent); font-size:12px; font-weight:bold;">${n.date}</div>
         <h3 style="margin:5px 0 10px; color:#fff;">${n.title}</h3>
@@ -244,9 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>`).join(''); 
   }
 
-  function renderGallery(list) { 
-    // ... (логіка відображення галереї)
-    document.getElementById('galleryGrid').innerHTML = list.map(g => `
+  function renderGallery(list) { document.getElementById('galleryGrid').innerHTML = list.map(g => `
     <div>
         <img src="${g.url}" onclick="document.getElementById('lightbox').classList.add('show'); document.getElementById('lightboxImage').src='${g.url}'">
         <button class="btn btn-outline admin-only" style="position:absolute; bottom:5px; right:5px; padding:2px 8px; font-size:10px; background:rgba(0,0,0,0.7); border:none;" onclick="window.deleteGallery('${g.id}')">DEL</button>
@@ -255,7 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- UI HANDLERS ---
   function updateAuthUI() {
-      // ... (логіка оновлення UI)
       const btn = document.getElementById('openAuthBtn');
       const txt = document.getElementById('authBtnText');
       
@@ -272,7 +297,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // GLOBAL ACTIONS
-  window.deleteMember = async (id) => customConfirm('Видалити персонажа?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); const m = await apiFetch('/api/members'); members=m; renderPublicMembers(); loadMyMemberTab(); } });
+  window.deleteMember = async (id) => customConfirm('Видалити персонажа?', async (r)=>{ 
+      if(r) { 
+          await apiFetch(`/api/members/${id}`, {method:'DELETE'}); 
+          const m = await apiFetch('/api/members'); 
+          members=m; 
+          renderPublicMembers(); 
+          if (document.getElementById('tab-my-member').classList.contains('active')) {
+             loadMyMemberTab(); 
+          } else if (document.getElementById('tab-admin-members') && document.getElementById('tab-admin-members').classList.contains('active')) {
+             loadAdminMembers();
+          }
+      } 
+  });
   window.deleteNews = async (id) => customConfirm('Видалити новину?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.deleteGallery = async (id) => customConfirm('Видалити фото?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); loadInitialData(); } });
   window.banUser = async (u) => customConfirm(`Заблокувати користувача ${u}? Це видалить його акаунт і персонажа.`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadUsersAdmin(); } });
@@ -287,7 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('memberSearch')?.addEventListener('input', (e) => renderPublicMembers(e.target.value));
   document.getElementById('adminMemberSearchInput')?.addEventListener('input', (e) => loadAdminMembers(e.target.value));
   document.getElementById('adminSearchInput')?.addEventListener('input', (e) => loadUsersAdmin(e.target.value));
-
 
   document.getElementById('tabLogin')?.addEventListener('click', (e) => {
       e.target.classList.add('active'); document.getElementById('tabRegister').classList.remove('active');
