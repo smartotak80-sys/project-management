@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const CURRENT_USER_KEY = 'barakuda_current_user';
   const MAX_MEMBER_PER_USER = 1; 
 
-  // --- HELPERS (Локальне сховище тільки для сесії адміна) ---
+  // --- HELPERS ---
   function loadCurrentUser(){ try{ return JSON.parse(localStorage.getItem(CURRENT_USER_KEY)); } catch(e){ return null; } }
   function saveCurrentUser(val){ localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(val)) }
   function removeCurrentUser(){ localStorage.removeItem(CURRENT_USER_KEY) }
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let members = [];
   let currentUser = loadCurrentUser(); 
 
-  // --- API FETCH (Функція для спілкування з сервером) ---
+  // --- API FETCH ---
   async function apiFetch(url, options = {}) {
       try {
           const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
@@ -48,33 +48,32 @@ document.addEventListener('DOMContentLoaded', () => {
           const data = await response.json();
           if (!response.ok) { 
               console.error("API Error:", data);
-              // Повернення користувацького повідомлення при помилці
-              customConfirm(data.message || "Помилка сервера. Перевірте логін або статус бекенду.", true);
+              customConfirm(data.message || "Помилка сервера.", true);
               return null; 
           }
           return data;
       } catch (error) {
-          console.error("Network Error: Backend is down or unreachable.", error);
-          customConfirm("Критична помилка з'єднання з сервером. Переконайтеся, що Node.js сервер запущено.", true);
+          console.error("Network Error:", error);
+          customConfirm("Помилка з'єднання.", true);
           return null;
       }
   }
 
-  // --- LOAD DATA (Завантаження даних при старті) ---
+  // --- LOAD DATA ---
   async function loadInitialData() {
-      // 1. Members
+      // Members
       const m = await apiFetch('/api/members');
       if (m) { members = m; renderMembers(); } else { members = []; renderMembers(); }
       
-      // 2. News
+      // News
       const n = await apiFetch('/api/news');
       if (n) renderNews(n); else renderNews([]);
       
-      // 3. Gallery
+      // Gallery
       const g = await apiFetch('/api/gallery');
       if (g) renderGallery(g); else renderGallery([]);
 
-      // 4. Users Count
+      // Stats
       const counts = await apiFetch('/api/users/count');
       if(counts){
           const tabReg = document.getElementById('tabRegister');
@@ -87,14 +86,12 @@ document.addEventListener('DOMContentLoaded', () => {
               tabReg.disabled = false;
             }
           }
-          // Оновлення статистики в Адмін-панелі
           if(document.getElementById('statTotalUsers')) document.getElementById('statTotalUsers').textContent = counts.totalUsers;
           if(document.getElementById('statTotalAdmins')) document.getElementById('statTotalAdmins').textContent = counts.totalAdmins;
           if(document.getElementById('statTotalNews')) document.getElementById('statTotalNews').textContent = n ? n.length : 0;
           if(document.getElementById('statTotalGallery')) document.getElementById('statTotalGallery').textContent = g ? g.length : 0;
       }
 
-      // 5. Admin Sidebar (Якщо адмін)
       if (currentUser && currentUser.role === 'admin') {
           const users = await apiFetch('/api/users');
           if (users) renderAdminSidebar(users);
@@ -106,11 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- RENDERERS ---
-
   function renderMembers(filter='') {
     const grid = document.getElementById('membersGrid');
     if(!grid) return;
-    
     const list = members.filter(m => (m.name + ' ' + m.role).toLowerCase().includes(filter.toLowerCase()));
     
     if(list.length===0) { grid.innerHTML = '<p class="muted">Немає учасників</p>'; return; }
@@ -140,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
     }).join('');
-    
     checkAnimate();
   }
 
@@ -165,28 +159,22 @@ document.addEventListener('DOMContentLoaded', () => {
            <img src="${g.url}" onclick="window.openLightbox(${idx})">
            <div class="admin-only"><button class="btn btn-delete" style="width:100%" onclick="window.deleteGallery('${g.id}')">Видалити</button></div>
         </div>`).join('') : '<p class="muted">Пусто</p>';
-      
       window.galleryData = list;
       checkAnimate();
   }
 
-  // --- ОНОВЛЕНИЙ СПИСОК КОРИСТУВАЧІВ (У АДМІН-ПАНЕЛІ) ---
   function renderAdminSidebar(users) {
       const el = document.getElementById('userDatabaseSidebar');
       if(!el) return;
-      
       el.innerHTML = users.map(u => {
           const isMe = currentUser && u.username === u.username;
-          // Статус Online/Offline (mocked for demo)
           const isOnline = isMe ? true : (Math.random() > 0.4); 
           const statusClass = isOnline ? 'online' : 'offline';
-          
           let dateStr = '---';
           if (u.regDate) {
               const d = new Date(u.regDate);
               dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
           }
-
           return `
             <div class="user-card-row">
                 <div class="u-status-indicator ${statusClass}"></div>
@@ -200,75 +188,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                 ${(!isMe && u.role!=='admin') ? 
-                    `<button class="btn-ban-row" onclick="window.banUser('${u.username}')" title="Видалити"><i class="fa-solid fa-trash"></i></button>` 
-                    : ''}
+                    `<button class="btn-ban-row" onclick="window.banUser('${u.username}')" title="Видалити"><i class="fa-solid fa-trash"></i></button>` : ''}
             </div>
           `;
       }).join('');
   }
 
-  // --- GLOBAL ACTIONS (CRUD OPERATIONS) ---
+  // --- ACTIONS ---
   window.editMember = async (id) => {
       const m = members.find(x => x.id === id);
       if(!m) return;
       const newName = prompt("Нове ім'я:", m.name);
       if(newName) {
           const res = await apiFetch(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
-          if(res && res.success) {
-              customConfirm("Зміни збережено.", true);
-              loadInitialData(); 
-          }
+          if(res && res.success) { customConfirm("Зміни збережено.", true); loadInitialData(); }
       }
   };
-
-  window.deleteMember = async (id) => customConfirm('Видалити?', async (r)=>{ 
-      if(r) { 
-          const res = await apiFetch(`/api/members/${id}`, {method:'DELETE'});
-          if(res && res.success) {
-            customConfirm("Учасника видалено.", true); 
-            loadInitialData(); 
-          }
-      } 
-  });
-  window.deleteNews = async (id) => customConfirm('Видалити?', async (r)=>{ 
-      if(r) { 
-          const res = await apiFetch(`/api/news/${id}`, {method:'DELETE'}); 
-          if(res && res.success) {
-            customConfirm("Новину видалено.", true); 
-            loadInitialData(); 
-          }
-      } 
-  });
-  window.deleteGallery = async (id) => customConfirm('Видалити?', async (r)=>{ 
-      if(r) { 
-          const res = await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); 
-          if(res && res.success) {
-            customConfirm("Фото видалено.", true); 
-            loadInitialData(); 
-          }
-      } 
-  });
-  window.banUser = async (u) => customConfirm(`Видалити користувача ${u}?`, async (r)=>{ 
-      if(r) { 
-          const res = await apiFetch(`/api/users/${u}`, {method:'DELETE'});
-          if(res && res.success) {
-             customConfirm(`Користувача ${u} видалено.`, true); 
-             loadInitialData(); 
-          }
-      } 
-  });
+  window.deleteMember = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/members/${id}`, {method:'DELETE'}); loadInitialData(); } });
+  window.deleteNews = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/news/${id}`, {method:'DELETE'}); loadInitialData(); } });
+  window.deleteGallery = async (id) => customConfirm('Видалити?', async (r)=>{ if(r) { await apiFetch(`/api/gallery/${id}`, {method:'DELETE'}); loadInitialData(); } });
+  window.banUser = async (u) => customConfirm(`Видалити користувача ${u}?`, async (r)=>{ if(r) { await apiFetch(`/api/users/${u}`, {method:'DELETE'}); loadInitialData(); } });
   
   window.openLightbox = (idx) => {
       const g = window.galleryData || [];
       if(!g[idx]) return;
       const lb = document.getElementById('lightbox');
-      if(lb) {
-          lb.classList.add('open');
-          document.getElementById('lightboxImage').src = g[idx].url;
-      }
+      if(lb) { lb.classList.add('open'); document.getElementById('lightboxImage').src = g[idx].url; }
   };
 
-  // --- AUTH & UI ---
   function updateAuthUI() {
       const btn = document.getElementById('openAuthBtn');
       const txt = document.getElementById('authBtnText');
@@ -281,102 +228,55 @@ document.addEventListener('DOMContentLoaded', () => {
           document.body.classList.remove('is-logged-in', 'is-admin');
           txt.textContent = 'Вхід';
       }
-      
       const addBtn = document.getElementById('addMemberBtn');
-      if(addBtn) {
-          if(currentUser) {
-              const myCount = members.filter(m => m.owner === currentUser.username).length;
-              if(currentUser.role !== 'admin' && myCount >= MAX_MEMBER_PER_USER) {
-                  addBtn.disabled = true; 
-                  addBtn.innerHTML = '<i class="fa-solid fa-lock"></i> ЛІМІТ';
-                  if(document.getElementById('memberLimitWarning')) document.getElementById('memberLimitWarning').style.display = 'block';
-                  if(document.getElementById('memberLimitWarning')) document.getElementById('memberLimitWarning').textContent = `Ви можете мати лише ${MAX_MEMBER_PER_USER} учасника. Видаліть існуючого, щоб додати нового.`;
-              } else {
-                  addBtn.disabled = false;
-                  addBtn.innerHTML = 'Додати учасника';
-                  if(document.getElementById('memberLimitWarning')) document.getElementById('memberLimitWarning').style.display = 'none';
-              }
+      if(addBtn && currentUser) {
+          const myCount = members.filter(m => m.owner === currentUser.username).length;
+          if(currentUser.role !== 'admin' && myCount >= MAX_MEMBER_PER_USER) {
+              addBtn.disabled = true; 
+              addBtn.innerHTML = '<i class="fa-solid fa-lock"></i> ЛІМІТ';
+          } else {
+              addBtn.disabled = false;
+              addBtn.innerHTML = 'Додати учасника';
           }
       }
   }
 
-  // EVENT LISTENERS
+  // LISTENERS
   document.getElementById('navToggle')?.addEventListener('click', ()=>document.getElementById('mainNav').classList.toggle('open'));
   document.getElementById('lightboxCloseBtn')?.addEventListener('click', ()=>document.getElementById('lightbox').classList.remove('open'));
-  
-  // Auth
   document.getElementById('openAuthBtn')?.addEventListener('click', ()=>{
       if(currentUser) {
-          if(currentUser.role==='admin') { 
-              document.getElementById('adminSidebar').classList.add('open'); 
-              apiFetch('/api/users').then(renderAdminSidebar);
-          } else {
-              customConfirm('Вийти?', (r)=>{ if(r) { removeCurrentUser(); location.reload(); } });
-          }
-      } else {
-          document.getElementById('authModal').classList.add('show');
-      }
+          if(currentUser.role==='admin') { document.getElementById('adminSidebar').classList.add('open'); apiFetch('/api/users').then(renderAdminSidebar); } 
+          else { customConfirm('Вийти?', (r)=>{ if(r) { removeCurrentUser(); location.reload(); } }); }
+      } else { document.getElementById('authModal').classList.add('show'); }
   });
-  
   document.getElementById('closeAuth')?.addEventListener('click', ()=>document.getElementById('authModal').classList.remove('show'));
   document.getElementById('closeSidebar')?.addEventListener('click', ()=>document.getElementById('adminSidebar').classList.remove('open'));
   document.getElementById('adminLogoutBtn')?.addEventListener('click', ()=>{ removeCurrentUser(); location.reload(); });
 
-  // Auth Tabs
   document.getElementById('tabLogin')?.addEventListener('click', (e) => {
-      document.getElementById('tabRegister')?.classList.remove('active');
-      e.target.classList.add('active');
-      document.getElementById('loginForm').style.display = 'block';
-      document.getElementById('registerForm').style.display = 'none';
+      document.getElementById('tabRegister')?.classList.remove('active'); e.target.classList.add('active');
+      document.getElementById('loginForm').style.display = 'block'; document.getElementById('registerForm').style.display = 'none';
   });
   document.getElementById('tabRegister')?.addEventListener('click', (e) => {
-      document.getElementById('tabLogin')?.classList.remove('active');
-      e.target.classList.add('active');
-      document.getElementById('loginForm').style.display = 'none';
-      document.getElementById('registerForm').style.display = 'block';
+      document.getElementById('tabLogin')?.classList.remove('active'); e.target.classList.add('active');
+      document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block';
   });
 
-
-  // Forms (Login/Register)
   document.getElementById('loginForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const loginUser = document.getElementById('loginUser').value;
-      const loginPass = document.getElementById('loginPass').value;
-
-      const res = await apiFetch('/api/auth/login', { method:'POST', body: JSON.stringify({ username: loginUser, password: loginPass }) });
-      if(res && res.success) {
-          saveCurrentUser(res.user);
-          location.reload();
-      } 
+      const res = await apiFetch('/api/auth/login', { method:'POST', body: JSON.stringify({ username: document.getElementById('loginUser').value, password: document.getElementById('loginPass').value }) });
+      if(res && res.success) { saveCurrentUser(res.user); location.reload(); } 
   });
 
   document.getElementById('registerForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const regUser = document.getElementById('regUser').value;
-      const regEmail = document.getElementById('regEmail').value;
-      const regPass = document.getElementById('regPass').value;
-      const regPassConfirm = document.getElementById('regPassConfirm').value;
-
-      if(regPass !== regPassConfirm) return customConfirm('Паролі різні');
-      
-      const res = await apiFetch('/api/auth/register', { method:'POST', body: JSON.stringify({ username: regUser, email: regEmail, password: regPass }) });
-      if(res && res.success) {
-          customConfirm('Успіх! Тепер увійдіть використовуючи ваш логін і пароль.');
-          // Switch to login tab
-          document.getElementById('registerForm').style.display = 'none';
-          document.getElementById('loginForm').style.display = 'block';
-          document.getElementById('tabRegister')?.classList.remove('active');
-          document.getElementById('tabLogin')?.classList.add('active');
-          // Clear registration form (optional)
-          document.getElementById('regUser').value = '';
-          document.getElementById('regEmail').value = '';
-          document.getElementById('regPass').value = '';
-          document.getElementById('regPassConfirm').value = '';
-
-      }
+      const pass = document.getElementById('regPass').value;
+      if(pass !== document.getElementById('regPassConfirm').value) return customConfirm('Паролі різні');
+      const res = await apiFetch('/api/auth/register', { method:'POST', body: JSON.stringify({ username: document.getElementById('regUser').value, email: document.getElementById('regEmail').value, password: pass }) });
+      if(res && res.success) { customConfirm('Успіх! Увійдіть.'); location.reload(); }
   });
 
-  // Adding Content (Add Member, News, Gallery)
   document.getElementById('addMemberForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(!currentUser) return;
@@ -384,120 +284,48 @@ document.addEventListener('DOMContentLoaded', () => {
           name: document.getElementById('memberNewName').value,
           role: document.getElementById('memberNewRole').value,
           owner: currentUser.username,
-          links: { 
-              discord: document.getElementById('memberNewDiscord').value, 
-              youtube: document.getElementById('memberNewYoutube').value, 
-              tg: document.getElementById('memberNewTg').value 
-          }
+          links: { discord: document.getElementById('memberNewDiscord').value, youtube: document.getElementById('memberNewYoutube').value, tg: document.getElementById('memberNewTg').value }
       };
       const res = await apiFetch('/api/members', { method:'POST', body: JSON.stringify(body) });
-      if(res && res.success) {
-          customConfirm('Учасника додано!', true);
-          document.getElementById('addMemberModal').classList.remove('show');
-          loadInitialData();
-      }
+      if(res && res.success) { customConfirm('Учасника додано!', true); document.getElementById('addMemberModal').classList.remove('show'); loadInitialData(); }
   });
   
-  document.getElementById('addNewsBtn')?.addEventListener('click', async (e)=>{
-      const title = document.getElementById('newsTitle').value;
-      const date = document.getElementById('newsDate').value;
-      const summary = document.getElementById('newsSummary').value;
-      if (!title || !date || !summary) return customConfirm('Заповніть усі поля для новини!', true);
-      
-      const body = { title, date, summary };
+  document.getElementById('addNewsBtn')?.addEventListener('click', async ()=>{
+      const body = { title: document.getElementById('newsTitle').value, date: document.getElementById('newsDate').value, summary: document.getElementById('newsSummary').value };
+      if (!body.title) return customConfirm('Заповніть!', true);
       const res = await apiFetch('/api/news', { method:'POST', body: JSON.stringify(body) }); 
-      if (res && res.success) {
-        customConfirm('Новину додано!', true);
-        // Clear inputs
-        document.getElementById('newsTitle').value = '';
-        document.getElementById('newsDate').value = '';
-        document.getElementById('newsSummary').value = '';
-        loadInitialData();
-      }
+      if (res && res.success) { customConfirm('Новину додано!', true); loadInitialData(); }
   });
   
-  document.getElementById('addGalleryBtn')?.addEventListener('click', async (e)=>{
+  document.getElementById('addGalleryBtn')?.addEventListener('click', async ()=>{
       const url = document.getElementById('galleryUrl').value;
-      if (!url) return customConfirm('Введіть посилання на зображення!', true);
-      
-      const body = { url };
-      const res = await apiFetch('/api/gallery', { method:'POST', body: JSON.stringify(body) }); 
-      if (res && res.success) {
-        customConfirm('Фото додано!', true);
-        document.getElementById('galleryUrl').value = '';
-        loadInitialData();
-      }
+      if (!url) return customConfirm('Введіть URL!', true);
+      const res = await apiFetch('/api/gallery', { method:'POST', body: JSON.stringify({ url }) }); 
+      if (res && res.success) { customConfirm('Фото додано!', true); loadInitialData(); }
   });
 
-  // Search
   document.getElementById('memberSearch')?.addEventListener('input', (e) => { renderMembers(e.target.value); });
-
   document.getElementById('addMemberBtn')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.add('show'));
   document.getElementById('closeMemberModal')?.addEventListener('click', ()=>document.getElementById('addMemberModal').classList.remove('show'));
   
-  // Admin Tabs Logic
   document.querySelectorAll('.admin-tabs .tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
           document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.remove('active'));
           document.querySelectorAll('.sidebar-content .tab-pane').forEach(p => p.classList.remove('active'));
-          
-          btn.classList.add('active');
-          document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+          btn.classList.add('active'); document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
       });
   });
 
-  // Admin Clock & UI Mocks (System info)
   let sessionTime = 0;
   setInterval(() => {
+    sessionTime++;
     const now = new Date();
-    const clock = document.getElementById('adminClock');
-    const dateDisplay = document.getElementById('adminDate');
-    if(clock) clock.textContent = now.toLocaleTimeString('uk-UA', {hour12:false});
-    if(dateDisplay) dateDisplay.textContent = now.toLocaleDateString('uk-UA');
-
-    // MOCK for System Info (CPU/MEM/PING) - these values are generated client-side
-    sessionTime = (sessionTime || 0) + 1;
-    const sessionEl = document.getElementById('adminSession');
-    if(sessionEl) {
-      const h = Math.floor(sessionTime / 3600);
-      const m = Math.floor((sessionTime % 3600) / 60);
-      const s = sessionTime % 60;
-      sessionEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    }
-    const pingEl = document.getElementById('adminPing');
-    if(pingEl) {
-      const randomPing = Math.floor(Math.random() * (150 - 10 + 1)) + 10;
-      pingEl.textContent = `${randomPing}ms`;
-      pingEl.style.color = randomPing < 50 ? '#22c55e' : (randomPing < 100 ? '#eab308' : '#ef4444');
-    }
-    const cpuVal = document.getElementById('cpuVal');
-    const cpuBar = document.getElementById('cpuBar');
-    const memVal = document.getElementById('memVal');
-    const memBar = document.getElementById('memBar');
-    if(cpuVal) {
-      const cpu = Math.floor(Math.random() * (25 - 5 + 1)) + 5;
-      cpuVal.textContent = `${cpu}%`;
-      cpuBar.style.width = `${cpu}%`;
-    }
-    if(memVal) {
-      const mem = Math.floor(Math.random() * (50 - 30 + 1)) + 30;
-      memVal.textContent = `${mem}%`;
-      memBar.style.width = `${mem}%`;
-    }
-    
+    if(document.getElementById('adminClock')) document.getElementById('adminClock').textContent = now.toLocaleTimeString('uk-UA', {hour12:false});
+    if(document.getElementById('adminDate')) document.getElementById('adminDate').textContent = now.toLocaleDateString('uk-UA');
+    if(document.getElementById('adminSession')) document.getElementById('adminSession').textContent = new Date(sessionTime * 1000).toISOString().substr(11, 8);
   }, 1000);
 
-  // Animation
-  const animated = document.querySelectorAll('.animated-content');
-  function checkAnimate() {
-      animated.forEach(el => { 
-          if(el.getBoundingClientRect().top < window.innerHeight - 50) {
-              el.classList.add('animate-in');
-          } 
-      });
-  }
+  function checkAnimate() { document.querySelectorAll('.animated-content').forEach(el => { if(el.getBoundingClientRect().top < window.innerHeight - 50) el.classList.add('animate-in'); }); }
   window.addEventListener('scroll', checkAnimate);
-
-  // Init
   loadInitialData();
 });
