@@ -24,19 +24,18 @@ body {
   line-height: 1.6;
 }
 
-/* --- СТИЛІ ПОЛІВ ВВЕДЕННЯ (ВІДПОВІДАЮТЬ МАКЕТАМ) --- */
+/* --- СТИЛІ ПОЛІВ ВВЕДЕННЯ (ПОВНА ШИРИНА, БІЛЬШЕ, ТЕМНІШЕ) --- */
 input, textarea, select {
-  /* Загальні стилі для полів */
-  width: 100%; /* Займають повну ширину за замовчуванням */
-  background: #151619 !important; /* Дуже темний фон */
-  border: 1px solid #333 !important; /* Чітка рамка */
-  padding: 18px 20px; /* Більший внутрішній відступ */
-  border-radius: 12px; 
+  width: 100%; /* Займають повну ширину */
+  background: #151619 !important; 
+  border: 1px solid #333 !important; 
+  padding: 18px 20px; /* Збільшений padding */
+  border-radius: 12px; /* Округлі кути */
   color: #fff !important;
   font-family: inherit;
-  font-size: 16px; /* Більший шрифт */
+  font-size: 16px; 
   transition: all 0.3s;
-  margin-bottom: 10px; /* Відступ між полями */
+  margin-bottom: 15px; /* Більший відступ між полями */
 }
 input:focus, textarea:focus {
   outline: none;
@@ -109,11 +108,15 @@ main { flex: 1; }
   background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);
   align-items: center;
 }
-.events-controls input, .events-controls textarea {
+.members-controls input {
     margin-bottom: 0;
+}
+/* Адаптація для розміщення input у рядку (Новини та події) */
+.events-controls input, .events-controls textarea {
+    margin-bottom: 0; /* Видаляємо margin, оскільки вони в flex контейнері */
     flex-grow: 1;
     min-width: 150px;
-    padding: 12px 18px; /* Менший padding для компактності в рядку */
+    padding: 12px 18px; 
 }
 .events-controls textarea { 
     height: 48px; min-height: 48px; 
@@ -121,7 +124,17 @@ main { flex: 1; }
     padding-top: 10px; 
 }
 .events-controls button {
-    height: 48px; /* Вирівнюємо по висоті з input */
+    height: 54px; /* Вирівнюємо по висоті з input */
+    padding: 0 25px;
+    font-size: 16px;
+    border-radius: 12px;
+}
+.gallery-controls input {
+    margin-bottom: 0;
+    flex-grow: 1;
+}
+.gallery-controls button {
+    height: 54px;
     padding: 0 25px;
     font-size: 16px;
     border-radius: 12px;
@@ -215,7 +228,7 @@ body.is-admin .dash-avatar { border-color: var(--accent); color: var(--accent); 
 
 .btn-large {
     padding: 18px 35px; /* Збільшений padding */
-    font-size: 18px; /* Збільшений шрифт */
+    font-size: 18px; 
     min-width: 240px; 
     border-radius: 12px; 
 }
