@@ -133,6 +133,7 @@
                 
                 <div class="admin-only-nav" style="display:none; margin-top:15px; border-top:1px solid #222; padding-top:10px;">
                     <small style="padding-left:10px; color:#555; text-transform:uppercase; font-size:10px;">Admin Zone</small>
+                    <button onclick="switchDashTab('admin-members')"><i class="fa-solid fa-users-gear"></i> Учасники</button>
                     <button onclick="switchDashTab('users')"><i class="fa-solid fa-users"></i> Користувачі</button>
                     <button onclick="switchDashTab('stats')"><i class="fa-solid fa-chart-line"></i> Статистика</button>
                 </div>
@@ -164,7 +165,14 @@
                 <h2>Мій Персонаж</h2>
                 <div id="myMemberContainer"></div>
             </div>
-
+            
+            <div id="tab-admin-members" class="dash-view">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 style="border:none; margin:0;">Керування учасниками</h2>
+                    <input id="adminMemberSearchInput" placeholder="Пошук за іменем/роллю..." style="max-width:250px;">
+                </div>
+                <div id="adminMembersList" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
             <div id="tab-users" class="dash-view">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2 style="border:none; margin:0;">База користувачів</h2>
@@ -207,8 +215,8 @@
         <button type="submit" class="btn btn-primary full-width">Увійти</button>
       </form>
       <form id="registerForm" style="display: none;">
-        <p style="font-size:13px; color:#fff; margin-bottom:18px; text-align:center; padding:10px 15px; border-radius:8px; background:linear-gradient(90deg, #301010, #150505); border:1px solid #602020;">
-          <i class="fa-solid fa-triangle-exclamation" style="color:#ff5555; margin-right:5px;"></i> Дозволено лише 1 акаунт.
+        <p style="font-size:12px; color:#777; margin-bottom:15px; text-align:center;">
+          <i class="fa-solid fa-triangle-exclamation"></i> Дозволено лише 1 акаунт.
         </p>
         <input type="text" id="regUser" placeholder="Логін (Унікальний)" required>
         <input type="email" id="regEmail" placeholder="Email (Унікальний)" required>
